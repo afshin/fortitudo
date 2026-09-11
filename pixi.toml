@@ -1,0 +1,11 @@
+[workspace]
+authors = ["A. T. Darian <git@darian.at>"]
+channels = ["conda-forge"]
+name = "fortitudo"
+platforms = ["osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+pip = ">=26.2.1,<27"
