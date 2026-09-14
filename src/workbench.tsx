@@ -59,6 +59,7 @@ export class Workbench extends BoxPanel {
     super({ direction: 'top-to-bottom', spacing: 0 });
     this.id = 'fortitudo-workbench';
     this.title.label = 'Fortitudo';
+    this.title.iconClass = 'fortitudo-icon';
     this.title.closable = true;
     this.addClass('fortitudo-workbench');
     this.compiler = createCompiler(options.workerUrl);

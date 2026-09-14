@@ -1,3 +1,9 @@
+.jp-LauncherCard-icon .fortitudo-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--jp-ui-font-color1);
+}
+
 .fortitudo-jupyter {
   --fortitudo-background: var(--jp-layout-color0);
   --fortitudo-muted-background: var(--jp-layout-color1);

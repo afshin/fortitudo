@@ -20,7 +20,10 @@ export function Controls(props: IControlsProps): React.ReactElement {
   return (
     <div className="fortitudo-controls">
       <div className="fortitudo-toolbar">
-        <strong className="fortitudo-brand">Fortitudo</strong>
+        <strong className="fortitudo-brand">
+          <span className="fortitudo-icon" aria-hidden="true" />
+          Fortitudo
+        </strong>
         <label>
           <span>Language</span>
           <select

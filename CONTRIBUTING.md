@@ -19,6 +19,10 @@ throughout. `--as-is` uses the already installed Pixi environment without
 synchronizing it on each invocation. After changing `pixi.toml`, run
 `pixi install` to update the environment and lock.
 
+Pixi uses Node 24. GitHub Actions have their own JavaScript runtime, independent
+of Pixi's Node version. Keep workflow actions on releases that use Node 24 too;
+update their pinned revisions when upgrading them.
+
 ## First build
 
 ```sh
@@ -109,7 +113,8 @@ standalone site, and Lite site. Every compiler file must match the generated
 manifest; the worker and manifest must match the current build too.
 
 The release check validates package metadata, checks PyPI's file limit, runs
-Twine and npm's publish dry run, and writes `dist/release.json` with archive
-sizes and hashes. It does not publish. See [RELEASE.md](RELEASE.md) for registry
-setup and the manually triggered release workflow. Keep `package.json` as the
+Twine and npm's offline pack dry run, and writes `dist/release.json` with
+archive sizes and hashes. It validates local archives even when their version is
+already published. See [RELEASE.md](RELEASE.md) for registry setup, automatic
+publishing from GitHub releases, and manual runs. Keep `package.json` as the
 version source; staging, commits, and tags remain the user's responsibility.

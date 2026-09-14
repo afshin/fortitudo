@@ -46,7 +46,7 @@ fields = ["description", "authors", "urls", "keywords"]
 # Twine 6.2 and the publishing action validate core metadata through 2.4.
 core-metadata-version = "2.4"
 artifacts = ["fortitudo/labextension"]
-exclude = [".github", "binder"]
+exclude = [".github", "binder", "*.tgz"]
 
 [tool.hatch.build.targets.wheel]
 core-metadata-version = "2.4"

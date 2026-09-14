@@ -1,16 +1,23 @@
 # Releasing Fortitudo
 
-`package.json` is the version source. The first release is `0.1.0`; its tag
-`v0.1.0` must be created by the maintainer before running the workflow. Staging,
-commits, pushing, and tags remain the maintainer's responsibility. The workflows
-never change versions, create commits or tags, or create GitHub releases.
+`package.json` is the version source. Each release uses a matching `v<version>`
+tag. Staging, commits, pushing, and tags remain the maintainer's responsibility.
+The workflows never change versions, create commits or tags, or create GitHub
+releases.
 
 ## Publishing workflow
 
-`publish-release.yml` is manually triggered from an existing stable version tag.
-It rejects branches and tags that do not match the package version. Its
+Publishing a stable GitHub release starts `publish-release.yml` and publishes to
+both npm and PyPI after all checks pass. It uses the release's tagged commit and
+rejects tags that do not match the package version. The tagged commit must
+include this workflow. Draft releases wait until publication; prereleases are
+skipped. Editing release notes does not trigger another run. See GitHub's
+[release event documentation][github-release].
+
+The workflow can also be run manually from an existing stable version tag. Its
 `destination` input selects `none` (the default), `pypi`, `npm`, or `both`.
 Selecting a registry authorizes an actual public publish after the checks pass.
+Manual runs reject branches and tags that do not match the package version.
 
 The workflow calls `build.yml` at the same revision. It rebuilds the pinned
 compiler without restoring cached compiler output, builds every host, validates
@@ -75,8 +82,8 @@ secrets.
 npm requires the package to exist before a trusted publisher can be added. The
 first publish therefore uses your local npm login and 2FA. Do not publish a
 placeholder: use the full, tested `0.1.0` archive from the successful workflow.
-Keep jlpm for dependency installation and packing; use npm only for registry
-operations, because npm implements the trusted publishing flow.
+Keep jlpm for dependency installation and archive creation. Use npm to validate
+the generated archive and for registry operations, including trusted publishing.
 
 After the maintainer has committed the release files, pushed them, and created
 and pushed `v0.1.0`, run the checks without publishing:
@@ -155,14 +162,23 @@ jupyter labextension list
 ```
 
 Open Fortitudo and compile a function to confirm the installed compiler assets.
-The maintainer can then create GitHub release notes against the existing tag.
 Publication never starts on an ordinary push or pull request.
 
 ## Later releases and recovery
 
-After changing the version and preparing a new stable tag, use the same checks
-and select `both`. The npm `latest` tag follows stable releases. Prerelease
-versions are deliberately rejected by this workflow.
+For the next release:
+
+1. Set an unpublished stable version in `package.json`, commit, and push the
+   changes, including the workflow. Wait for the main branch checks to pass.
+2. Create a matching `v<version>` tag at that commit and publish a stable GitHub
+   release for it. Publishing the release starts the build and both registry
+   uploads automatically; no manual Actions run is needed.
+3. Check the Publish Release run and verify both registry versions.
+
+The npm `latest` tag follows stable releases. Prerelease versions are
+deliberately rejected by this workflow. Use manual `destination=none` to check a
+tag before publishing its GitHub release. Avoid manually publishing the same
+version as well: the automatic run would attempt duplicate uploads.
 
 If one registry succeeds and the other fails, rerun only the failed job in the
 same Actions run. Its successful build artifacts remain available, and the
@@ -173,9 +189,11 @@ workflow does not silently skip existing versions or ignore upload errors.
 Keep the compiler manifest and measurements with the release. The local check
 `pixi run --as-is python scripts/release.py` requires exactly the three current
 archives, validates names and versions, runs Twine with strict metadata checks,
-and performs an npm publish dry run. Existing package checks verify every
-compiler asset, including the optional Wasm driver, in the wheel rebuilt from
-the source distribution.
+and performs an offline npm pack dry run on the generated archive. This check
+works after a version is published; only publishing jobs contact the registries
+to upload it, and duplicate-version errors still fail those jobs. Existing
+package checks verify every compiler asset, including the optional Wasm driver,
+in the wheel rebuilt from the source distribution.
 
 PyPI's [default limits][pypi-limits] are 100 MB per file and 10 GB per project.
 The compiler makes each current archive approximately 60 MiB. Review the exact
@@ -186,3 +204,5 @@ sizes in each run; a larger runtime may need a limit increase before publishing.
 [pypi-limits]: https://docs.pypi.org/project-management/storage-limits/
 [npm-trusted]: https://docs.npmjs.com/trusted-publishers/
 [npm-trust]: https://docs.npmjs.com/cli/v11/commands/npm-trust/
+[github-release]:
+  https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#release

@@ -46,6 +46,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     app.commands.addCommand(openId, {
       label: 'Open Fortitudo',
       caption: 'Explore C and C++ assembly in your browser',
+      iconClass: 'fortitudo-icon',
       execute: () => {
         if (current && !current.isDisposed) {
           app.shell.activateById(current.id);

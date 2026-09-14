@@ -61,9 +61,8 @@ subprocess.run(
     check=True,
 )
 subprocess.run(
-    ['npm', 'publish', str(npm), '--dry-run', '--ignore-scripts',
-     '--access', 'public', '--registry', 'https://registry.npmjs.org',
-     '--json'],
+    ['npm', 'pack', str(npm), '--dry-run', '--ignore-scripts',
+     '--offline', '--json'],
     cwd=root,
     stdout=subprocess.DEVNULL,
     check=True,
