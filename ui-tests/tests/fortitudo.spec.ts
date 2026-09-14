@@ -209,45 +209,107 @@ test('initialized compiler can compile changed source offline', async ({
   await context.setOffline(false);
 });
 
-test('redocking and resetting panes preserves editing state', async ({
+for (const [host, url] of Object.entries(hosts)) {
+  test(`${host}: resize and reset panes within the host`, async ({ page }) => {
+    await open(page, url);
+    await page.getByRole('button', { name: 'Reset layout' }).click();
+    await edit(page, 'int resized() { return 12; }');
+    const workbench = page.locator('#fortitudo-workbench');
+    await expect(workbench.locator('.lm-DockPanel')).toHaveCount(0);
+    const source = workbench.getByRole('tabpanel', {
+      name: 'Source',
+      exact: true
+    });
+    const width = () => source.evaluate(node => node.clientWidth);
+    const original = await width();
+    const handle = workbench.locator(
+      '.lm-SplitPanel[data-orientation="horizontal"] ' +
+        '> .lm-SplitPanel-handle:not(.lm-mod-hidden)'
+    );
+    const from = await handle.boundingBox();
+    if (!from) {
+      throw new Error('The workbench divider is not laid out.');
+    }
+    const x = from.x + from.width / 2;
+    const y = from.y + from.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x - 100, y, { steps: 20 });
+    await page.mouse.up();
+    await expect.poll(width).toBeLessThan(original - 80);
+    const resized = await width();
+    await page.getByRole('button', { name: 'Close Fortitudo' }).click();
+    await page.getByText('Open Fortitudo', { exact: true }).first().click();
+    await expect.poll(width).toBeGreaterThan(resized - 3);
+    await expect.poll(width).toBeLessThan(resized + 3);
+    // Jupyter may defer saving its open tabs; its launcher can reopen us.
+    await open(page, url);
+    await expect(source).toBeVisible();
+    await expect.poll(width).toBeGreaterThan(resized - 3);
+    await expect.poll(width).toBeLessThan(resized + 3);
+    await expect(page.getByRole('textbox', { name: 'Source code' })).toHaveText(
+      'int resized() { return 12; }'
+    );
+    await page.getByRole('button', { name: 'Reset layout' }).click();
+    await expect.poll(width).toBeGreaterThan(original - 3);
+    await expect.poll(width).toBeLessThan(original + 3);
+    await expect(workbench.getByRole('tablist')).toHaveCount(3);
+    await page.setViewportSize({ width: 650, height: 720 });
+    await expect(
+      page.getByRole('button', { name: 'Compile', exact: true })
+    ).toBeInViewport();
+    await expect(workbench.getByRole('alert')).toHaveCount(0);
+  });
+}
+
+test('previously docked tab groups restore and save their selection', async ({
   page
 }) => {
   await open(page, standalone);
-  await edit(page, 'int docked() { return 12; }');
-  const source = page.getByRole('tabpanel', { name: 'Source', exact: true });
-  const tab = page.getByRole('tab', { name: 'Diagnostics', exact: true });
-  const from = await tab.boundingBox();
-  const to = await source.boundingBox();
-  if (!from || !to) {
-    throw new Error('The workbench panes are not laid out.');
-  }
-  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, {
-    steps: 20
+  await page.evaluate(() => {
+    localStorage.setItem(
+      'fortitudo:session:v1',
+      JSON.stringify({
+        version: 1,
+        source: 'int grouped() { return 12; }',
+        options: {
+          language: 'cpp',
+          target: 'wasm32-unknown-emscripten',
+          optimization: 2
+        },
+        layout: {
+          type: 'split-area',
+          orientation: 'horizontal',
+          sizes: [0.4, 0.6],
+          children: [
+            { type: 'tab-area', widgets: ['source'], currentIndex: 0 },
+            {
+              type: 'tab-area',
+              widgets: ['assembly', 'diagnostics'],
+              currentIndex: 0
+            }
+          ]
+        }
+      })
+    );
   });
-  await page.mouse.up();
-  await expect(
-    page.locator('#fortitudo-workbench').getByRole('tablist')
-  ).toHaveCount(2);
   await page.reload();
-  await expect(
-    page.locator('#fortitudo-workbench').getByRole('tablist')
-  ).toHaveCount(2);
-  await page.getByRole('tab', { name: 'Source', exact: true }).click();
-  await expect(page.getByRole('textbox', { name: 'Source code' })).toHaveText(
-    'int docked() { return 12; }'
-  );
+  const workbench = page.locator('#fortitudo-workbench');
+  await expect(workbench.getByRole('tablist')).toHaveCount(2);
+  await expect(page.getByLabel('Assembly output')).toBeVisible();
+  await page.getByRole('tab', { name: 'Diagnostics', exact: true }).click();
+  await expect(page.getByLabel('Assembly output')).toBeHidden();
+  await page.reload();
+  await expect(page.getByLabel('Diagnostics pane')).toBeVisible();
+  await expect(page.getByLabel('Assembly output')).toBeHidden();
   await page.getByRole('button', { name: 'Reset layout' }).click();
-  await expect(
-    page.locator('#fortitudo-workbench').getByRole('tablist')
-  ).toHaveCount(3);
-  await page.setViewportSize({ width: 650, height: 720 });
-  await expect(
-    page.getByRole('button', { name: 'Compile', exact: true })
-  ).toBeInViewport();
+  await expect(workbench.getByRole('tablist')).toHaveCount(3);
+  await expect(page.getByLabel('Assembly output')).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Source code' })).toHaveText(
+    'int grouped() { return 12; }'
+  );
   await compile(page);
-  await expect(page.getByLabel('Assembly output')).toContainText('docked');
+  await expect(page.getByLabel('Assembly output')).toContainText('grouped');
 });
 
 for (const asset of ['Compiler.js', 'Compiler.data']) {

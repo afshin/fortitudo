@@ -1,20 +1,20 @@
 import type { CommandRegistry } from '@lumino/commands';
 import type { IDisposable } from '@lumino/disposable';
 import type { Message } from '@lumino/messaging';
-import { BoxPanel, DockPanel } from '@lumino/widgets';
-import type { DockLayout, Widget } from '@lumino/widgets';
+import { BoxPanel } from '@lumino/widgets';
 import * as React from 'react';
 
 import { CommandIDs, registerCommands } from './commands';
 import { createCompiler } from './compiler/client';
 import type { ICompiler } from './compiler/types';
 import { initial, snapshot } from './model';
-import type { Area, Pane, Session } from './model';
+import type { Pane, Session } from './model';
 import { session } from './persistence';
 import type { IPersistence } from './persistence';
 import { createStore } from './state';
 import type { IStore } from './state';
 import { Bridge } from './ui/bridge';
+import { PanePanel } from './ui/panels';
 import { ReactWidget } from './widget';
 
 export interface IWorkbenchOptions {
@@ -66,20 +66,23 @@ export class Workbench extends BoxPanel {
     const header = this.view('controls');
     header.addClass('fortitudo-header');
     this.addWidget(header);
-    this.addWidget(this.dock);
-    BoxPanel.setStretch(this.dock, 1);
-    this.panes = {
+    const panes = {
       source: this.view('source'),
       assembly: this.view('assembly'),
       diagnostics: this.view('diagnostics')
     };
-    this.panes.source.title.label = 'Source';
-    this.panes.assembly.title.label = 'Assembly';
-    this.panes.diagnostics.title.label = 'Diagnostics';
+    panes.source.title.label = 'Source';
+    panes.assembly.title.label = 'Assembly';
+    panes.diagnostics.title.label = 'Diagnostics';
+    this.panels = new PanePanel(panes, store.state.layout, () =>
+      this.layoutChanged()
+    );
+    this.addWidget(this.panels);
+    BoxPanel.setStretch(this.panels, 1);
     this.registered = registerCommands(options.commands, {
       store,
       compiler: this.compiler,
-      resetLayout: () => this.restore(null),
+      resetLayout: () => this.panels.reset(),
       close: () => this.close()
     });
     this.binding = options.commands.addKeyBinding({
@@ -87,8 +90,6 @@ export class Workbench extends BoxPanel {
       keys: ['Accel Enter'],
       selector: '.fortitudo-workbench'
     });
-    this.restore(store.state.layout);
-    this.dock.layoutModified.connect(this.layoutChanged, this);
     let previous = snapshot(store.state);
     let position = store.state.position;
     this.unsubscribe = store.subscribe(() => {
@@ -104,7 +105,7 @@ export class Workbench extends BoxPanel {
       }
       if (store.state.position !== position) {
         position = store.state.position;
-        this.dock.activateWidget(this.panes.source);
+        this.panels.activatePane('source');
       }
     });
   }
@@ -131,7 +132,7 @@ export class Workbench extends BoxPanel {
 
   protected onActivateRequest(message: Message): void {
     super.onActivateRequest(message);
-    this.dock.activateWidget(this.panes.source);
+    this.panels.activatePane('source');
   }
 
   private view(pane: Pane | 'controls'): ReactWidget {
@@ -153,73 +154,13 @@ export class Workbench extends BoxPanel {
     return widget;
   }
 
-  private restore(layout: Area | null): void {
-    const main: DockLayout.AreaConfig = layout
-      ? this.restoreArea(layout)
-      : {
-          type: 'split-area',
-          orientation: 'vertical',
-          sizes: [0.75, 0.25],
-          children: [
-            {
-              type: 'split-area',
-              orientation: 'horizontal',
-              sizes: [0.5, 0.5],
-              children: [this.tab('source'), this.tab('assembly')]
-            },
-            this.tab('diagnostics')
-          ]
-        };
-    this.dock.restoreLayout({ main });
-  }
-
-  private tab(pane: Pane): DockLayout.ITabAreaConfig {
-    return { type: 'tab-area', widgets: [this.panes[pane]], currentIndex: 0 };
-  }
-
-  private restoreArea(area: Area): DockLayout.AreaConfig {
-    return area.type === 'tab-area'
-      ? { ...area, widgets: area.widgets.map(pane => this.panes[pane]) }
-      : {
-          ...area,
-          sizes: [...area.sizes],
-          children: area.children.map(child => this.restoreArea(child))
-        };
-  }
-
-  private identifiers(area: DockLayout.AreaConfig): Area {
-    return area.type === 'tab-area'
-      ? {
-          ...area,
-          widgets: area.widgets.map(widget => this.identifier(widget))
-        }
-      : {
-          ...area,
-          children: area.children.map(child => this.identifiers(child))
-        };
-  }
-
-  private identifier(widget: Widget): Pane {
-    if (widget === this.panes.source) {
-      return 'source';
-    }
-    if (widget === this.panes.assembly) {
-      return 'assembly';
-    }
-    if (widget === this.panes.diagnostics) {
-      return 'diagnostics';
-    }
-    throw new Error('Unknown workbench pane.');
-  }
-
   private layoutChanged(): void {
-    const main = this.dock.saveLayout().main;
-    if (!main || this.isDisposed) {
+    if (this.isDisposed) {
       return;
     }
     void this.options.commands
       .execute(CommandIDs.layoutChanged, {
-        layout: this.identifiers(main)
+        layout: this.panels.save()
       })
       .catch(error => {
         this.store.dispatch({ type: 'notice', message: String(error) });
@@ -257,8 +198,7 @@ export class Workbench extends BoxPanel {
     }
   }
 
-  private readonly dock = new DockPanel();
-  private readonly panes: Record<Pane, ReactWidget>;
+  private readonly panels: PanePanel;
   private readonly compiler: ICompiler;
   private readonly registered: IDisposable;
   private readonly binding: IDisposable;

@@ -19,12 +19,11 @@ packaged LLVM runtime reports WebAssembly, x86-64, and AArch64 backends. Native
 targets produce assembly with Clang built-in headers only; the packaged C/C++
 system headers are for WebAssembly.
 
-Source, options, and docked pane layout are saved by the host. Jupyter also
-keeps a browser copy scoped to the current workspace, protecting recent edits
-while its workspace writes are deferred. Reopening restores editing state
-without compiling. Output is explicitly marked out of date when source or
-options change. Invalid saved state opens a usable default session with
-feedback.
+Source, options, and pane layout are saved by the host. Jupyter also keeps a
+browser copy scoped to the current workspace, protecting recent edits while its
+workspace writes are deferred. Reopening restores editing state without
+compiling. Output is explicitly marked out of date when source or options
+change. Invalid saved state opens a usable default session with feedback.
 
 ## Running locally
 
@@ -68,7 +67,8 @@ offline page reload is a separate feature.
 - One instance-owned store outside React.
 - Lumino commands orchestrate semantic changes and compiler effects.
 - Functional React views, with explicit store and CodeMirror bridges.
-- A shared Lumino workbench owns layout, workers, and view lifecycles.
+- A shared Lumino workbench owns workers and view lifecycles, with tab panels
+  inside resizable split panels. Jupyter owns docking of the workbench itself.
 - Thin Jupyter and standalone adapters supply shell and persistence.
 
 The shared package entry exports these contracts. Only `src/jupyter/` imports

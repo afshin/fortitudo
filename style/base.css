@@ -233,14 +233,13 @@
   background: var(--fortitudo-background);
 }
 
-.fortitudo-workbench .lm-DockPanel-handle {
+.fortitudo-panels .lm-SplitPanel-handle {
   background: var(--fortitudo-border);
 }
 
-.fortitudo-workbench .lm-DockPanel-overlay {
-  border: 2px solid var(--fortitudo-accent);
-  background: var(--fortitudo-muted-background);
-  opacity: 0.75;
+.fortitudo-panels .lm-TabPanel {
+  min-width: 120px;
+  min-height: 80px;
 }
 
 .fortitudo-open {
