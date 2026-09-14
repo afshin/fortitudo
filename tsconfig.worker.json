@@ -9,6 +9,7 @@
   "include": [
     "src/compiler/worker.ts",
     "src/compiler/runtime.ts",
+    "src/compiler/assets.ts",
     "src/compiler/protocol.ts",
     "src/compiler/types.ts",
     "src/compiler/request.ts",

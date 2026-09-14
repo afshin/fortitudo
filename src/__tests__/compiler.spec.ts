@@ -108,3 +108,23 @@ it('rejects malformed messages before they reach the compiler', () => {
   ).toBe(false);
   expect(isOutput({ kind: 'ready', id: 1, info })).toBe(true);
 });
+
+it.each([
+  { loaded: -1, total: 10 },
+  { loaded: 11, total: 10 },
+  { loaded: 1, total: 0 },
+  { loaded: 0.5, total: 10 },
+  { loaded: NaN, total: 10 },
+  { loaded: 1, total: Infinity }
+])('rejects invalid download counts: %p', counts => {
+  expect(
+    isOutput({
+      kind: 'progress',
+      id: 1,
+      progress: {
+        phase: 'downloading',
+        downloads: [{ name: 'Compiler.wasm', ...counts }]
+      }
+    })
+  ).toBe(false);
+});

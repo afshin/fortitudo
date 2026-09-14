@@ -16,6 +16,10 @@ export interface IControlsProps {
 export function Controls(props: IControlsProps): React.ReactElement {
   const { state, onOptions } = props;
   const busy = state.active !== null;
+  const downloads =
+    state.progress?.phase === 'downloading' ? state.progress.downloads : null;
+  const loaded = downloads?.reduce((sum, item) => sum + item.loaded, 0) ?? 0;
+  const total = downloads?.reduce((sum, item) => sum + item.total, 0) ?? 0;
   return (
     <div className="fortitudo-controls">
       <div className="fortitudo-toolbar">
@@ -112,10 +116,28 @@ export function Controls(props: IControlsProps): React.ReactElement {
           </button>
         </div>
       </div>
-      <div className="fortitudo-status" role="status" aria-live="polite">
-        <span className={state.status === 'failed' ? 'fortitudo-error' : ''}>
-          {status(state)}
-        </span>
+      <div className="fortitudo-status">
+        <div className="fortitudo-activity">
+          {busy && <span className="fortitudo-spinner" aria-hidden="true" />}
+          <span
+            className={state.status === 'failed' ? 'fortitudo-error' : ''}
+            role="status"
+            aria-live="polite"
+          >
+            {status(state)}
+          </span>
+          {downloads && (
+            <>
+              <progress
+                aria-label="Compiler download"
+                aria-valuetext={bytes(loaded, total)}
+                value={loaded}
+                max={total}
+              />
+              <span aria-hidden="true">{bytes(loaded, total)}</span>
+            </>
+          )}
+        </div>
         <span>
           {state.info?.version ?? 'Clang / LLVM'} · Runs in your browser
         </span>
@@ -200,10 +222,36 @@ export function Diagnostics({
       <div className="fortitudo-caption">
         <span>Diagnostics {stale(state) ? '(out of date)' : ''}</span>
         <span>
-          {result ? `Exit status ${result.exitCode}` : 'Ready when you are'}
+          {state.active
+            ? status(state)
+            : result
+              ? `Exit status ${result.exitCode}`
+              : 'Ready when you are'}
         </span>
       </div>
       <div className="fortitudo-diagnostic-list">
+        {state.status === 'loading' && (
+          <div className="fortitudo-loading">
+            <p className="fortitudo-hint">
+              {state.progress?.phase === 'preparing'
+                ? 'Downloads complete. Checking assets and preparing compiler…'
+                : 'You can keep editing while the compiler loads.'}
+            </p>
+            {state.progress?.phase === 'downloading' && (
+              <ul className="fortitudo-downloads" aria-label="Compiler assets">
+                {state.progress.downloads.map(download => (
+                  <li key={download.name}>
+                    <span>{download.name}</span>
+                    <span>{bytes(download.loaded, download.total)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+        {state.status === 'failed' && state.notice && (
+          <p className="fortitudo-hint fortitudo-error">{state.notice}</p>
+        )}
         {result?.diagnostics.length ? (
           result.diagnostics.map((diagnostic, index) => (
             <button
@@ -222,13 +270,13 @@ export function Diagnostics({
               {diagnostic.message}
             </button>
           ))
-        ) : (
+        ) : state.active === null && state.status !== 'failed' ? (
           <p className="fortitudo-hint">
             {result
               ? 'No structured diagnostics.'
               : 'Compiler messages appear here.'}
           </p>
-        )}
+        ) : null}
         {result && (
           <details>
             <summary>Compiler output and commands</summary>
@@ -249,7 +297,11 @@ function status(state: State): string {
     case 'idle':
       return 'Ready to load the compiler';
     case 'loading':
-      return 'Loading compiler…';
+      return state.progress?.phase === 'downloading'
+        ? 'Downloading compiler…'
+        : state.progress?.phase === 'preparing'
+          ? 'Preparing compiler…'
+          : 'Loading compiler…';
     case 'compiling':
       return 'Compiling…';
     case 'cancelled':
@@ -265,4 +317,10 @@ function status(state: State): string {
             ? 'Compilation complete'
             : 'Compiler ready';
   }
+}
+
+function bytes(loaded: number, total: number): string {
+  const loadedMB = (loaded / 1_000_000).toFixed(1);
+  const totalMB = (total / 1_000_000).toFixed(1);
+  return `${loadedMB} / ${totalMB} MB`;
 }

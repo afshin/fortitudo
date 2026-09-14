@@ -44,7 +44,9 @@ test('real compiler: standards, headers, targets, repetition @compat', async ({
       return new Promise((resolve, reject) => {
         worker.onerror = event => reject(new Error(event.message));
         worker.onmessage = event => {
-          if (event.data.kind === 'error') {
+          if (event.data.kind === 'progress') {
+            return;
+          } else if (event.data.kind === 'error') {
             reject(new Error(event.data.message));
           } else {
             resolve(event.data);

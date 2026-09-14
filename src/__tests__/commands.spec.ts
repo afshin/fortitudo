@@ -63,10 +63,12 @@ it('keeps cancellation distinct from worker failure', async () => {
     throw new Error('not started');
   };
   const compiler: ICompiler = {
-    initialize: () =>
-      new Promise((_, failure) => {
+    initialize: onProgress => {
+      onProgress?.({ phase: 'preparing' });
+      return new Promise((_, failure) => {
         reject = failure;
-      }),
+      });
+    },
     compile: jest.fn(),
     cancel: () => reject(new Error('terminated')),
     dispose: jest.fn()
@@ -77,9 +79,11 @@ it('keeps cancellation distinct from worker failure', async () => {
     resetLayout: jest.fn()
   });
   const running = commands.execute(CommandIDs.compile);
+  expect(store.state.progress).toEqual({ phase: 'preparing' });
   await commands.execute(CommandIDs.cancel);
   await running;
   expect(store.state.status).toBe('cancelled');
   expect(store.state.notice).toBeNull();
+  expect(store.state.progress).toBeNull();
   registered.dispose();
 });

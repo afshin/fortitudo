@@ -21,6 +21,18 @@ export type Info = Readonly<{
   targets: readonly Target[];
 }>;
 
+/** Decoded asset bytes, measured against the packaged manifest. */
+export type Download = Readonly<{
+  name: string;
+  loaded: number;
+  total: number;
+}>;
+
+/** Preparation includes integrity checks and runtime initialization. */
+export type Progress =
+  | Readonly<{ phase: 'downloading'; downloads: readonly Download[] }>
+  | Readonly<{ phase: 'preparing' }>;
+
 export type Request = Readonly<{
   id: number;
   source: string;
@@ -48,7 +60,8 @@ export type Result = Readonly<{
 
 /** Ordinary compiler errors resolve; runtime failures reject. */
 export interface ICompiler {
-  initialize(): Promise<Info>;
+  /** Progress callbacks are released when initialization settles. */
+  initialize(onProgress?: (progress: Progress) => void): Promise<Info>;
   compile(request: Request): Promise<Result>;
   cancel(): void;
   dispose(): void;

@@ -100,3 +100,59 @@ it('settles failures and refuses work after disposal', async () => {
   compiler.dispose();
   await expect(compiler.initialize()).rejects.toThrow('disposed');
 });
+
+it('shares progress until initialization settles', async () => {
+  const { compiler, workers } = setup();
+  const first = jest.fn();
+  const pending = compiler.initialize(first);
+  const id = workers[0].messages[0].id;
+  const progress = {
+    phase: 'downloading' as const,
+    downloads: [{ name: 'Compiler.wasm', loaded: 3, total: 10 }]
+  };
+  workers[0].reply({ kind: 'progress', id, progress });
+  expect(first).toHaveBeenCalledWith(progress);
+  const second = jest.fn();
+  expect(compiler.initialize(second)).toBe(pending);
+  expect(second).toHaveBeenCalledWith(progress);
+  const settled = jest.fn();
+  void pending.then(settled);
+  await Promise.resolve();
+  expect(settled).not.toHaveBeenCalled();
+  workers[0].reply({ kind: 'progress', id: id + 1, progress });
+  expect(first).toHaveBeenCalledTimes(1);
+  workers[0].reply({ kind: 'ready', id, info });
+  await expect(pending).resolves.toEqual(info);
+  workers[0].reply({ kind: 'progress', id, progress });
+  const cached = jest.fn();
+  await compiler.initialize(cached);
+  expect(cached).not.toHaveBeenCalled();
+  expect(first).toHaveBeenCalledTimes(1);
+  expect(second).toHaveBeenCalledTimes(1);
+  compiler.dispose();
+});
+
+it('ignores old progress after cancellation and retry', async () => {
+  const { compiler, workers } = setup();
+  const first = jest.fn();
+  const pending = compiler.initialize(first);
+  const rejected = expect(pending).rejects.toThrow();
+  const late = workers[0].onmessage;
+  compiler.cancel();
+  const second = jest.fn();
+  const next = compiler.initialize(second);
+  await rejected;
+  const id = workers[1].messages[0].id;
+  late?.(
+    new MessageEvent('message', {
+      data: { kind: 'progress', id, progress: { phase: 'preparing' } }
+    })
+  );
+  expect(first).not.toHaveBeenCalled();
+  expect(second).not.toHaveBeenCalled();
+  workers[1].reply({ kind: 'progress', id, progress: { phase: 'preparing' } });
+  expect(second).toHaveBeenCalledWith({ phase: 'preparing' });
+  workers[1].reply({ kind: 'ready', id, info });
+  await expect(next).resolves.toEqual(info);
+  compiler.dispose();
+});

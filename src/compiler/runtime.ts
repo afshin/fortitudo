@@ -1,7 +1,8 @@
+import { assets } from './assets';
 import { diagnostics } from './diagnostics';
 import { record } from './protocol';
 import { invocation, serialize } from './request';
-import type { Info, Request, Result, Target } from './types';
+import type { Info, Progress, Request, Result, Target } from './types';
 
 interface IFilesystem {
   mkdirTree(path: string): void;
@@ -36,7 +37,10 @@ export interface IRuntime {
 }
 
 /** Load the generated compiler without allowing a bundler to rewrite it. */
-export async function initialize(base: string): Promise<IRuntime> {
+export async function initialize(
+  base: string,
+  onProgress: (progress: Progress) => void
+): Promise<IRuntime> {
   const response = await fetch(new URL('manifest.json', base));
   if (!response.ok) {
     throw new Error(`Compiler manifest could not load (${response.status}).`);
@@ -51,12 +55,13 @@ export async function initialize(base: string): Promise<IRuntime> {
     throw new Error('The compiler manifest is invalid.');
   }
   const url = new URL('Compiler.js', base).href;
-  const [loader, data, wasm]: [unknown, ArrayBuffer, ArrayBuffer] =
-    await Promise.all([
-      import(/* @vite-ignore */ url),
-      asset('Compiler.data', base, manifest.files),
-      asset('Compiler.wasm', base, manifest.files)
-    ]);
+  const [loader, { data, wasm }]: [
+    unknown,
+    { data: ArrayBuffer; wasm: ArrayBuffer }
+  ] = await Promise.all([
+    import(/* @vite-ignore */ url),
+    assets(base, manifest.files, onProgress)
+  ]);
   if (!record(loader) || !factory(loader.default)) {
     throw new Error('The compiler loader does not export a module factory.');
   }
@@ -162,45 +167,6 @@ export async function initialize(base: string): Promise<IRuntime> {
       }
     }
   };
-}
-
-/** Fetch explicitly: the generated data loader can leave failures pending. */
-async function asset(
-  name: string,
-  base: string,
-  files: unknown
-): Promise<ArrayBuffer> {
-  const entry = record(files) ? files[name] : null;
-  if (
-    !record(entry) ||
-    typeof entry.sha256 !== 'string' ||
-    !/^[a-f0-9]{64}$/.test(entry.sha256) ||
-    typeof entry.bytes !== 'number' ||
-    entry.bytes <= 0
-  ) {
-    throw new Error(`The manifest does not describe ${name}.`);
-  }
-  const hash = entry.sha256.match(/../g) ?? [];
-  const binary = hash
-    .map(byte => String.fromCharCode(parseInt(byte, 16)))
-    .join('');
-  try {
-    const response = await fetch(new URL(name, base), {
-      integrity: `sha256-${btoa(binary)}`
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    const bytes = await response.arrayBuffer();
-    if (bytes.byteLength !== entry.bytes) {
-      throw new Error('The file size does not match its manifest.');
-    }
-    return bytes;
-  } catch (error) {
-    throw new Error(
-      `${name} could not load or failed integrity: ${String(error)}`
-    );
-  }
 }
 
 function factory(

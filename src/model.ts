@@ -1,4 +1,4 @@
-import type { Info, Options, Result } from './compiler/types';
+import type { Info, Options, Progress, Result } from './compiler/types';
 
 export type Pane = 'source' | 'assembly' | 'diagnostics';
 
@@ -29,6 +29,7 @@ export type State = Readonly<{
   revision: number;
   status: 'idle' | 'loading' | 'ready' | 'compiling' | 'cancelled' | 'failed';
   info: Info | null;
+  progress: Progress | null;
   active: Readonly<{ id: number; revision: number }> | null;
   result: Readonly<{ revision: number; value: Result }> | null;
   notice: string | null;
@@ -40,6 +41,7 @@ export type Action =
   | Readonly<{ type: 'options'; options: Options }>
   | Readonly<{ type: 'layout'; layout: Area | null }>
   | Readonly<{ type: 'begin'; id: number }>
+  | Readonly<{ type: 'progress'; id: number; progress: Progress }>
   | Readonly<{ type: 'initialized'; id: number; info: Info; compile: boolean }>
   | Readonly<{ type: 'finished'; id: number; result: Result }>
   | Readonly<{ type: 'failed'; id: number; message: string }>
@@ -67,6 +69,7 @@ export function initial(session: Session | null = null): State {
     revision: 0,
     status: 'idle',
     info: null,
+    progress: null,
     active: null,
     result: null,
     notice: null,
@@ -92,14 +95,20 @@ export function reduce(state: State, action: Action): State {
         ...state,
         active: { id: action.id, revision: state.revision },
         status: 'loading',
+        progress: null,
         notice: null
       };
+    case 'progress':
+      return state.active?.id === action.id && state.status === 'loading'
+        ? { ...state, progress: action.progress }
+        : state;
     case 'initialized':
       return state.active?.id === action.id
         ? {
             ...state,
             info: action.info,
             status: action.compile ? 'compiling' : 'ready',
+            progress: null,
             active: action.compile ? state.active : null
           }
         : state;
@@ -108,6 +117,7 @@ export function reduce(state: State, action: Action): State {
         ? {
             ...state,
             status: 'ready',
+            progress: null,
             active: null,
             result: { revision: state.active.revision, value: action.result }
           }
@@ -117,12 +127,13 @@ export function reduce(state: State, action: Action): State {
         ? {
             ...state,
             status: 'failed',
+            progress: null,
             active: null,
             notice: action.message
           }
         : state;
     case 'cancelled':
-      return { ...state, active: null, status: 'cancelled' };
+      return { ...state, active: null, status: 'cancelled', progress: null };
     case 'notice':
       return { ...state, notice: action.message };
     case 'navigate':

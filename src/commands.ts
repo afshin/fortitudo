@@ -44,7 +44,11 @@ export function registerCommands(
     const { source, options } = store.state;
     store.dispatch({ type: 'begin', id });
     try {
-      const info = await compiler.initialize();
+      const info = await compiler.initialize(progress => {
+        if (!disposed) {
+          store.dispatch({ type: 'progress', id, progress });
+        }
+      });
       if (disposed || store.state.active?.id !== id) {
         return;
       }

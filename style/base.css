@@ -143,7 +143,44 @@
 }
 
 .fortitudo-status {
+  flex-wrap: wrap;
   padding: 0 20px 12px;
+}
+
+.fortitudo-activity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fortitudo-activity progress {
+  width: 120px;
+  height: 6px;
+  accent-color: var(--fortitudo-accent);
+}
+
+.fortitudo-spinner {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--fortitudo-border);
+  border-top-color: var(--fortitudo-accent);
+  border-radius: 50%;
+  animation: fortitudo-spin 0.8s linear infinite;
+}
+
+@keyframes fortitudo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fortitudo-spinner {
+    animation: none;
+  }
 }
 
 .fortitudo-caption {
@@ -186,6 +223,22 @@
 .fortitudo-diagnostic-list summary {
   cursor: pointer;
   color: var(--fortitudo-muted);
+}
+
+.fortitudo-downloads {
+  margin: 8px 12px;
+  padding: 0;
+  list-style: none;
+  color: var(--fortitudo-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fortitudo-downloads li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
 }
 
 .fortitudo-workbench .fortitudo-diagnostic {

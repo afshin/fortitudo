@@ -1,4 +1,4 @@
-import type { Info, Request, Result } from './types';
+import type { Info, Progress, Request, Result } from './types';
 import { isRequest, isTarget } from './types';
 
 export type Input =
@@ -6,6 +6,7 @@ export type Input =
   | Readonly<{ kind: 'compile'; id: number; request: Request }>;
 
 export type Output =
+  | Readonly<{ kind: 'progress'; id: number; progress: Progress }>
   | Readonly<{ kind: 'ready'; id: number; info: Info }>
   | Readonly<{ kind: 'result'; id: number; result: Result }>
   | Readonly<{ kind: 'error'; id: number; message: string }>;
@@ -26,6 +27,29 @@ export function isOutput(value: unknown): value is Output {
   }
   if (value.kind === 'error') {
     return typeof value.message === 'string';
+  }
+  if (value.kind === 'progress') {
+    const progress = value.progress;
+    return (
+      record(progress) &&
+      (progress.phase === 'preparing' ||
+        (progress.phase === 'downloading' &&
+          Array.isArray(progress.downloads) &&
+          progress.downloads.length > 0 &&
+          progress.downloads.every(download => {
+            return (
+              record(download) &&
+              typeof download.name === 'string' &&
+              typeof download.loaded === 'number' &&
+              Number.isSafeInteger(download.loaded) &&
+              download.loaded >= 0 &&
+              typeof download.total === 'number' &&
+              Number.isSafeInteger(download.total) &&
+              download.total > 0 &&
+              download.loaded <= download.total
+            );
+          })))
+    );
   }
   if (value.kind === 'ready') {
     const info = value.info;

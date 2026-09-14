@@ -14,6 +14,12 @@ select a diagnostic to jump to its source location. Compilation runs in a
 worker, so editing remains available. **Cancel** terminates that worker; the
 next compile loads a fresh one.
 
+The status strip shows download progress in MB, then preparation and compilation
+activity. Diagnostics lists the individual compiler downloads and any loading
+failure. Progress counts decoded asset bytes against their packaged sizes;
+compressed network transfers may be smaller. Asset verification requires HTTPS
+or a local server on localhost.
+
 The defaults are C++23, WebAssembly, and O2. C23 and O0–O3 are available. The
 packaged LLVM runtime reports WebAssembly, x86-64, and AArch64 backends. Native
 targets produce assembly with Clang built-in headers only; the packaged C/C++

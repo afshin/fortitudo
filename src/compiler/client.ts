@@ -1,6 +1,6 @@
 import { isOutput } from './protocol';
 import type { Input, Output } from './protocol';
-import type { ICompiler, Info, Request, Result } from './types';
+import type { ICompiler, Info, Progress, Request, Result } from './types';
 
 export interface IWorker {
   postMessage(message: Input): void;
@@ -13,6 +13,12 @@ export interface IWorker {
 type Pending = {
   resolve(output: Output): void;
   reject(error: Error): void;
+  onProgress?: (progress: Progress) => void;
+};
+
+type Loading = {
+  listeners: Set<(progress: Progress) => void>;
+  progress: Progress | null;
 };
 
 /** One disposable worker owns the compiler and all of its process state. */
@@ -22,6 +28,7 @@ export function createCompiler(
 ): ICompiler {
   let worker: IWorker | null = null;
   let ready: Promise<Info> | null = null;
+  let loading: Loading | null = null;
   let disposed = false;
   let busy = false;
   let sequence = 0;
@@ -38,6 +45,7 @@ export function createCompiler(
       worker = null;
     }
     ready = null;
+    loading = null;
     for (const entry of pending.values()) {
       entry.reject(error);
     }
@@ -66,7 +74,9 @@ export function createCompiler(
       if (!entry) {
         return;
       }
-      if (output.kind === 'error') {
+      if (output.kind === 'progress') {
+        entry.onProgress?.(output.progress);
+      } else if (output.kind === 'error') {
         stop(new Error(output.message));
       } else {
         pending.delete(output.id);
@@ -87,10 +97,13 @@ export function createCompiler(
     return current;
   }
 
-  function send(input: Input): Promise<Output> {
+  function send(
+    input: Input,
+    onProgress?: (progress: Progress) => void
+  ): Promise<Output> {
     return new Promise((resolve, reject) => {
       const current = start();
-      pending.set(input.id, { resolve, reject });
+      pending.set(input.id, { resolve, reject, onProgress });
       try {
         current.postMessage(input);
       } catch (error) {
@@ -99,24 +112,49 @@ export function createCompiler(
     });
   }
 
-  function initialize(): Promise<Info> {
+  function initialize(
+    onProgress?: (progress: Progress) => void
+  ): Promise<Info> {
     if (!ready) {
-      ready = send({
-        kind: 'initialize',
-        id: ++sequence,
-        base: new URL('.', url).href
-      }).then(output => {
-        if (output.kind !== 'ready') {
-          throw new Error('Expected compiler capabilities.');
+      const current: Loading = { listeners: new Set(), progress: null };
+      loading = current;
+      ready = send(
+        {
+          kind: 'initialize',
+          id: ++sequence,
+          base: new URL('.', url).href
+        },
+        progress => {
+          current.progress = progress;
+          for (const listener of current.listeners) {
+            listener(progress);
+          }
         }
-        return output.info;
-      });
+      )
+        .then(output => {
+          if (output.kind !== 'ready') {
+            throw new Error('Expected compiler capabilities.');
+          }
+          return output.info;
+        })
+        .finally(() => {
+          current.listeners.clear();
+          if (loading === current) {
+            loading = null;
+          }
+        });
       const attempt = ready;
       void attempt.catch(() => {
         if (ready === attempt) {
           ready = null;
         }
       });
+    }
+    if (onProgress && loading) {
+      loading.listeners.add(onProgress);
+      if (loading.progress) {
+        onProgress(loading.progress);
+      }
     }
     return ready;
   }

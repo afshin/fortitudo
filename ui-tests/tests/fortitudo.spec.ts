@@ -51,6 +51,91 @@ async function compile(page: Page): Promise<void> {
   ).toBeVisible();
 }
 
+test.describe('loading feedback', () => {
+  // Lite's service worker would bypass the controlled download delays.
+  test.use({ serviceWorkers: 'block' });
+  for (const [host, url] of Object.entries(hosts)) {
+    test(`${host}: download progress and preparation${
+      host === 'standalone' ? ' @compat' : ''
+    }`, async ({ page }, testInfo) => {
+      let download = () => {};
+      let prepare = () => {};
+      const downloading = new Promise<void>(resolve => {
+        download = resolve;
+      });
+      const preparing = new Promise<void>(resolve => {
+        prepare = resolve;
+      });
+      await page.route('**/compiler/Compiler.wasm', async route => {
+        await downloading;
+        await route.continue().catch(() => {});
+      });
+      await page.route('**/compiler/Compiler.js', async route => {
+        await preparing;
+        await route.continue().catch(() => {});
+      });
+      try {
+        await open(page, url);
+        await page.getByLabel('Language', { exact: true }).selectOption('cpp');
+        await page
+          .getByLabel('Target', { exact: true })
+          .selectOption('wasm32-unknown-emscripten');
+        await edit(page, 'int square(int x) { return x * x; }');
+        await page
+          .getByRole('button', { name: 'Compile', exact: true })
+          .click();
+        const status = page.getByRole('status');
+        const progress = page.getByRole('progressbar', {
+          name: 'Compiler download'
+        });
+        await expect(status).toHaveText('Downloading compiler…');
+        await expect(progress).toBeVisible();
+        await expect
+          .poll(() => progress.getAttribute('value').then(Number))
+          .toBeGreaterThan(0);
+        const loaded = Number(await progress.getAttribute('value'));
+        const total = Number(await progress.getAttribute('max'));
+        expect(loaded).toBeLessThan(total);
+        await expect(progress).toHaveAttribute('aria-valuetext', / MB$/);
+        const diagnostics = page.getByLabel('Diagnostics pane');
+        await expect(diagnostics).toContainText('Compiler.data');
+        await expect(diagnostics).toContainText('Compiler.wasm');
+        await expect(diagnostics).not.toContainText('Ready when you are');
+        await expect(
+          page.getByRole('button', { name: 'Cancel' })
+        ).toBeEnabled();
+        await edit(page, 'int edited_while_loading() { return 7; }');
+        await page.screenshot({ path: testInfo.outputPath('downloading.png') });
+        await page.setViewportSize({ width: 650, height: 720 });
+        await expect(progress).toBeInViewport();
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        const spinner = page.locator('.fortitudo-spinner');
+        await expect(spinner).toHaveCSS('animation-name', 'none');
+        download();
+        await expect(status).toHaveText('Preparing compiler…');
+        await expect(progress).toHaveCount(0);
+        await expect(spinner).toBeVisible();
+        await expect(diagnostics).toContainText('Downloads complete.');
+        await page.screenshot({ path: testInfo.outputPath('preparing.png') });
+        prepare();
+        await expect(page.getByLabel('Assembly output')).toContainText(
+          'i32.mul'
+        );
+        await expect(spinner).toHaveCount(0);
+        await expect(diagnostics).not.toContainText('Compiler.wasm');
+        await compile(page);
+        await expect(page.getByLabel('Assembly output')).toContainText(
+          'edited_while_loading'
+        );
+      } finally {
+        download();
+        prepare();
+        await page.unrouteAll({ behavior: 'wait' });
+      }
+    });
+  }
+});
+
 for (const [host, url] of Object.entries(hosts)) {
   test(`${host}: edit, compile, inspect, restore${
     host === 'standalone' ? ' @compat' : ''
@@ -147,10 +232,15 @@ test('missing assets, cancellation during loading, and retry', async ({
   });
   await page.getByRole('button', { name: 'Retry compilation' }).click();
   await expect(
+    page.getByRole('progressbar', { name: 'Compiler download' })
+  ).toBeVisible();
+  await expect(
     page.getByRole('button', { name: 'Cancel', exact: true })
   ).toBeEnabled();
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Cancelled');
+  await expect(page.getByRole('progressbar')).toHaveCount(0);
+  await expect(page.locator('.fortitudo-spinner')).toHaveCount(0);
   release();
   await page.unrouteAll({ behavior: 'wait' });
   await compile(page);

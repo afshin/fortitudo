@@ -2,9 +2,11 @@ export { CommandIDs, registerCommands } from './commands';
 export type { IContext } from './commands';
 export { createCompiler } from './compiler/client';
 export type {
+  Download,
   ICompiler,
   Info,
   Options,
+  Progress,
   Request,
   Result
 } from './compiler/types';

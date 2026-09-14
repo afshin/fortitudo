@@ -19,7 +19,9 @@ self.addEventListener('message', (event: MessageEvent<unknown>) => {
   pending = pending.then(async () => {
     try {
       if (input.kind === 'initialize') {
-        runtime = await initialize(input.base);
+        runtime = await initialize(input.base, progress => {
+          reply({ kind: 'progress', id: input.id, progress });
+        });
         reply({ kind: 'ready', id: input.id, info: runtime.info });
       } else {
         if (!runtime) {

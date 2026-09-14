@@ -35,6 +35,32 @@ it('ignores a response after cancellation or a newer request', () => {
   expect(reduce(newer, { type: 'finished', id: 1, result })).toBe(newer);
 });
 
+it('clears progress outside the current initialization', () => {
+  const progress = { phase: 'preparing' as const };
+  const action = { type: 'progress' as const, id: 1, progress };
+  const started = reduce(initial(), { type: 'begin', id: 1 });
+  const loading = reduce(started, action);
+  expect(loading.progress).toBe(progress);
+  expect(started.progress).toBeNull();
+  expect(snapshot(loading)).not.toHaveProperty('progress');
+  const cancelled = reduce(loading, { type: 'cancelled' });
+  expect(cancelled.progress).toBeNull();
+  expect(reduce(cancelled, action)).toBe(cancelled);
+  const retry = reduce(cancelled, { type: 'begin', id: 2 });
+  expect(reduce(retry, action)).toBe(retry);
+  const initialized = reduce(loading, {
+    type: 'initialized',
+    id: 1,
+    info: { version: 'LLVM', resourceDirectory: '/', targets: [] },
+    compile: true
+  });
+  expect(initialized.progress).toBeNull();
+  expect(reduce(initialized, action)).toBe(initialized);
+  expect(
+    reduce(loading, { type: 'failed', id: 1, message: 'missing' }).progress
+  ).toBeNull();
+});
+
 it('keeps snapshots stable and removes subscriptions on disposal', () => {
   const store = createStore(initial());
   const listener = jest.fn();
