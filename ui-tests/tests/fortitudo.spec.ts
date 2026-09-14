@@ -171,14 +171,15 @@ test('editing, cancellation during compilation, and retry', async ({
 }) => {
   await open(page, standalone);
   await compile(page);
-  await edit(
-    page,
+  await page.getByRole('textbox', { name: 'Source code' }).fill(
     [
-      'template<int N> int sum(int x) {',
-      '  if constexpr (N == 0) return x;',
-      '  else return sum<N - 1>(x) + sum<N - 1>(x + 1);',
-      '}',
-      'int slow(int x) { return sum<500>(x); }'
+      // Expand a compact source into enough work to reliably cancel it.
+      '#define VALUES_0 0',
+      ...Array.from(
+        { length: 22 },
+        (_, i) => `#define VALUES_${i + 1} VALUES_${i}, VALUES_${i}`
+      ),
+      'int slow[] = { VALUES_22 };'
     ].join('\n')
   );
   await page.getByRole('button', { name: 'Compile', exact: true }).click();

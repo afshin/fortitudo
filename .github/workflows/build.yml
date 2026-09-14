@@ -33,6 +33,8 @@ jobs:
         with:
           pixi-version: v0.59.0
           cache: true
+      - name: Install the Lite build environment
+        run: pixi install --all --locked
       - name: Install JavaScript dependencies
         run: pixi run --as-is jlpm install --immutable
       - name: Restore compiler assets
@@ -64,6 +66,7 @@ jobs:
           pixi run --as-is jupyter-builder develop . --overwrite
           pixi run --as-is jlpm build:standalone
           pixi run --as-is node scripts/lite.mjs
+          pixi run --as-is node scripts/site.mjs
       - name: Build and verify distributions
         run: |
           pixi run --as-is jlpm pack --out dist/fortitudo.tgz
@@ -74,6 +77,12 @@ jobs:
         run: pixi run --as-is jlpm playwright install --with-deps
       - name: Test real browser workflows
         run: pixi run --as-is jlpm test:browser
+      - name: Upload GitHub Pages site
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        # actions/upload-pages-artifact@v5.0.0
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9
+        with:
+          path: dist/site
       # actions/upload-artifact@v7.0.1
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
@@ -127,3 +136,25 @@ jobs:
           python -m pip install 'jupyterlab>=4.6,<5' dist/fortitudo*.whl
           jupyter labextension list
           python -m jupyterlab.browser_check --no-browser-test
+
+  pages:
+    needs: [build, wheel]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    steps:
+      - name: Configure GitHub Pages
+        # actions/configure-pages@v6.0.0
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d
+      - name: Deploy GitHub Pages
+        id: deploy
+        # actions/deploy-pages@v5.0.1
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346

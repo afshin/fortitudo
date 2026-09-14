@@ -1,3 +1,12 @@
 {
-  "LiteBuildConfig": {}
+  "LiteBuildConfig": {
+    "contents": ["files"],
+    "federated_extensions": ["../fortitudo/labextension"]
+  },
+  "XeusAddon": {
+    "default_channels": [
+      "https://prefix.dev/emscripten-forge-4x",
+      "https://conda.anaconda.org/conda-forge"
+    ]
+  }
 }

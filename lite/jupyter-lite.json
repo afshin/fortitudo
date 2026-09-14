@@ -3,6 +3,7 @@
   "jupyter-config-data": {
     "appName": "Fortitudo",
     "appUrl": "./lab",
-    "faviconUrl": "./icon.svg"
+    "faviconUrl": "./icon.svg",
+    "defaultKernelName": "xcpp23"
   }
 }

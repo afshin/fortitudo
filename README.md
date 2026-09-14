@@ -4,6 +4,10 @@ Fortitudo is a browser-only C/C++ compiler explorer for JupyterLab, JupyterLite,
 and a standalone Lumino application. All three hosts use the same workbench and
 compiler worker. No kernel or remote compiler is needed.
 
+The [web app](https://afshin.github.io/fortitudo/) opens the standalone
+explorer. Select **Open JupyterLite** to use the explorer alongside C23 and
+C++23 notebooks. Both applications run in the browser.
+
 Edit a function, choose a language, target, and optimization level, then select
 **Compile** or press **Ctrl/Cmd+Enter**. Inspect assembly and compiler messages;
 select a diagnostic to jump to its source location. Compilation runs in a
@@ -70,6 +74,23 @@ offline page reload is a separate feature.
 The shared package entry exports these contracts. Only `src/jupyter/` imports
 JupyterLab packages; the plugin retains `fortitudo:plugin`.
 
+## C and C++ notebooks
+
+Our JupyterLite site includes xeus-cpp 0.10.0, with C23 and C++23 kernels. Open
+**Getting started.ipynb** or **C examples.ipynb** and choose **Run → Run All
+Cells**. The examples use packaged standard library headers, define functions,
+and reuse state across cells.
+
+The notebook interpreter runs in its own browser worker. It is independent of
+Fortitudo's assembly compiler: code, options, and results are not synchronized
+between them. Its Clang version also differs from the explorer's LLVM runtime.
+The first kernel start downloads the interpreter and its libraries. Browser
+memory limits apply; native processes, native platform APIs, and arbitrary
+native libraries are unavailable.
+
+These kernels are included in our Lite site, not installed into native
+JupyterLab by the Fortitudo Python package.
+
 ## Runtime and limits
 
 The runtime is reproduced from WasmBolt with LLVM 23.1.0 and Emscripten 4.0.9.
@@ -101,6 +122,13 @@ copyright and license notice are included in our distributions.
 
 The compiler itself is provided by LLVM/Clang and built for WebAssembly using
 Emscripten.
+
+Our notebook environment uses
+[xeus-cpp](https://github.com/compiler-research/xeus-cpp), CppInterOp, and
+[jupyterlite-xeus](https://github.com/jupyterlite/xeus), with browser packages
+from [emscripten-forge](https://github.com/emscripten-forge/recipes). Their work
+makes interactive C and C++ notebooks possible without a server. The Lite build
+preserves package license notices alongside the kernel assets.
 
 ## License
 

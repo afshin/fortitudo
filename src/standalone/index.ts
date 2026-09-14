@@ -6,6 +6,7 @@ import type { Workbench } from '../workbench';
 
 import '@lumino/widgets/style/index.css';
 import '../../style/base.css';
+import '../../style/standalone.css';
 
 const commands = new CommandRegistry();
 const key = 'fortitudo:session:v1';

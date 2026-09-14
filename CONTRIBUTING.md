@@ -9,7 +9,7 @@ columns, use strict types, and keep domain code independent of hosts.
 Install Pixi, then run from this repository on macOS arm64 or Linux x64:
 
 ```sh
-pixi install --locked
+pixi install --all --locked
 pixi run --as-is jlpm install --immutable
 ```
 
@@ -17,7 +17,12 @@ pixi run --as-is jlpm install --immutable
 and packaging tools. `yarn.lock` covers all JavaScript code and tests. Use jlpm
 throughout. `--as-is` uses the already installed Pixi environment without
 synchronizing it on each invocation. After changing `pixi.toml`, run
-`pixi install` to update the environment and lock.
+`pixi install --all` to update the environments and lock.
+
+The default environment runs native JupyterLab. The `lite` environment adds the
+browser-only xeus integration, which must not be loaded by native JupyterLab.
+Both environments share locked tool versions. The Lite build script selects its
+environment automatically and includes our built extension directly.
 
 Pixi uses Node 24. GitHub Actions have their own JavaScript runtime, independent
 of Pixi's Node version. Keep workflow actions on releases that use Node 24 too;
@@ -32,6 +37,7 @@ pixi run --as-is python -m pip install --no-build-isolation --no-deps -e .
 pixi run --as-is jupyter-builder develop . --overwrite
 pixi run --as-is jlpm build:standalone
 pixi run --as-is node scripts/lite.mjs
+pixi run --as-is node scripts/site.mjs
 ```
 
 The compiler build downloads pinned toolchain packages and version-matched LLVM
@@ -44,6 +50,54 @@ incomplete assets do not pass production checks.
 The Lite builder discovers the installed extension. Install and link it before
 building Lite. Its output is `lite/_output`; the standalone output is
 `dist/standalone`. Both include their own copy of the compiler assets.
+
+The Lite builder also installs the browser C/C++ kernel from
+`lite/xeus-cpp-lock.txt`. This explicit lock records every package URL and
+SHA-256 hash resolved from `lite/environment.yml`. The builder recreates
+`work/xeus-cpp`, keeping downloads in `.cache/lite-mamba`, and packages only the
+C23 and C++23 kernels. This environment is separate from Pixi's native build
+tools. No native C++ kernel is required.
+
+When updating the kernel, edit `lite/environment.yml`, then solve into a fresh
+temporary prefix and export the lock:
+
+```sh
+pixi run --as-is micromamba create --yes --no-rc \
+  --platform emscripten-wasm32 --root-prefix .cache/lite-mamba \
+  --prefix work/xeus-update --file lite/environment.yml
+pixi run --as-is micromamba list --prefix work/xeus-update \
+  --explicit --sha256 > lite/xeus-cpp-lock.txt
+```
+
+Rebuild the site and rerun both example notebooks through the browser suite.
+Commit the environment specification and lock together. If channels change, also
+update `XeusAddon.default_channels` in the Lite configuration. Do not replace
+the lock with a floating solve in CI.
+
+## GitHub Pages
+
+After building and linking the extension, build the combined site:
+
+```sh
+pixi run --as-is jlpm build:site
+pixi run --as-is jlpm serve:site
+```
+
+`dist/site` serves standalone at its root and JupyterLite under `lite/`. The
+standalone navigation opens Lite in a new tab, retaining the explorer. The
+separate `dist/standalone` build has no link to an unbundled Lite site. All
+asset URLs remain relative, including compiler and notebook kernel assets. The
+site build checks required entry points and the 1 GB Pages size limit.
+
+GitHub Pages uses **GitHub Actions** as its source. The Build workflow tests the
+combined site on pull requests, main pushes, and release builds. Successful main
+pushes deploy it after both the build and wheel installation checks pass. Pull
+requests and package releases do not deploy Pages. The site therefore tracks
+`main`, independently of npm and PyPI releases.
+
+The deployed URLs are `https://afshin.github.io/fortitudo/` and
+`https://afshin.github.io/fortitudo/lite/lab/index.html`. Generated site and
+kernel assets are uploaded as an Actions artifact; they do not belong in Git.
 
 ## Development loop
 
@@ -85,11 +139,12 @@ pixi run --as-is jlpm playwright install
 pixi run --as-is jlpm test:browser
 ```
 
-Build all three hosts before browser tests. Linux CI installs browser system
-dependencies with `jlpm playwright install --with-deps`. Browser tests start
-local servers, exercise non-root paths, and cover actual compiler behavior,
-asset failures, cancellation, recovery, persistence, and offline compilation.
-See [ui-tests/README.md](ui-tests/README.md) for the matrix.
+Build all three hosts and the combined site before browser tests. Linux CI
+installs browser system dependencies with `jlpm playwright install --with-deps`.
+Browser tests start local servers, exercise non-root paths, and cover actual
+compiler behavior, asset failures, cancellation, recovery, persistence, and
+offline compilation. See [ui-tests/README.md](ui-tests/README.md) for the
+matrix.
 
 Main, worker, unit-test, and browser-test TypeScript configurations are
 separate. Worker code has worker globals rather than DOM globals. ESLint checks

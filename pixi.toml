@@ -21,3 +21,10 @@ actionlint = ">=1.7,<2"
 [pypi-dependencies]
 jupyter-builder = ">=1.2,<2"
 hatch-jupyter-builder = ">=0.9,<1"
+
+[feature.lite.dependencies]
+jupyterlite-xeus = "5.0.*"
+
+[environments]
+default = { features = [], solve-group = "default" }
+lite = { features = ["lite"], solve-group = "default" }

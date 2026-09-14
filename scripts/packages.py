@@ -33,6 +33,8 @@ for name in [
     'fortitudo/labextension/static/compiler',
     'dist/standalone/compiler',
     'lite/_output/extensions/fortitudo/static/compiler',
+    'dist/site/compiler',
+    'dist/site/lite/extensions/fortitudo/static/compiler',
 ]:
     verify(name, lambda path, base=root / name: (base / path).read_bytes())
 
