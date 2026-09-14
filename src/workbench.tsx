@@ -5,8 +5,10 @@ import { BoxPanel } from '@lumino/widgets';
 import * as React from 'react';
 
 import { CommandIDs, registerCommands } from './commands';
+import { createRunner } from './compiler/runner';
+import type { IRunner } from './compiler/execution';
 import { createCompiler } from './compiler/client';
-import type { ICompiler } from './compiler/types';
+import type { ICompiler, OutputKind } from './compiler/types';
 import { initial, snapshot } from './model';
 import type { Pane, Session } from './model';
 import { session } from './persistence';
@@ -14,6 +16,8 @@ import type { IPersistence } from './persistence';
 import { createStore } from './state';
 import type { IStore } from './state';
 import { Bridge } from './ui/bridge';
+import type { ISharing } from './share';
+import { OutputPanel } from './ui/outputpanel';
 import { PanePanel } from './ui/panels';
 import { ReactWidget } from './widget';
 
@@ -22,6 +26,7 @@ export interface IWorkbenchOptions {
   workerUrl: URL;
   persistence: IPersistence;
   defaults?: Session;
+  sharing?: ISharing;
 }
 
 /** Load editing state without initializing or invoking the compiler. */
@@ -43,6 +48,11 @@ export async function createWorkbench(
   } catch (error) {
     notice = `Saved state could not be loaded: ${String(error)}`;
   }
+  try {
+    saved = options.sharing?.read() ?? saved;
+  } catch (error) {
+    notice = String(error);
+  }
   const store = createStore(initial(saved));
   if (notice) {
     store.dispatch({ type: 'notice', message: notice });
@@ -63,16 +73,31 @@ export class Workbench extends BoxPanel {
     this.title.closable = true;
     this.addClass('fortitudo-workbench');
     this.compiler = createCompiler(options.workerUrl);
+    this.runner = createRunner(options.workerUrl);
     const header = this.view('controls');
     header.addClass('fortitudo-header');
     this.addWidget(header);
     const panes = {
       source: this.view('source'),
-      assembly: this.view('assembly'),
-      diagnostics: this.view('diagnostics')
+      outputs: new OutputPanel(store, options.commands, 'primary', kind =>
+        this.view('outputs', kind)
+      ),
+      comparison: new OutputPanel(store, options.commands, 'comparison', kind =>
+        this.view('comparison', kind)
+      ),
+      diagnostics: this.view('diagnostics'),
+      files: this.view('files'),
+      terminal: this.view('terminal'),
+      run: this.view('run'),
+      pipelines: this.view('pipelines')
     };
     panes.source.title.label = 'Source';
-    panes.assembly.title.label = 'Assembly';
+    panes.outputs.title.label = 'Outputs';
+    panes.comparison.title.label = 'Comparison';
+    panes.files.title.label = 'Files';
+    panes.terminal.title.label = 'Terminal';
+    panes.run.title.label = 'Run';
+    panes.pipelines.title.label = 'Pipelines';
     panes.diagnostics.title.label = 'Diagnostics';
     this.panels = new PanePanel(panes, store.state.layout, () =>
       this.layoutChanged()
@@ -82,7 +107,23 @@ export class Workbench extends BoxPanel {
     this.registered = registerCommands(options.commands, {
       store,
       compiler: this.compiler,
-      resetLayout: () => this.panels.reset()
+      runner: this.runner,
+      sharing: options.sharing,
+      resetLayout: () => this.panels.reset(),
+      compare: () => this.panels.compare(),
+      activatePane: pane => this.panels.activatePane(pane),
+      copy: text => navigator.clipboard.writeText(text),
+      download: file => {
+        const url = URL.createObjectURL(new Blob([file.data]));
+        try {
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = file.path.slice(file.path.lastIndexOf('/') + 1);
+          link.click();
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+      }
     });
     this.binding = options.commands.addKeyBinding({
       command: CommandIDs.compile,
@@ -96,7 +137,9 @@ export class Workbench extends BoxPanel {
       if (
         next.source !== previous.source ||
         next.options !== previous.options ||
-        next.layout !== previous.layout
+        next.layout !== previous.layout ||
+        next.outputs !== previous.outputs ||
+        next.timeout !== previous.timeout
       ) {
         previous = next;
         this.pending = next;
@@ -120,6 +163,7 @@ export class Workbench extends BoxPanel {
       this.binding.dispose();
       this.registered.dispose();
       this.compiler.dispose();
+      this.runner.dispose();
       this.store.dispose();
       super.dispose();
     }
@@ -134,7 +178,7 @@ export class Workbench extends BoxPanel {
     this.panels.activatePane('source');
   }
 
-  private view(pane: Pane | 'controls'): ReactWidget {
+  private view(pane: Pane | 'controls', output?: OutputKind): ReactWidget {
     const resize = (height: number) => {
       widget.node.style.minHeight = `${Math.ceil(height)}px`;
       widget.node.style.maxHeight = `${Math.ceil(height)}px`;
@@ -145,11 +189,15 @@ export class Workbench extends BoxPanel {
         store={this.store}
         commands={this.options.commands}
         pane={pane}
+        output={output}
         onSize={resize}
       />
     ));
     widget.addClass('fortitudo-view');
     widget.node.dataset.pane = pane;
+    if (output) {
+      widget.node.dataset.output = output;
+    }
     return widget;
   }
 
@@ -199,6 +247,7 @@ export class Workbench extends BoxPanel {
 
   private readonly panels: PanePanel;
   private readonly compiler: ICompiler;
+  private readonly runner: IRunner;
   private readonly registered: IDisposable;
   private readonly binding: IDisposable;
   private readonly unsubscribe: () => void;

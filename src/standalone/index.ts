@@ -1,6 +1,7 @@
 import { CommandRegistry } from '@lumino/commands';
 import { Widget } from '@lumino/widgets';
 
+import { createSharing } from '../share';
 import { createWorkbench } from '../workbench';
 import type { Workbench } from '../workbench';
 
@@ -9,6 +10,7 @@ import '../../style/base.css';
 import '../../style/standalone.css';
 
 const commands = new CommandRegistry();
+const sharing = createSharing(new URL(location.href));
 const key = 'fortitudo:session:v1';
 const host = document.getElementById('fortitudo');
 if (!host) {
@@ -31,6 +33,7 @@ function open(): Promise<void> {
     await saved;
     const workbench = await createWorkbench({
       commands,
+      sharing,
       workerUrl: new URL('compiler/worker.js', document.baseURI),
       persistence: {
         load: async () => {

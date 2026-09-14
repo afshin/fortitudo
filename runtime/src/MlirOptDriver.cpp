@@ -7,7 +7,9 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/ToolOutputFile.h"
+#include "llvm/Support/raw_ostream.h"
 
+#include <cstdio>
 #include <cstdlib>
 #include <string>
 #include <utility>
@@ -34,7 +36,12 @@ DriverState &getDriverState() {
 }
 
 struct ResetCommandLineOptions {
-  ~ResetCommandLineOptions() { llvm::cl::ResetAllOptionOccurrences(); }
+  ~ResetCommandLineOptions() {
+    llvm::outs().flush();
+    llvm::errs().flush();
+    std::fflush(nullptr);
+    llvm::cl::ResetAllOptionOccurrences();
+  }
 };
 
 } // namespace
@@ -66,5 +73,6 @@ extern "C" int wasmbolt_mlir_opt_main(int argc, char **argv) {
                             config)))
     return EXIT_FAILURE;
   output->keep();
+  output->os().flush();
   return EXIT_SUCCESS;
 }

@@ -44,7 +44,15 @@ it('saves navigation and layout reset without losing edits', async () => {
     source: 'int restored() { return 42; }',
     layout: {
       type: 'tab-area',
-      widgets: ['assembly', 'source', 'diagnostics'],
+      widgets: [
+        'outputs',
+        'source',
+        'diagnostics',
+        'files',
+        'terminal',
+        'run',
+        'pipelines'
+      ],
       currentIndex: 0
     }
   };

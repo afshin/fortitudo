@@ -5,7 +5,10 @@ import { session } from '../persistence';
 
 const result: Result = {
   id: 1,
-  assembly: 'assembly',
+  sourcePath: '/workspace/snippet.cpp',
+  artifacts: [],
+  stages: [],
+  files: [],
   diagnostics: [],
   commands: [],
   stdout: '',
@@ -55,7 +58,7 @@ it('clears progress outside the current initialization', () => {
     compile: true
   });
   expect(initialized.progress).toBeNull();
-  expect(reduce(initialized, action)).toBe(initialized);
+  expect(reduce(initialized, action).progress).toBe(progress);
   expect(
     reduce(loading, { type: 'failed', id: 1, message: 'missing' }).progress
   ).toBeNull();
@@ -83,7 +86,7 @@ it('keeps snapshots stable and removes subscriptions on disposal', () => {
 it('validates saved inputs and pane identities', () => {
   const saved = snapshot(initial());
   expect(session(JSON.parse(JSON.stringify(saved)))).toEqual(saved);
-  expect(session({ ...saved, version: 2 })).toBeNull();
+  expect(session({ ...saved, version: 3 })).toBeNull();
   expect(
     session({ ...saved, options: { ...options, optimization: 99 } })
   ).toBeNull();
@@ -99,7 +102,15 @@ it('validates saved inputs and pane identities', () => {
   ).toBeNull();
   const layout = {
     type: 'tab-area',
-    widgets: ['source', 'assembly', 'diagnostics'],
+    widgets: [
+      'source',
+      'outputs',
+      'diagnostics',
+      'files',
+      'terminal',
+      'run',
+      'pipelines'
+    ],
     currentIndex: 1
   };
   expect(session({ ...saved, layout })?.layout).toEqual(layout);

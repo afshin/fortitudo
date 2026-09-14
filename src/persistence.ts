@@ -1,4 +1,5 @@
-import { isOptions } from './compiler/types';
+import { isOptions, isOutputKind, pipelines } from './compiler/types';
+import { isTimeout } from './compiler/execution';
 import { record } from './compiler/protocol';
 import type { Area, Pane, Session } from './model';
 
@@ -7,42 +8,97 @@ export interface IPersistence {
   save(session: Session): Promise<void>;
 }
 
-/** Validate saved data before allowing it to configure application state. */
+export const panes: readonly Pane[] = [
+  'source',
+  'outputs',
+  'diagnostics',
+  'files',
+  'terminal',
+  'run',
+  'pipelines'
+];
+
+/** Validate and migrate editing state without initializing the compiler. */
 export function session(value: unknown): Session | null {
   if (
     !record(value) ||
-    value.version !== 1 ||
+    (value.version !== 1 && value.version !== 2) ||
     typeof value.source !== 'string' ||
-    !isOptions(value.options)
+    !record(value.options)
   ) {
     return null;
   }
-  if (value.layout === null) {
-    return {
-      version: 1,
-      source: value.source,
-      options: value.options,
-      layout: null
-    };
+  const legacy = value.version === 1;
+  const options = legacy ? { ...pipelines, ...value.options } : value.options;
+  if (!isOptions(options)) {
+    return null;
   }
   const seen = new Set<Pane>();
-  const layout = area(value.layout, seen, 0);
-  if (!layout || seen.size !== 3) {
+  let layout =
+    value.layout === null ? null : area(value.layout, seen, 0, legacy);
+  if (
+    value.layout !== null &&
+    (!layout ||
+      !(legacy ? ['source', 'outputs', 'diagnostics'] : panes).every(name =>
+        [...seen].some(pane => pane === name)
+      ))
+  ) {
+    return null;
+  }
+  if (legacy && layout) {
+    layout = addUtilities(layout);
+  }
+  const outputs = legacy
+    ? { primary: 'assembly', comparison: 'optimized' }
+    : value.outputs;
+  const timeout = legacy ? 10000 : value.timeout;
+  if (
+    !record(outputs) ||
+    !isOutputKind(outputs.primary) ||
+    !isOutputKind(outputs.comparison) ||
+    !isTimeout(timeout)
+  ) {
     return null;
   }
   return {
-    version: 1,
+    version: 2,
     source: value.source,
-    options: value.options,
-    layout
+    options,
+    layout,
+    outputs: { primary: outputs.primary, comparison: outputs.comparison },
+    timeout
   };
 }
 
-function pane(value: unknown): value is Pane {
-  return value === 'source' || value === 'assembly' || value === 'diagnostics';
+function addUtilities(area: Area): Area {
+  if (area.type === 'split-area') {
+    return { ...area, children: area.children.map(addUtilities) };
+  }
+  return area.widgets.includes('diagnostics')
+    ? {
+        ...area,
+        widgets: [...area.widgets, 'files', 'terminal', 'run', 'pipelines']
+      }
+    : area;
 }
 
-function area(value: unknown, seen: Set<Pane>, depth: number): Area | null {
+function pane(value: unknown, legacy: boolean): Pane | null {
+  if (legacy) {
+    return value === 'assembly'
+      ? 'outputs'
+      : value === 'source' || value === 'diagnostics'
+        ? value
+        : null;
+  }
+  return [...panes, 'comparison' as const].find(pane => pane === value) ?? null;
+}
+
+function area(
+  value: unknown,
+  seen: Set<Pane>,
+  depth: number,
+  legacy: boolean
+): Area | null {
   if (!record(value) || depth > 8) {
     return null;
   }
@@ -50,7 +106,6 @@ function area(value: unknown, seen: Set<Pane>, depth: number): Area | null {
     if (
       !Array.isArray(value.widgets) ||
       value.widgets.length === 0 ||
-      !value.widgets.every(pane) ||
       typeof value.currentIndex !== 'number' ||
       !Number.isInteger(value.currentIndex) ||
       value.currentIndex < 0 ||
@@ -58,24 +113,24 @@ function area(value: unknown, seen: Set<Pane>, depth: number): Area | null {
     ) {
       return null;
     }
-    for (const widget of value.widgets) {
+    const widgets = value.widgets.map(value => pane(value, legacy));
+    if (!widgets.every((value): value is Pane => value !== null)) {
+      return null;
+    }
+    for (const widget of widgets) {
       if (seen.has(widget)) {
         return null;
       }
       seen.add(widget);
     }
-    return {
-      type: 'tab-area',
-      widgets: value.widgets,
-      currentIndex: value.currentIndex
-    };
+    return { type: 'tab-area', widgets, currentIndex: value.currentIndex };
   }
   if (
     value.type !== 'split-area' ||
-    (value.orientation !== 'horizontal' && value.orientation !== 'vertical') ||
+    !['horizontal', 'vertical'].includes(String(value.orientation)) ||
     !Array.isArray(value.children) ||
     value.children.length < 2 ||
-    value.children.length > 3 ||
+    value.children.length > panes.length + 1 ||
     !Array.isArray(value.sizes) ||
     value.sizes.length !== value.children.length ||
     !value.sizes.every(
@@ -84,13 +139,15 @@ function area(value: unknown, seen: Set<Pane>, depth: number): Area | null {
   ) {
     return null;
   }
-  const children = value.children.map(child => area(child, seen, depth + 1));
+  const children = value.children.map(child =>
+    area(child, seen, depth + 1, legacy)
+  );
   if (!children.every((child): child is Area => child !== null)) {
     return null;
   }
   return {
     type: 'split-area',
-    orientation: value.orientation,
+    orientation: value.orientation === 'horizontal' ? 'horizontal' : 'vertical',
     children,
     sizes: value.sizes
   };

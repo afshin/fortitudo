@@ -6,7 +6,7 @@ import {
 } from '@codemirror/commands';
 import { cpp } from '@codemirror/lang-cpp';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
-import { EditorState } from '@codemirror/state';
+import { Compartment, EditorState } from '@codemirror/state';
 import {
   EditorView,
   drawSelection,
@@ -32,13 +32,16 @@ export function Editor({ store, onChange }: IEditorProps): React.ReactElement {
       return;
     }
     let updating = false;
+    let language = store.state.options.language;
+    const dialect = new Compartment();
+    const extensions = () => (['c', 'cpp'].includes(language) ? cpp() : []);
     let position = store.state.position?.serial ?? 0;
     const view = new EditorView({
       parent: node.current,
       state: EditorState.create({
         doc: store.state.source,
         extensions: [
-          cpp(),
+          dialect.of(extensions()),
           lineNumbers(),
           history(),
           drawSelection(),
@@ -88,6 +91,10 @@ export function Editor({ store, onChange }: IEditorProps): React.ReactElement {
     });
     const unsubscribe = store.subscribe(() => {
       const state = store.state;
+      if (state.options.language !== language) {
+        language = state.options.language;
+        view.dispatch({ effects: dialect.reconfigure(extensions()) });
+      }
       if (state.source !== view.state.doc.toString()) {
         updating = true;
         view.dispatch({

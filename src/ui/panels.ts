@@ -20,10 +20,14 @@ const defaultArea: Area = {
       sizes: [0.5, 0.5],
       children: [
         { type: 'tab-area', widgets: ['source'], currentIndex: 0 },
-        { type: 'tab-area', widgets: ['assembly'], currentIndex: 0 }
+        { type: 'tab-area', widgets: ['outputs'], currentIndex: 0 }
       ]
     },
-    { type: 'tab-area', widgets: ['diagnostics'], currentIndex: 0 }
+    {
+      type: 'tab-area',
+      widgets: ['diagnostics', 'files', 'run', 'terminal', 'pipelines'],
+      currentIndex: 0
+    }
   ]
 };
 
@@ -47,12 +51,32 @@ export class PanePanel extends BoxPanel {
 
   /** Reuse the views while replacing and disposing their layout containers. */
   reset(): void {
+    this.replace(defaultArea);
+  }
+
+  /** Toggle a second output group without disturbing the source split. */
+  compare(): void {
+    const area = this.save();
+    this.replace(hasComparison(area) ? removeComparison(area) : compare(area));
+  }
+
+  dispose(): void {
+    if (!this.isDisposed) {
+      super.dispose();
+      // The comparison view may currently be detached from the layout.
+      for (const pane of Object.values(this.panes)) {
+        pane.dispose();
+      }
+    }
+  }
+
+  private replace(area: Area): void {
     this.restoring = true;
     for (const pane of Object.values(this.panes)) {
       pane.parent = null;
     }
     this.section.widget.dispose();
-    this.section = this.create(defaultArea);
+    this.section = this.create(area);
     this.addWidget(this.section.widget);
     this.restoring = false;
     this.changed();
@@ -116,6 +140,59 @@ export class PanePanel extends BoxPanel {
 
   private section: ISection;
   private restoring = false;
+}
+
+function hasComparison(area: Area): boolean {
+  return area.type === 'tab-area'
+    ? area.widgets.includes('comparison')
+    : area.children.some(hasComparison);
+}
+
+function compare(area: Area): Area {
+  if (area.type === 'split-area') {
+    return { ...area, children: area.children.map(compare) };
+  }
+  return area.widgets.includes('outputs')
+    ? {
+        type: 'split-area',
+        orientation: 'horizontal',
+        sizes: [0.5, 0.5],
+        children: [
+          area,
+          {
+            type: 'tab-area',
+            widgets: ['comparison'],
+            currentIndex: 0
+          }
+        ]
+      }
+    : area;
+}
+
+function removeComparison(area: Area): Area {
+  if (area.type === 'tab-area') {
+    const widgets = area.widgets.filter(pane => pane !== 'comparison');
+    return {
+      ...area,
+      widgets,
+      currentIndex: Math.min(area.currentIndex, Math.max(0, widgets.length - 1))
+    };
+  }
+  const entries = area.children
+    .map((child, index) => ({
+      child: removeComparison(child),
+      size: area.sizes[index]
+    }))
+    .filter(
+      ({ child }) => child.type !== 'tab-area' || child.widgets.length > 0
+    );
+  return entries.length === 1
+    ? entries[0].child
+    : {
+        ...area,
+        children: entries.map(entry => entry.child),
+        sizes: entries.map(entry => entry.size)
+      };
 }
 
 /** Retain proportions when the host changes size during restoration. */

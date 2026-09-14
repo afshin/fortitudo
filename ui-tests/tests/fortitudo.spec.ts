@@ -157,7 +157,9 @@ for (const [host, url] of Object.entries(hosts)) {
     });
     await edit(page, 'int twice(int x) { return x + x; }');
     await expect(
-      page.getByText('Out of date — compile to update')
+      page
+        .getByLabel('Assembly pane')
+        .getByText('Out of date — compile to update')
     ).toBeVisible();
     await page
       .getByRole('textbox', { name: 'Source code' })
@@ -284,7 +286,9 @@ test('editing, cancellation during compilation, and retry', async ({
     ].join('\n')
   );
   await page.getByRole('button', { name: 'Compile', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Compiling');
+  await expect(
+    page.getByRole('button', { name: 'Cancel', exact: true })
+  ).toBeEnabled();
   await edit(page, 'int after_cancel(int x) { return x + 7; }');
   await expect(
     page.getByRole('button', { name: 'Compile', exact: true })
@@ -353,7 +357,7 @@ for (const [host, url] of Object.entries(hosts)) {
     await page.getByRole('button', { name: 'Reset layout' }).click();
     await expect.poll(width).toBeGreaterThan(original - 3);
     await expect.poll(width).toBeLessThan(original + 3);
-    await expect(workbench.getByRole('tablist')).toHaveCount(3);
+    await expect(workbench.getByRole('tablist')).toHaveCount(4);
     await page.setViewportSize({ width: 650, height: 720 });
     await expect(
       page.getByRole('button', { name: 'Compile', exact: true })
@@ -395,7 +399,7 @@ test('previously docked tab groups restore and save their selection', async ({
   });
   await page.reload();
   const workbench = page.locator('#fortitudo-workbench');
-  await expect(workbench.getByRole('tablist')).toHaveCount(2);
+  await expect(workbench.getByRole('tablist')).toHaveCount(3);
   await expect(page.getByLabel('Assembly output')).toBeVisible();
   await page.getByRole('tab', { name: 'Diagnostics', exact: true }).click();
   await expect(page.getByLabel('Assembly output')).toBeHidden();
@@ -403,7 +407,7 @@ test('previously docked tab groups restore and save their selection', async ({
   await expect(page.getByLabel('Diagnostics pane')).toBeVisible();
   await expect(page.getByLabel('Assembly output')).toBeHidden();
   await page.getByRole('button', { name: 'Reset layout' }).click();
-  await expect(workbench.getByRole('tablist')).toHaveCount(3);
+  await expect(workbench.getByRole('tablist')).toHaveCount(4);
   await expect(page.getByLabel('Assembly output')).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Source code' })).toHaveText(
     'int grouped() { return 12; }'

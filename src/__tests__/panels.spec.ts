@@ -7,8 +7,13 @@ import { PanePanel } from '../ui/panels';
 function views() {
   return {
     source: new Widget(),
-    assembly: new Widget(),
-    diagnostics: new Widget()
+    outputs: new Widget(),
+    diagnostics: new Widget(),
+    files: new Widget(),
+    terminal: new Widget(),
+    run: new Widget(),
+    pipelines: new Widget(),
+    comparison: new Widget()
   };
 }
 
@@ -22,7 +27,7 @@ it('restores saved splits and tab groups and reveals inactive panes', () => {
     children: [
       {
         type: 'tab-area',
-        widgets: ['assembly', 'source'],
+        widgets: ['outputs', 'source'],
         currentIndex: 0
       },
       { type: 'tab-area', widgets: ['diagnostics'], currentIndex: 0 }
@@ -34,7 +39,7 @@ it('restores saved splits and tab groups and reveals inactive panes', () => {
   expect(changed).not.toHaveBeenCalled();
   panel.activatePane('source');
   expect(panes.source.isHidden).toBe(false);
-  expect(panes.assembly.isHidden).toBe(true);
+  expect(panes.outputs.isHidden).toBe(true);
   expect(panel.save()).toEqual({
     ...area,
     children: [{ ...area.children[0], currentIndex: 1 }, area.children[1]]
@@ -52,7 +57,7 @@ it('resets containers while retaining views and saving once', () => {
     panes,
     {
       type: 'tab-area',
-      widgets: ['assembly', 'source', 'diagnostics'],
+      widgets: ['outputs', 'source', 'diagnostics'],
       currentIndex: 0
     },
     () => changes.push(panel.save())
@@ -64,8 +69,9 @@ it('resets containers while retaining views and saving once', () => {
   expect(panel.save().type).toBe('split-area');
   for (const pane of Object.values(panes)) {
     expect(pane.isDisposed).toBe(false);
-    expect(pane.isHidden).toBe(false);
-    expect(panel.contains(pane)).toBe(true);
+    if (pane !== panes.comparison) {
+      expect(panel.contains(pane)).toBe(true);
+    }
   }
   panel.dispose();
   expect(changes).toHaveLength(1);
@@ -82,7 +88,7 @@ it('preserves pane proportions while the host restores its size', () => {
         { type: 'tab-area', widgets: ['source'], currentIndex: 0 },
         {
           type: 'tab-area',
-          widgets: ['assembly', 'diagnostics'],
+          widgets: ['outputs', 'diagnostics'],
           currentIndex: 0
         }
       ]

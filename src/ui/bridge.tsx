@@ -3,24 +3,26 @@ import * as React from 'react';
 import { useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 
 import { CommandIDs } from '../commands';
-import type { Diagnostic, Options } from '../compiler/types';
+import type { Diagnostic, Options, OutputKind } from '../compiler/types';
 import type { Pane } from '../model';
 import type { IStore } from '../state';
 import { Editor } from './editor';
-import { Assembly, Controls, Diagnostics, Source } from './views';
+import { Files, Output } from './outputs';
+import { Pipelines, Run, Terminal } from './tools';
+import { Controls, Diagnostics, Source } from './views';
 
 export interface IBridgeProps {
   store: IStore;
   commands: CommandRegistry;
   pane: Pane | 'controls';
+  output?: OutputKind;
   onSize(height: number): void;
 }
 
-/** The only React subscription to semantic application state. */
+/** Subscribe here; views receive state and command-backed callbacks. */
 export function Bridge(props: IBridgeProps): React.ReactElement {
-  const { store, commands, pane } = props;
+  const { store, commands, pane, onSize } = props;
   const node = useRef<HTMLDivElement>(null);
-  const { onSize } = props;
   useLayoutEffect(() => {
     const element = node.current;
     if (!element) {
@@ -45,6 +47,22 @@ export function Bridge(props: IBridgeProps): React.ReactElement {
       onCompile: () => execute(CommandIDs.compile),
       onCancel: () => execute(CommandIDs.cancel),
       onLayout: () => execute(CommandIDs.layout),
+      onCompare: () => execute(CommandIDs.compare),
+      onShare: () => execute(CommandIDs.share),
+      onExample: () => execute(CommandIDs.example),
+      onRun: () => execute(CommandIDs.run),
+      onStop: () => execute(CommandIDs.stop),
+      onCommand: (command: string) => execute(CommandIDs.terminal, { command }),
+      onClear: () => execute(CommandIDs.clearTerminal),
+      onSymbol: (symbol: string) => execute(CommandIDs.symbol, { symbol }),
+      onArguments: (values: readonly string[]) =>
+        execute(CommandIDs.runArguments, { values }),
+      onTimeout: (timeout: number) => execute(CommandIDs.timeout, { timeout }),
+      onModule: (path: string) => execute(CommandIDs.module, { path }),
+      onCopy: (path: string, workspace: boolean) =>
+        execute(CommandIDs.copy, { path, workspace }),
+      onDownload: (path: string, workspace: boolean) =>
+        execute(CommandIDs.download, { path, workspace }),
       onNavigate: ({ line, column }: Diagnostic) =>
         execute(CommandIDs.navigate, { line, column })
     };
@@ -62,9 +80,24 @@ export function Bridge(props: IBridgeProps): React.ReactElement {
           <Editor store={store} onChange={callbacks.onChange} />
         </Source>
       );
-    case 'assembly':
-      return <Assembly state={state} />;
+    case 'outputs':
+    case 'comparison':
+      return (
+        <Output
+          state={state}
+          kind={props.output ?? 'assembly'}
+          {...callbacks}
+        />
+      );
     case 'diagnostics':
       return <Diagnostics state={state} onNavigate={callbacks.onNavigate} />;
+    case 'files':
+      return <Files state={state} {...callbacks} />;
+    case 'run':
+      return <Run state={state} {...callbacks} />;
+    case 'terminal':
+      return <Terminal state={state} {...callbacks} />;
+    case 'pipelines':
+      return <Pipelines state={state} {...callbacks} />;
   }
 }

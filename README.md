@@ -1,18 +1,35 @@
 # Fortitudo
 
-Fortitudo is a browser-only C/C++ compiler explorer for JupyterLab, JupyterLite,
-and a standalone Lumino application. All three hosts use the same workbench and
-compiler worker. No kernel or remote compiler is needed.
+Fortitudo is a browser-only compiler explorer for C, C++, LLVM IR, and MLIR in
+JupyterLab, JupyterLite, and a standalone Lumino application. All three hosts
+use the same workbench and workers. No kernel or remote compiler is needed.
 
 The [web app](https://afshin.github.io/fortitudo/) opens the standalone
 explorer. Select **Try in Jupyter** to use the explorer alongside C23 and C++23
 notebooks. Both applications run in the browser.
 
 Edit a function, choose a language, target, and optimization level, then select
-**Compile** or press **Ctrl/Cmd+Enter**. Inspect assembly and compiler messages;
-select a diagnostic to jump to its source location. Compilation runs in a
-worker, so editing remains available. **Cancel** terminates that worker; the
-next compile loads a fresh one.
+**Compile** or press **Ctrl/Cmd+Enter**. One compilation generates every
+applicable output from the same source revision. Changing output tabs never
+compiles. Compilation runs in a worker, so editing remains available. **Cancel**
+terminates that worker; the next compile loads a fresh one.
+
+- C/C++: AST, LLVM IR before passes, optimized IR, analysis, function graphs,
+  assembly, and object.
+- LLVM IR: validated input IR, optimized IR, analysis, function graphs,
+  assembly, and object.
+- MLIR: transformed MLIR and operation graph.
+- WebAssembly target with C/C++ or LLVM IR: also a linked Wasm module and its
+  metadata.
+
+Every build includes diagnostics, recorded commands, raw streams, stage timings,
+and generated files. A failed stage preserves successful independent outputs.
+Select a diagnostic to jump to its source location. **Compare** opens a second
+output group, initially comparing LLVM IR before and after passes. Both groups
+have independent selections and resizable widths. Text views provide line
+numbers, search, copy, and download. Graphs have function selection, zoom, fit,
+and DOT/SVG downloads. The Wasm inspector lists size, imports, exports, and
+function signatures without executing the module.
 
 The status strip shows download progress in MB, then preparation and compilation
 activity. Diagnostics lists the individual compiler downloads and any loading
@@ -22,14 +39,71 @@ or a local server on localhost.
 
 The defaults are C++23, WebAssembly, and O2. C23 and O0–O3 are available. The
 packaged LLVM runtime reports WebAssembly, x86-64, and AArch64 backends. Native
-targets produce assembly with Clang built-in headers only; the packaged C/C++
+targets produce inspection artifacts with Clang built-in headers only; the C/C++
 system headers are for WebAssembly.
 
-Source, options, and pane layout are saved by the host. Jupyter also keeps a
-browser copy scoped to the current workspace, protecting recent edits while its
-workspace writes are deferred. Reopening restores editing state without
-compiling. Output is explicitly marked out of date when source or options
-change. Invalid saved state opens a usable default session with feedback.
+**Pipelines** exposes LLVM optimization, analysis, and MLIR passes. An empty
+LLVM field follows the selected O level, for example `default<O2>`. Frontend
+semantics and backend code generation also use that O level. The first IR view
+has LLVM optimization passes disabled. Analysis defaults to dominator trees and
+loops; MLIR defaults to `builtin.module(canonicalize,cse)`. LLVM inputs with
+incompatible target triples or layouts report an error instead of being silently
+retargeted. Changing language preserves your source; **Reset example**
+explicitly replaces it with that language's example.
+
+## Execution
+
+**Run** reuses a current Wasm module, or builds it first if source or options
+have changed. Compilation and inspection never execute generated code. The
+separate runner worker initializes on the first Run. Choose an exported function
+and enter its scalar arguments in the Run pane. Supported signatures are `i32`
+or `f64` returns with zero, one, or two matching arguments, and `void()`.
+Unsupported signatures remain visible. Pointer and aggregate values are not
+marshaled. A compatible selection survives a rebuild; otherwise the runner
+prefers supported `main`, then a sole callable export. Ambiguous exports require
+selection. `main(i32, i32)` receives zero arguments and a null argv.
+
+The pane shows the return value, stdout, stderr, status, and errors. Repeated
+calls retain module state. **Reset execution**, **Stop**, timeout, traps, and
+module replacement discard the runner without losing compilation artifacts. The
+default execution timeout is 10 seconds, configurable in Pipelines; it starts
+after initialization. Legitimate NaN returns are displayed as results. Execution
+requires WebAssembly; native targets remain available for inspection.
+
+## Commands, files, and sharing
+
+The **Terminal** runs `clang`, `clang++`, `opt`, `llc`, `wasm-ld`, `mlir-opt`,
+and `dot` through the compiler worker. It accepts single and double quotes,
+backslash escapes, and `>` / `2>` redirection. Quote LLVM pipeline arguments
+containing angle brackets. This is one tool invocation per command, without a
+shell, pipelines, or input redirection. For example:
+
+```text
+opt "-passes=print<domtree>" -disable-output optimized.ll 2> tree.txt
+dot -Tsvg .square.dot -o square.svg
+```
+
+The current directory is `/workspace`. Compile seeds it with source and all
+generated files. Manual commands can use explicit libraries and compiler flags;
+their output updates the workspace while completed build artifacts remain
+unchanged. A new Compile replaces the workspace. Worker recovery retains its
+latest snapshot. **Files** provides previews and downloads; select a manually
+linked `.wasm` file and choose **Use module** to run it. Keep files under
+`/workspace` to include them in snapshots and the runner's dependencies.
+
+**Share** copies a versioned URL containing source and semantic compiler
+options. Opening it restores inputs without compiling or running. Binaries,
+logs, layout, and execution state are excluded.
+
+Source, pipeline options, output selections, comparison layout, pane sizes, and
+execution timeout are saved by the host. Jupyter also keeps a browser copy
+scoped to the current workspace, protecting recent edits while its workspace
+writes are deferred. Reopening restores editing state without compiling. Output
+is explicitly marked out of date when source or options change. Invalid saved
+state opens a usable default session with feedback. Version 1 sessions migrate
+to version 2, preserving source and split proportions and replacing the Assembly
+pane with an output group selecting Assembly. Compiled artifacts, command files,
+and running processes are not persisted.
 
 ## Running locally
 
@@ -64,8 +138,9 @@ prints its local address. These commands run in separate terminals.
 Built standalone and Lite directories can be served below a URL prefix. Keep
 each site's `compiler` assets at their generated relative location. Serve `.js`
 as JavaScript, `.wasm` as `application/wasm`, and `.data` as
-`application/octet-stream`. Compilation works offline after initialization;
-offline page reload is a separate feature.
+`application/octet-stream`. Compilation works offline after initialization. MLIR
+and execution each need their runtime assets loaded before offline use; offline
+page reload is a separate feature.
 
 ## Architecture
 
@@ -75,10 +150,22 @@ offline page reload is a separate feature.
 - Functional React views, with explicit store and CodeMirror bridges.
 - A shared Lumino workbench owns workers and view lifecycles, with tab panels
   inside resizable split panels. Jupyter owns docking of the workbench itself.
-- Thin Jupyter and standalone adapters supply shell and persistence.
+- Thin Jupyter and standalone adapters supply shell, persistence, and share
+  URLs.
 
 The shared package entry exports these contracts. Only `src/jupyter/` imports
 JupyterLab packages; the plugin retains `fortitudo:plugin`.
+
+The compiler API now returns `Result.artifacts`, `Result.stages`, and
+`Result.files` instead of `Result.assembly`. Artifacts carry their build ID,
+kind, path, and text or binary content. Stages record status, commands, raw
+streams, diagnostics, and duration. Consumers should select artifacts by kind
+and account for partial failures. `ICompiler.compile` accepts stage progress;
+`ICompiler.command` returns a stage and replacement workspace snapshot.
+`Options` includes the three pipeline fields and the four input languages.
+`IRunner`, `RunRequest`, `RunResult`, and `inspectWasm` are exported separately.
+Treat all returned binary buffers as immutable; transport never detaches buffers
+already owned by application state.
 
 ## C and C++ notebooks
 
@@ -88,7 +175,7 @@ Cells**. The examples use packaged standard library headers, define functions,
 and reuse state across cells.
 
 The notebook interpreter runs in its own browser worker. It is independent of
-Fortitudo's assembly compiler: code, options, and results are not synchronized
+Fortitudo's compiler explorer: code, options, and results are not synchronized
 between them. Its Clang version also differs from the explorer's LLVM runtime.
 The first kernel start downloads the interpreter and its libraries. Browser
 memory limits apply; native processes, native platform APIs, and arbitrary
@@ -105,16 +192,17 @@ build details. Generated `compiler/manifest.json` records asset sizes and
 SHA-256 hashes. Browser test attachments record timings and Wasm memory
 observations.
 
-The current compiler is large and reserves 256 MiB of initial Wasm memory, with
-memory growth enabled and a 32 MiB stack. Browser memory limits still apply.
-Cancellation releases the worker; a later compile must initialize another.
-Initialization and runtime failures offer a retry path. Ordinary compiler errors
-retain diagnostics and raw output.
+Each initialized compiler or runner is large and reserves 256 MiB of initial
+Wasm memory, with memory growth enabled and a 32 MiB stack. Running a program
+alongside the compiler therefore requires two instances. Browser memory limits
+still apply. Cancellation releases the worker; a later compile must initialize
+another. Initialization and runtime failures offer a retry path. Ordinary
+compiler errors retain diagnostics and raw output.
 
-This implementation produces assembly. IR/AST views, MLIR tools, graphs,
-execution, a terminal, sharing, arbitrary flags, automatic compilation, and
-automatic timeouts are deferred. The optional upstream MLIR driver remains
-packaged to preserve the runtime build, but is not downloaded eagerly.
+The optional MLIR driver downloads only when MLIR is used, with the same
+integrity checks, progress, cancellation, and retry behavior as the core. MLIR
+exploration uses explicit passes; automatic lowering to an executable, automatic
+compilation, and notebook synchronization remain outside this port.
 
 ## Acknowledgments
 

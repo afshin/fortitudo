@@ -1,6 +1,7 @@
 import { isOutput } from './protocol';
 import type { Input, Output } from './protocol';
-import type { ICompiler, Info, Progress, Request, Result } from './types';
+import type { ICompiler, Info, Progress } from './types';
+import type { RunRequest, RunResult } from './execution';
 
 export interface IWorker {
   postMessage(message: Input): void;
@@ -26,17 +27,33 @@ export function createCompiler(
   url: URL,
   create: () => IWorker = () => new Worker(url, { type: 'module' })
 ): ICompiler {
+  return createClient(url, create);
+}
+
+export interface IClient extends ICompiler {
+  execute(
+    request: RunRequest,
+    onProgress?: (progress: Progress) => void
+  ): Promise<RunResult>;
+}
+
+/** Shared request transport; each client owns a distinct worker. */
+export function createClient(
+  url: URL,
+  create: () => IWorker = () => new Worker(url, { type: 'module' })
+): IClient {
   let worker: IWorker | null = null;
   let ready: Promise<Info> | null = null;
   let loading: Loading | null = null;
   let disposed = false;
-  let busy = false;
+  let busy: number | null = null;
   let sequence = 0;
   let generation = 0;
   const pending = new Map<number, Pending>();
 
   function stop(error: Error): void {
     generation += 1;
+    busy = null;
     if (worker) {
       worker.onmessage = null;
       worker.onerror = null;
@@ -159,33 +176,77 @@ export function createCompiler(
     return ready;
   }
 
+  async function invoke(
+    task: Exclude<Input, { kind: 'initialize' }>,
+    onProgress?: (progress: Progress) => void
+  ): Promise<Exclude<Output, { kind: 'ready' | 'progress' | 'error' }>> {
+    if (busy !== null) {
+      throw new Error('A compiler operation is already in progress.');
+    }
+    busy = task.id;
+    const current = generation;
+    try {
+      await initialize(onProgress);
+      if (current !== generation) {
+        const error = new Error('Compilation cancelled.');
+        error.name = 'AbortError';
+        throw error;
+      }
+      const output = await send(task, onProgress);
+      if (!('result' in output) || output.result.id !== task.request.id) {
+        throw new Error('The response belongs to another request.');
+      }
+      return output;
+    } finally {
+      if (busy === task.id) {
+        busy = null;
+      }
+    }
+  }
+
   return {
     initialize,
-    async compile(request: Request): Promise<Result> {
-      if (busy) {
-        throw new Error('A compilation is already in progress.');
-      }
-      busy = true;
-      const current = generation;
-      try {
-        await initialize();
-        if (current !== generation) {
-          const error = new Error('Compilation cancelled.');
-          error.name = 'AbortError';
-          throw error;
-        }
-        const output = await send({
+    async compile(request, onProgress) {
+      const output = await invoke(
+        {
           kind: 'compile',
           id: ++sequence,
           request
-        });
-        if (output.kind !== 'result' || output.result.id !== request.id) {
-          throw new Error('The compiler response belongs to another request.');
-        }
-        return output.result;
-      } finally {
-        busy = false;
+        },
+        onProgress
+      );
+      if (output.kind !== 'result') {
+        throw new Error('Expected a compilation result.');
       }
+      return output.result;
+    },
+    async command(request, onProgress) {
+      const output = await invoke(
+        {
+          kind: 'command',
+          id: ++sequence,
+          request
+        },
+        onProgress
+      );
+      if (output.kind !== 'command') {
+        throw new Error('Expected a command result.');
+      }
+      return output.result;
+    },
+    async execute(request, onProgress) {
+      const output = await invoke(
+        {
+          kind: 'execute',
+          id: ++sequence,
+          request
+        },
+        onProgress
+      );
+      if (output.kind !== 'execution') {
+        throw new Error('Expected an execution result.');
+      }
+      return output.result;
     },
     cancel() {
       const error = new Error('Compilation cancelled.');

@@ -9,10 +9,35 @@ export async function assets(
   files: unknown,
   onProgress: (progress: Progress) => void
 ): Promise<{ data: ArrayBuffer; wasm: ArrayBuffer }> {
+  const [data, wasm] = await loadAssets(
+    base,
+    files,
+    ['Compiler.data', 'Compiler.wasm'],
+    onProgress
+  );
+  return { data, wasm };
+}
+
+/** Optional drivers have the same integrity and progress contract as core. */
+export async function asset(
+  base: string,
+  files: unknown,
+  name: string,
+  onProgress: (progress: Progress) => void
+): Promise<ArrayBuffer> {
+  return (await loadAssets(base, files, [name], onProgress))[0];
+}
+
+async function loadAssets(
+  base: string,
+  files: unknown,
+  names: readonly string[],
+  onProgress: (progress: Progress) => void
+): Promise<ArrayBuffer[]> {
   if (!crypto.subtle) {
     throw new Error('Compiler verification requires HTTPS or localhost.');
   }
-  const entries = ['Compiler.data', 'Compiler.wasm'].map(name => {
+  const entries = names.map(name => {
     const entry = record(files) ? files[name] : null;
     if (
       !record(entry) ||
@@ -67,7 +92,7 @@ export async function assets(
         }
       })
     );
-    return { data: buffers[0], wasm: buffers[1] };
+    return buffers;
   } finally {
     // A failed asset must not leave its sibling downloading in the worker.
     controller.abort();

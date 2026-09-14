@@ -64,7 +64,18 @@ test('real compiler: standards, headers, targets, repetition @compat', async ({
       const initializationMs = performance.now() - start;
       const results: {
         name: string;
-        result: Result;
+        result: Pick<
+          Result,
+          'id' | 'exitCode' | 'duration' | 'diagnostics' | 'stderr' | 'commands'
+        > & {
+          artifacts: { kind: string; bytes: number }[];
+          stages: {
+            name: string;
+            status: string;
+            stderr: string;
+            duration: number;
+          }[];
+        };
         memoryBytes: number | null;
       }[] = [];
       async function compile(name: string, source: string, options: Options) {
@@ -81,14 +92,37 @@ test('real compiler: standards, headers, targets, repetition @compat', async ({
         }
         results.push({
           name,
-          result: response.result,
+          result: {
+            id: response.result.id,
+            exitCode: response.result.exitCode,
+            duration: response.result.duration,
+            diagnostics: response.result.diagnostics,
+            stderr: response.result.stderr.slice(0, 2000),
+            commands: response.result.commands,
+            artifacts: response.result.artifacts.map(artifact => ({
+              kind: artifact.kind,
+              bytes:
+                artifact.format === 'text'
+                  ? artifact.text.length
+                  : artifact.data.byteLength
+            })),
+            stages: response.result.stages.map(stage => ({
+              name: stage.name,
+              status: stage.status,
+              stderr: stage.stderr.slice(0, 2000),
+              duration: stage.duration
+            }))
+          },
           memoryBytes: response.memoryBytes
         });
       }
       const options: Options = {
         language: 'cpp',
         target: 'wasm32-unknown-emscripten',
-        optimization: 2
+        optimization: 2,
+        llvmPipeline: null,
+        analysisPipeline: 'print<domtree>,print<loops>',
+        mlirPipeline: 'builtin.module(canonicalize,cse)'
       };
       await compile(
         'c++23-headers',
@@ -150,8 +184,16 @@ test('real compiler: standards, headers, targets, repetition @compat', async ({
       expect(result.diagnostics.length, name).toBeGreaterThan(0);
     } else {
       expect(result.exitCode, `${name}: ${result.stderr}`).toBe(0);
-      expect(result.assembly.length, name).toBeGreaterThan(0);
-      expect(result.commands, name).toHaveLength(3);
+      expect(
+        result.artifacts.some(
+          artifact => artifact.kind === 'assembly' && artifact.bytes > 0
+        ),
+        name
+      ).toBe(true);
+      expect(
+        result.stages.every(stage => stage.status === 'success'),
+        name
+      ).toBe(true);
     }
   }
 });

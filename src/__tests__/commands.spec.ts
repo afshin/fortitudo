@@ -19,6 +19,7 @@ it('routes edits and releases command registrations', async () => {
   };
   const compiler: ICompiler = {
     initialize: async () => info,
+    command: jest.fn(),
     compile: () =>
       new Promise(resolve => {
         finish = resolve;
@@ -29,7 +30,12 @@ it('routes edits and releases command registrations', async () => {
   const registered = registerCommands(commands, {
     store,
     compiler,
-    resetLayout: jest.fn()
+    resetLayout: jest.fn(),
+    compare: jest.fn(),
+    activatePane: jest.fn(),
+    copy: jest.fn(),
+    download: jest.fn(),
+    runner: { run: jest.fn(), reset: jest.fn(), dispose: jest.fn() }
   });
   const running = commands.execute(CommandIDs.compile);
   expect(commands.isEnabled(CommandIDs.compile)).toBe(false);
@@ -40,7 +46,10 @@ it('routes edits and releases command registrations', async () => {
   });
   finish({
     id: 1,
-    assembly: 'assembly',
+    sourcePath: '/workspace/snippet.cpp',
+    artifacts: [],
+    stages: [],
+    files: [],
     diagnostics: [],
     commands: [],
     stdout: '',
@@ -69,6 +78,7 @@ it('keeps cancellation distinct from worker failure', async () => {
         reject = failure;
       });
     },
+    command: jest.fn(),
     compile: jest.fn(),
     cancel: () => reject(new Error('terminated')),
     dispose: jest.fn()
@@ -76,7 +86,12 @@ it('keeps cancellation distinct from worker failure', async () => {
   const registered = registerCommands(commands, {
     store,
     compiler,
-    resetLayout: jest.fn()
+    resetLayout: jest.fn(),
+    compare: jest.fn(),
+    activatePane: jest.fn(),
+    copy: jest.fn(),
+    download: jest.fn(),
+    runner: { run: jest.fn(), reset: jest.fn(), dispose: jest.fn() }
   });
   const running = commands.execute(CommandIDs.compile);
   expect(store.state.progress).toEqual({ phase: 'preparing' });

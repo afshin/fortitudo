@@ -12,7 +12,7 @@
     "language": {
       "title": "Language",
       "type": "string",
-      "enum": ["c", "cpp"],
+      "enum": ["c", "cpp", "llvm", "mlir"],
       "default": "cpp"
     },
     "target": {
@@ -30,6 +30,21 @@
       "type": "integer",
       "enum": [0, 1, 2, 3],
       "default": 2
+    },
+    "llvmPipeline": {
+      "title": "LLVM pipeline",
+      "type": "string",
+      "default": ""
+    },
+    "analysisPipeline": {
+      "title": "Analysis pipeline",
+      "type": "string",
+      "default": "print<domtree>,print<loops>"
+    },
+    "mlirPipeline": {
+      "title": "MLIR pipeline",
+      "type": "string",
+      "default": "builtin.module(canonicalize,cse)"
     }
   }
 }

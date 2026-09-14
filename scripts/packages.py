@@ -50,17 +50,25 @@ for archive, prefix in archives:
             assert member is not None, f'{archive.name}: {name} missing'
             return member.read()
         verify(archive.name, read)
+        if prefix == 'package/compiler/':
+            for module in ['types', 'execution', 'runner', 'wasm', 'terminal']:
+                for suffix in ['js', 'd.ts']:
+                    name = f'package/lib/compiler/{module}.{suffix}'
+                    assert package.getmember(name).size > 0, name
+            entry = package.extractfile('package/lib/index.d.ts')
+            assert entry is not None, 'Missing shared library declarations.'
+            declarations = entry.read().decode()
+            for contract in ['Artifact', 'Stage', 'IRunner', 'inspectWasm']:
+                assert contract in declarations, f'Missing {contract} export'
         assert not any('/.cache/' in name or '/node_modules/' in name
                        for name in package.getnames())
 
-wheels = list((root / 'dist').glob('fortitudo-*.whl'))
-assert wheels == [root / f'dist/fortitudo-{version}-py3-none-any.whl'], (
-    'Expected one current wheel.'
-)
-with zipfile.ZipFile(wheels[0]) as package:
+wheel = root / f'dist/fortitudo-{version}-py3-none-any.whl'
+assert wheel.is_file(), 'Build the current wheel first.'
+with zipfile.ZipFile(wheel) as package:
     matches = [name for name in package.namelist()
                if name.endswith('/static/compiler/manifest.json')]
     assert len(matches) == 1, 'The wheel must contain one compiler copy.'
     for match in matches:
         prefix = match.removesuffix('manifest.json')
-        verify(wheels[0].name, lambda name: package.read(prefix + name))
+        verify(wheel.name, lambda name: package.read(prefix + name))

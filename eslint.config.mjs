@@ -10,7 +10,12 @@ const domain = [
   'src/compiler/types.ts',
   'src/compiler/request.ts',
   'src/compiler/diagnostics.ts',
-  'src/compiler/protocol.ts'
+  'src/compiler/protocol.ts',
+  'src/compiler/wasm.ts',
+  'src/compiler/terminal.ts',
+  'src/compiler/execution.ts',
+  'src/examples.ts',
+  'src/sharing.ts'
 ];
 
 export default defineConfig([

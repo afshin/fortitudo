@@ -302,3 +302,77 @@
     14px system-ui,
     sans-serif;
 }
+
+.fortitudo-workbench input {
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--fortitudo-border);
+  border-radius: 4px;
+  color: var(--fortitudo-foreground);
+  background: var(--fortitudo-background);
+  font: inherit;
+}
+
+.fortitudo-file-actions,
+.fortitudo-file-picker,
+.fortitudo-command-line,
+.fortitudo-run-controls {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+}
+
+.fortitudo-file-picker select,
+.fortitudo-command-line input {
+  flex: 1;
+  min-width: 120px;
+}
+
+.fortitudo-file-actions span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fortitudo-form {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 12px;
+  overflow: auto;
+}
+
+.fortitudo-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.fortitudo-form pre {
+  white-space: pre-wrap;
+}
+
+.fortitudo-graph {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: white;
+}
+
+.fortitudo-find {
+  padding: 2px 12px;
+  text-align: right;
+}
+
+.fortitudo-workbench .fortitudo-outputs .lm-TabBar {
+  overflow-x: auto;
+}
+
+.fortitudo-workbench .fortitudo-outputs .lm-TabBar-tab {
+  flex: 0 0 auto;
+  padding-right: 10px;
+  padding-left: 10px;
+}

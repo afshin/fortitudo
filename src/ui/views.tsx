@@ -1,6 +1,13 @@
 import * as React from 'react';
 
-import { isTarget, labels, targets } from '../compiler/types';
+import {
+  isLanguage,
+  isTarget,
+  labels,
+  languages,
+  sourceName,
+  targets
+} from '../compiler/types';
 import type { Diagnostic, Options } from '../compiler/types';
 import { stale } from '../model';
 import type { State } from '../model';
@@ -11,6 +18,10 @@ export interface IControlsProps {
   onCompile(): void;
   onCancel(): void;
   onLayout(): void;
+  onRun(): void;
+  onCompare(): void;
+  onShare(): void;
+  onExample(): void;
 }
 
 export function Controls(props: IControlsProps): React.ReactElement {
@@ -35,18 +46,24 @@ export function Controls(props: IControlsProps): React.ReactElement {
             onChange={event =>
               onOptions({
                 ...state.options,
-                language: event.target.value === 'c' ? 'c' : 'cpp'
+                language: isLanguage(event.target.value)
+                  ? event.target.value
+                  : state.options.language
               })
             }
           >
-            <option value="cpp">C++23</option>
-            <option value="c">C23</option>
+            {Object.entries(languages).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </select>
         </label>
         <label>
           <span>Target</span>
           <select
             aria-label="Target"
+            disabled={state.options.language === 'mlir'}
             value={state.options.target}
             onChange={event => {
               const target = event.target.value;
@@ -79,6 +96,7 @@ export function Controls(props: IControlsProps): React.ReactElement {
           <span>Optimization</span>
           <select
             aria-label="Optimization"
+            disabled={state.options.language === 'mlir'}
             value={state.options.optimization}
             onChange={event => {
               const optimization = Number(event.target.value);
@@ -111,6 +129,21 @@ export function Controls(props: IControlsProps): React.ReactElement {
           <button onClick={props.onCancel} disabled={!busy}>
             Cancel
           </button>
+          <button
+            onClick={props.onRun}
+            disabled={
+              busy ||
+              state.execution.active !== null ||
+              (!state.execution.module &&
+                (state.options.language === 'mlir' ||
+                  state.options.target !== 'wasm32-unknown-emscripten'))
+            }
+          >
+            Run
+          </button>
+          <button onClick={props.onCompare}>Compare</button>
+          <button onClick={props.onShare}>Share</button>
+          <button onClick={props.onExample}>Reset example</button>
           <button onClick={props.onLayout} title="Restore default pane layout">
             Reset layout
           </button>
@@ -161,7 +194,7 @@ export function Source({
   return (
     <section className="fortitudo-pane" aria-label="Source pane">
       <div className="fortitudo-caption">
-        <span>snippet.{state.options.language === 'cpp' ? 'cpp' : 'c'}</span>
+        <span>{sourceName(state.options.language)}</span>
         <span>Edit, then compile</span>
       </div>
       {children}
@@ -175,34 +208,6 @@ export function Source({
   );
 }
 
-export function Assembly({ state }: { state: State }): React.ReactElement {
-  const result = state.result?.value;
-  return (
-    <section className="fortitudo-pane" aria-label="Assembly pane">
-      <div className="fortitudo-caption">
-        <span>
-          {stale(state) ? 'Out of date — compile to update' : 'Assembly'}
-        </span>
-        <span>
-          {result
-            ? `${Math.round(result.duration)} ms`
-            : 'No entry point required'}
-        </span>
-      </div>
-      <pre
-        className="fortitudo-output"
-        aria-label="Assembly output"
-        tabIndex={0}
-      >
-        {result?.assembly ||
-          (result?.exitCode
-            ? 'Compilation failed. See Diagnostics for details.'
-            : 'Compile your source to inspect the generated assembly.')}
-      </pre>
-    </section>
-  );
-}
-
 export function Diagnostics({
   state,
   onNavigate
@@ -211,9 +216,7 @@ export function Diagnostics({
   onNavigate(diagnostic: Diagnostic): void;
 }): React.ReactElement {
   const result = state.result?.value;
-  const filename =
-    `/workspace/request-${result?.id}/snippet.` +
-    (state.options.language === 'cpp' ? 'cpp' : 'c');
+  const filename = result?.sourcePath;
   return (
     <section
       className="fortitudo-pane fortitudo-diagnostics"
@@ -277,6 +280,18 @@ export function Diagnostics({
               : 'Compiler messages appear here.'}
           </p>
         ) : null}
+        {result && result.stages.length > 0 && (
+          <ul className="fortitudo-stages" aria-label="Build stages">
+            {result.stages.map(stage => (
+              <li key={stage.name}>
+                <strong>{stage.name}</strong>: {stage.status}
+                {' · '}
+                {Math.round(stage.duration)} ms
+                {stage.status !== 'success' && <pre>{stage.stderr}</pre>}
+              </li>
+            ))}
+          </ul>
+        )}
         {result && (
           <details>
             <summary>Compiler output and commands</summary>
@@ -303,14 +318,16 @@ function status(state: State): string {
           ? 'Preparing compiler…'
           : 'Loading compiler…';
     case 'compiling':
-      return 'Compiling…';
+      return state.progress?.phase === 'working'
+        ? `${state.progress.stage}…`
+        : 'Compiling…';
     case 'cancelled':
       return 'Cancelled — compile again when ready';
     case 'failed':
       return 'Compiler unavailable — retry to load it again';
     case 'ready':
       return state.result?.value.exitCode
-        ? 'Compilation failed — inspect diagnostics'
+        ? 'Some outputs failed — inspect diagnostics'
         : stale(state)
           ? 'Source or options changed — compile to update'
           : state.result

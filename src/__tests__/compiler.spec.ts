@@ -1,4 +1,4 @@
-import { diagnostics } from '../compiler/diagnostics';
+import { diagnostics, uniqueDiagnostics } from '../compiler/diagnostics';
 import { isInput, isOutput } from '../compiler/protocol';
 import { invocation, serialize } from '../compiler/request';
 import { options } from '../model';
@@ -20,15 +20,22 @@ describe('compiler requests', () => {
   it('constructs the requested compiler pipeline', () => {
     const request = { id: 1, source: '', options };
     const plan = invocation(request, info, '/workspace/request-1');
-    expect(plan.commands.map(command => command[0])).toEqual([
-      'clang++',
-      'opt',
-      'llc'
+    expect(plan.steps.map(step => step.name)).toEqual([
+      'ast',
+      'ir',
+      'optimized',
+      'analysis',
+      'graphs',
+      'assembly',
+      'object',
+      'wasm'
     ]);
-    expect(plan.commands[0]).toContain('-std=c++23');
-    expect(plan.commands[0]).toContain('/include/c++/v1');
-    expect(plan.commands[1]).toContain('-passes=default<O2>');
-    expect(plan.commands[2]).toContain('-mtriple=wasm32-unknown-emscripten');
+    expect(plan.steps[1].commands[0]).toContain('-std=c++23');
+    expect(plan.steps[1].commands[0]).toContain('/include/c++/v1');
+    expect(plan.steps[2].commands[0]).toContain('-passes=default<O2>');
+    expect(plan.steps[5].commands[0]).toContain(
+      '-mtriple=wasm32-unknown-emscripten'
+    );
     expect(plan.source).toBe('/workspace/request-1/snippet.cpp');
   });
 
@@ -38,6 +45,7 @@ describe('compiler requests', () => {
         id: 2,
         source: '',
         options: {
+          ...options,
           language: 'c',
           optimization: 0,
           target: 'x86_64-unknown-linux-gnu'
@@ -46,14 +54,23 @@ describe('compiler requests', () => {
       info,
       '/workspace/request-2'
     );
-    expect(plan.commands[0]).toContain('-std=c23');
-    expect(plan.commands[0]).toContain('/lib/clang/23/include');
-    expect(plan.commands[0]).not.toContain('/include');
-    expect(plan.commands[1]).toContain('-passes=default<O0>');
+    expect(plan.steps[1].commands[0]).toContain('-std=c23');
+    expect(plan.steps[1].commands[0]).toContain('/lib/clang/23/include');
+    expect(plan.steps[1].commands[0]).not.toContain('/include');
+    expect(plan.steps[2].commands[0]).toContain('-passes=default<O0>');
   });
 });
 
 describe('diagnostics', () => {
+  it('deduplicates stage summaries while preserving distinct locations', () => {
+    const [error] = diagnostics('input.c:1:2: error: missing name');
+    const second = { ...error, line: 2 };
+    expect(uniqueDiagnostics([error, { ...error }, second])).toEqual([
+      error,
+      second
+    ]);
+  });
+
   it('parses source locations and global errors', () => {
     expect(
       diagnostics(

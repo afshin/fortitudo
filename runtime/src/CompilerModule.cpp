@@ -34,6 +34,7 @@
 #include <graphviz/gvcext.h>
 
 #include <cmath>
+#include <cstdio>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -53,6 +54,17 @@ extern gvplugin_library_t gvplugin_core_LTX_library;
 }
 
 namespace {
+
+// Tool and program output must be complete before JavaScript changes capture.
+struct FlushStreams {
+  ~FlushStreams() {
+    llvm::outs().flush();
+    llvm::errs().flush();
+    std::fflush(nullptr);
+  }
+};
+
+std::string CallError;
 
 class ExecuteCompilerToolAction final : public clang::tooling::ToolAction {
 public:
@@ -196,15 +208,27 @@ int runOpt(const std::vector<std::string> &Args) {
       return 1;
     }
     llvm::TargetOptions Options;
+    std::optional<llvm::Reloc::Model> Relocation;
+    if (Triple.isWasm())
+      Relocation = llvm::Reloc::PIC_;
     TM.reset(Target->createTargetMachine(Triple, CPU, Features, Options,
-                                         std::nullopt));
+                                         Relocation));
     if (!TM) {
       llvm::errs() << "opt: could not create target machine for '"
                    << TargetTriple << "'\n";
       return 1;
     }
+    const auto Layout = TM->createDataLayout();
+    if ((!Module->getTargetTriple().str().empty() &&
+         Module->getTargetTriple() != Triple) ||
+        (!Module->getDataLayoutStr().empty() &&
+         Module->getDataLayout() != Layout)) {
+      llvm::errs() << "opt: input target or data layout does not match '"
+                   << TargetTriple << "'\n";
+      return 1;
+    }
     Module->setTargetTriple(Triple);
-    Module->setDataLayout(TM->createDataLayout());
+    Module->setDataLayout(Layout);
   }
 
   llvm::LoopAnalysisManager LAM;
@@ -378,7 +402,8 @@ void *loadSymbol(const char *ModulePath, const char *Symbol) {
   if (Handle == nullptr) {
     Handle = dlopen(ModulePath, RTLD_NOW | RTLD_GLOBAL);
     if (Handle == nullptr) {
-      llvm::errs() << "dlopen failed: " << dlerror() << '\n';
+      CallError = std::string("dlopen failed: ") + dlerror();
+      llvm::errs() << CallError << '\n';
       return nullptr;
     }
   }
@@ -386,7 +411,8 @@ void *loadSymbol(const char *ModulePath, const char *Symbol) {
   dlerror();
   void *Address = dlsym(Handle, Symbol);
   if (const char *Error = dlerror()) {
-    llvm::errs() << "dlsym failed: " << Error << '\n';
+    CallError = std::string("dlsym failed: ") + Error;
+    llvm::errs() << CallError << '\n';
     return nullptr;
   }
   return Address;
@@ -395,15 +421,13 @@ void *loadSymbol(const char *ModulePath, const char *Symbol) {
 } // namespace
 
 extern "C" EMSCRIPTEN_KEEPALIVE int run_command(const char *Command) {
+  FlushStreams Flush;
   if (Command == nullptr)
     return 2;
 
   std::vector<std::string> Args = tokenize(Command);
   if (Args.empty())
     return 2;
-
-  llvm::outs() << "$ " << Command << '\n';
-  llvm::outs().flush();
 
   const llvm::StringRef Program = llvm::sys::path::filename(Args.front());
   if (Program == "clang" || Program == "clang++")
@@ -448,6 +472,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE const char *available_targets() {
 extern "C" EMSCRIPTEN_KEEPALIVE double
 load_and_call_numeric(const char *ModulePath, const char *Symbol,
                       std::int32_t Signature, double A, double B) {
+  FlushStreams Flush;
+  CallError.clear();
   void *Address = loadSymbol(ModulePath, Symbol);
   if (!Address)
     return std::numeric_limits<double>::quiet_NaN();
@@ -471,12 +497,19 @@ load_and_call_numeric(const char *ModulePath, const char *Symbol,
     reinterpret_cast<void (*)()>(Address)();
     return 0.0;
   default:
-    llvm::errs() << "unsupported call signature code: " << Signature << '\n';
+    CallError = "Unsupported call signature";
+    llvm::errs() << CallError << '\n';
     return std::numeric_limits<double>::quiet_NaN();
   }
 }
 
+// A successful floating-point call may itself return NaN.
+extern "C" EMSCRIPTEN_KEEPALIVE const char *wasmbolt_call_error() {
+  return CallError.c_str();
+}
+
 int main() {
+  FlushStreams Flush;
   initializeTargets();
   llvm::outs() << "WasmBolt compiler runtime is ready (LLVM "
                << LLVM_VERSION_STRING << ").\n";

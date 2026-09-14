@@ -1,5 +1,5 @@
 /** Source languages supported by the core explorer. */
-export type Language = 'c' | 'cpp';
+export type Language = 'c' | 'cpp' | 'llvm' | 'mlir';
 
 /** Targets exposed when their backend is present in the runtime. */
 export type Target =
@@ -13,6 +13,10 @@ export type Options = Readonly<{
   language: Language;
   target: Target;
   optimization: Optimization;
+  /** Null follows the selected optimization level. */
+  llvmPipeline: string | null;
+  analysisPipeline: string;
+  mlirPipeline: string;
 }>;
 
 export type Info = Readonly<{
@@ -31,7 +35,8 @@ export type Download = Readonly<{
 /** Preparation includes integrity checks and runtime initialization. */
 export type Progress =
   | Readonly<{ phase: 'downloading'; downloads: readonly Download[] }>
-  | Readonly<{ phase: 'preparing' }>;
+  | Readonly<{ phase: 'preparing' }>
+  | Readonly<{ phase: 'working'; stage: string }>;
 
 export type Request = Readonly<{
   id: number;
@@ -47,9 +52,47 @@ export type Diagnostic = Readonly<{
   message: string;
 }>;
 
+export type OutputKind =
+  | 'ast'
+  | 'ir'
+  | 'optimized'
+  | 'analysis'
+  | 'graphs'
+  | 'assembly'
+  | 'object'
+  | 'wasm'
+  | 'mlir';
+
+/** Buffers belong to their snapshot and must never be mutated or detached. */
+export type File = Readonly<{ path: string; data: Uint8Array }>;
+
+export type Artifact = Readonly<{
+  build: number;
+  kind: OutputKind;
+  path: string;
+}> &
+  (
+    | Readonly<{ format: 'text'; text: string }>
+    | Readonly<{ format: 'binary'; data: Uint8Array }>
+  );
+
+export type Stage = Readonly<{
+  name: string;
+  status: 'success' | 'failed' | 'skipped';
+  commands: readonly string[];
+  diagnostics: readonly Diagnostic[];
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+  duration: number;
+}>;
+
 export type Result = Readonly<{
   id: number;
-  assembly: string;
+  sourcePath: string;
+  artifacts: readonly Artifact[];
+  stages: readonly Stage[];
+  files: readonly File[];
   diagnostics: readonly Diagnostic[];
   commands: readonly string[];
   stdout: string;
@@ -58,13 +101,73 @@ export type Result = Readonly<{
   duration: number;
 }>;
 
+export type CommandRequest = Readonly<{
+  id: number;
+  command: string;
+  files: readonly File[];
+}>;
+
+export type CommandResult = Readonly<{
+  id: number;
+  stage: Stage;
+  files: readonly File[];
+}>;
+
 /** Ordinary compiler errors resolve; runtime failures reject. */
 export interface ICompiler {
   /** Progress callbacks are released when initialization settles. */
   initialize(onProgress?: (progress: Progress) => void): Promise<Info>;
-  compile(request: Request): Promise<Result>;
+  compile(
+    request: Request,
+    onProgress?: (progress: Progress) => void
+  ): Promise<Result>;
+  command(
+    request: CommandRequest,
+    onProgress?: (progress: Progress) => void
+  ): Promise<CommandResult>;
   cancel(): void;
   dispose(): void;
+}
+
+export const pipelines = {
+  llvmPipeline: null,
+  analysisPipeline: 'print<domtree>,print<loops>',
+  mlirPipeline: 'builtin.module(canonicalize,cse)'
+} as const;
+
+export const languages: Readonly<Record<Language, string>> = {
+  cpp: 'C++23',
+  c: 'C23',
+  llvm: 'LLVM IR',
+  mlir: 'MLIR'
+};
+
+export const outputLabels: Readonly<Record<OutputKind, string>> = {
+  assembly: 'Assembly',
+  ast: 'AST',
+  ir: 'LLVM IR — before passes',
+  optimized: 'Optimized IR',
+  analysis: 'Analysis',
+  graphs: 'Graphs',
+  wasm: 'Wasm Module',
+  mlir: 'MLIR',
+  object: 'Object'
+};
+
+export function isLanguage(value: unknown): value is Language {
+  return Object.keys(languages).some(language => language === value);
+}
+
+export function isOutputKind(value: unknown): value is OutputKind {
+  return Object.keys(outputLabels).some(kind => kind === value);
+}
+
+export function sourceName(language: Language): string {
+  return language === 'llvm'
+    ? 'input.ll'
+    : language === 'mlir'
+      ? 'input.mlir'
+      : `snippet.${language === 'cpp' ? 'cpp' : 'c'}`;
 }
 
 export const targets: readonly Target[] = [
@@ -89,11 +192,17 @@ export function isOptions(value: unknown): value is Options {
   }
   return (
     'language' in value &&
-    (value.language === 'c' || value.language === 'cpp') &&
+    isLanguage(value.language) &&
     'target' in value &&
     isTarget(value.target) &&
     'optimization' in value &&
-    [0, 1, 2, 3].some(level => level === value.optimization)
+    [0, 1, 2, 3].some(level => level === value.optimization) &&
+    'llvmPipeline' in value &&
+    (value.llvmPipeline === null || typeof value.llvmPipeline === 'string') &&
+    'analysisPipeline' in value &&
+    typeof value.analysisPipeline === 'string' &&
+    'mlirPipeline' in value &&
+    typeof value.mlirPipeline === 'string'
   );
 }
 

@@ -32,6 +32,27 @@ export function diagnostics(stderr: string): readonly Diagnostic[] {
   return results;
 }
 
+/** Combine stages without repeating the same source diagnostic. */
+export function uniqueDiagnostics(
+  values: readonly Diagnostic[]
+): readonly Diagnostic[] {
+  const seen = new Set<string>();
+  return values.filter(value => {
+    const key = JSON.stringify([
+      value.file,
+      value.line,
+      value.column,
+      value.severity,
+      value.message
+    ]);
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
 function severity(value: string): Diagnostic['severity'] {
   return value === 'note' || value === 'warning' ? value : 'error';
 }
