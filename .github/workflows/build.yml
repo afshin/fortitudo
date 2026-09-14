@@ -24,7 +24,6 @@ jobs:
     timeout-minutes: 60
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/browsers
-      JUPYTER_CONFIG_DIR: ${{ github.workspace }}/work/jupyter-config
     steps:
       # actions/checkout@v7.0.1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1

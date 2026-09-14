@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
@@ -38,6 +39,9 @@ export default defineConfig({
     },
     {
       command: 'jupyter lab --config=ui-tests/jupyter_server_test_config.py',
+      env: {
+        JUPYTER_CONFIG_DIR: resolve(import.meta.dirname, 'work/jupyter-config')
+      },
       url: 'http://127.0.0.1:8766/fortitudo/lab',
       timeout: 120_000,
       reuseExistingServer: !process.env.CI

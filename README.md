@@ -89,6 +89,19 @@ execution, a terminal, sharing, arbitrary flags, automatic compilation, and
 automatic timeouts are deferred. The optional upstream MLIR driver remains
 packaged to preserve the runtime build, but is not downloaded eagerly.
 
+## Acknowledgments
+
+Fortitudo’s browser compiler runtime is based on
+[WasmBolt](https://github.com/anutosh491/WasmBolt), created by Anutosh Bhat and
+released under the MIT License. We reuse WasmBolt’s compiler module, LLVM
+lifecycle adaptations, and compilation pipeline, with an adapted build recipe.
+Fortitudo adds the shared React/Lumino workbench, compiler worker service, and
+JupyterLab, JupyterLite, and standalone integrations. WasmBolt’s original
+copyright and license notice are included in our distributions.
+
+The compiler itself is provided by LLVM/Clang and built for WebAssembly using
+Emscripten.
+
 ## License
 
 Fortitudo is BSD-3-Clause licensed. The compiler incorporates WasmBolt and other

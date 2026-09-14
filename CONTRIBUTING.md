@@ -115,6 +115,6 @@ manifest; the worker and manifest must match the current build too.
 The release check validates package metadata, checks PyPI's file limit, runs
 Twine and npm's offline pack dry run, and writes `dist/release.json` with
 archive sizes and hashes. It validates local archives even when their version is
-already published. See [RELEASE.md](RELEASE.md) for registry setup, automatic
-publishing from GitHub releases, and manual runs. Keep `package.json` as the
-version source; staging, commits, and tags remain the user's responsibility.
+already published. See [RELEASE.md](RELEASE.md) for publishing from GitHub
+releases and recovering failed uploads. Keep `package.json` as the version
+source; staging, commits, and tags remain the user's responsibility.
