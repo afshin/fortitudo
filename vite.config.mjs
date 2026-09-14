@@ -35,7 +35,10 @@ export default defineConfig(({ mode }) => {
                     target: '_blank',
                     rel: 'noopener'
                   },
-                  children: 'Open JupyterLite ↗'
+                  children:
+                    '<img src="./jupyter.svg" alt="" width="18" height="18">' +
+                    '<span>Try in Jupyter</span>' +
+                    '<span aria-hidden="true">↗</span>'
                 }
               ],
               injectTo: 'body-prepend'

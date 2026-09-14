@@ -23,6 +23,19 @@ async function open(page: Page, url: string): Promise<void> {
   ).toBeVisible();
 }
 
+async function reopen(page: Page, url: string): Promise<void> {
+  if (url === standalone) {
+    await open(page, url);
+    return;
+  }
+  await page
+    .getByRole('tab', { name: 'Fortitudo', exact: true })
+    .locator('.lm-TabBar-tabCloseIcon')
+    .click();
+  await expect(page.locator('#fortitudo-workbench')).toHaveCount(0);
+  await page.getByText('Open Fortitudo', { exact: true }).first().click();
+}
+
 async function edit(page: Page, source: string): Promise<void> {
   const editor = page.getByRole('textbox', { name: 'Source code' });
   await editor.fill(source);
@@ -77,9 +90,7 @@ for (const [host, url] of Object.entries(hosts)) {
     ).toBeFocused();
     await edit(page, 'int restored(int x) { return x + 9; }');
     await page.getByLabel('Optimization', { exact: true }).selectOption('3');
-    await page.getByRole('button', { name: 'Close Fortitudo' }).click();
-    await expect(page.locator('#fortitudo-workbench')).toHaveCount(0);
-    await page.getByText('Open Fortitudo', { exact: true }).first().click();
+    await reopen(page, url);
     await expect(page.getByRole('textbox', { name: 'Source code' })).toHaveText(
       'int restored(int x) { return x + 9; }'
     );
@@ -238,8 +249,7 @@ for (const [host, url] of Object.entries(hosts)) {
     await page.mouse.up();
     await expect.poll(width).toBeLessThan(original - 80);
     const resized = await width();
-    await page.getByRole('button', { name: 'Close Fortitudo' }).click();
-    await page.getByText('Open Fortitudo', { exact: true }).first().click();
+    await reopen(page, url);
     await expect.poll(width).toBeGreaterThan(resized - 3);
     await expect.poll(width).toBeLessThan(resized + 3);
     // Jupyter may defer saving its open tabs; its launcher can reopen us.

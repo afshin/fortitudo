@@ -5,8 +5,8 @@ and a standalone Lumino application. All three hosts use the same workbench and
 compiler worker. No kernel or remote compiler is needed.
 
 The [web app](https://afshin.github.io/fortitudo/) opens the standalone
-explorer. Select **Open JupyterLite** to use the explorer alongside C23 and
-C++23 notebooks. Both applications run in the browser.
+explorer. Select **Try in Jupyter** to use the explorer alongside C23 and C++23
+notebooks. Both applications run in the browser.
 
 Edit a function, choose a language, target, and optimization level, then select
 **Compile** or press **Ctrl/Cmd+Enter**. Inspect assembly and compiler messages;

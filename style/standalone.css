@@ -38,6 +38,9 @@ body {
 }
 
 .fortitudo-navigation a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 4px;
   color: inherit;
   text-underline-offset: 3px;

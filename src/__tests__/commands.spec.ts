@@ -29,8 +29,7 @@ it('routes edits and releases command registrations', async () => {
   const registered = registerCommands(commands, {
     store,
     compiler,
-    resetLayout: jest.fn(),
-    close: jest.fn()
+    resetLayout: jest.fn()
   });
   const running = commands.execute(CommandIDs.compile);
   expect(commands.isEnabled(CommandIDs.compile)).toBe(false);
@@ -75,8 +74,7 @@ it('keeps cancellation distinct from worker failure', async () => {
   const registered = registerCommands(commands, {
     store,
     compiler,
-    resetLayout: jest.fn(),
-    close: jest.fn()
+    resetLayout: jest.fn()
   });
   const running = commands.execute(CommandIDs.compile);
   await commands.execute(CommandIDs.cancel);

@@ -11,7 +11,6 @@ export interface IControlsProps {
   onCompile(): void;
   onCancel(): void;
   onLayout(): void;
-  onClose(): void;
 }
 
 export function Controls(props: IControlsProps): React.ReactElement {
@@ -110,9 +109,6 @@ export function Controls(props: IControlsProps): React.ReactElement {
           </button>
           <button onClick={props.onLayout} title="Restore default pane layout">
             Reset layout
-          </button>
-          <button onClick={props.onClose} aria-label="Close Fortitudo">
-            Close
           </button>
         </div>
       </div>

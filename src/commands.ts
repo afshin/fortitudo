@@ -16,7 +16,6 @@ export namespace CommandIDs {
   export const cancel = 'fortitudo:cancel';
   export const layout = 'fortitudo:reset-layout';
   export const layoutChanged = 'fortitudo:layout-changed';
-  export const close = 'fortitudo:close';
   export const navigate = 'fortitudo:navigate';
 }
 
@@ -24,7 +23,6 @@ export interface IContext {
   readonly store: IStore;
   readonly compiler: ICompiler;
   resetLayout(): void;
-  close(): void;
 }
 
 /** Register one session's controllers against either host's registry. */
@@ -133,12 +131,6 @@ export function registerCommands(
         }
         store.dispatch({ type: 'layout', layout: saved.layout });
       }
-    })
-  );
-  disposables.add(
-    commands.addCommand(CommandIDs.close, {
-      label: 'Close Fortitudo',
-      execute: () => context.close()
     })
   );
   disposables.add(

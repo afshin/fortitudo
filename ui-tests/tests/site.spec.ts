@@ -11,7 +11,7 @@ test('site: compile and open JupyterLite', async ({ page }, testInfo) => {
   await expect(page.getByLabel('Assembly output')).toContainText('i32.mul');
   await page.screenshot({ path: testInfo.outputPath('site.png') });
 
-  const link = page.getByRole('link', { name: 'Open JupyterLite' });
+  const link = page.getByRole('link', { name: 'Try in Jupyter', exact: true });
   const popup = page.waitForEvent('popup');
   await link.click();
   const lite = await popup;

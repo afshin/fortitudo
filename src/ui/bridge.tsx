@@ -45,7 +45,6 @@ export function Bridge(props: IBridgeProps): React.ReactElement {
       onCompile: () => execute(CommandIDs.compile),
       onCancel: () => execute(CommandIDs.cancel),
       onLayout: () => execute(CommandIDs.layout),
-      onClose: () => execute(CommandIDs.close),
       onNavigate: ({ line, column }: Diagnostic) =>
         execute(CommandIDs.navigate, { line, column })
     };

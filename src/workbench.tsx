@@ -82,8 +82,7 @@ export class Workbench extends BoxPanel {
     this.registered = registerCommands(options.commands, {
       store,
       compiler: this.compiler,
-      resetLayout: () => this.panels.reset(),
-      close: () => this.close()
+      resetLayout: () => this.panels.reset()
     });
     this.binding = options.commands.addKeyBinding({
       command: CommandIDs.compile,
