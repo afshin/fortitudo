@@ -113,5 +113,5 @@ jobs:
       - name: Publish to npm with trusted publishing
         run: |
           npm --version
-          npm publish dist/fortitudo.tgz --access public --tag latest \
+          npm publish ./dist/fortitudo.tgz --access public --tag latest \
             --ignore-scripts --registry https://registry.npmjs.org
