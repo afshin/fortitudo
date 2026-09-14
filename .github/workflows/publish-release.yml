@@ -53,6 +53,11 @@ jobs:
 
   build:
     needs: release
+    # GitHub validates permissions even for the skipped Pages job.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     uses: ./.github/workflows/build.yml
     with:
       release: true
