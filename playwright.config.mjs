@@ -33,14 +33,15 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'python -m http.server 8765 --bind 127.0.0.1',
+      command: 'python ui-tests/server.py',
       url: 'http://127.0.0.1:8765/dist/standalone/',
       reuseExistingServer: !process.env.CI
     },
     {
       command: 'jupyter lab --config=ui-tests/jupyter_server_test_config.py',
       env: {
-        JUPYTER_CONFIG_DIR: resolve(import.meta.dirname, 'work/jupyter-config')
+        JUPYTER_CONFIG_DIR: resolve(import.meta.dirname, 'work/jupyter-config'),
+        JUPYTER_RUNTIME_DIR: resolve(import.meta.dirname, '.cache/jupyter')
       },
       url: 'http://127.0.0.1:8766/fortitudo/lab',
       timeout: 120_000,

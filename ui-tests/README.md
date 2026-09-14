@@ -25,6 +25,14 @@ ports 8765 and 8766. The JupyterLab test server uses `work/jupyter-config` for
 settings and saved workspaces so tests do not restore your personal workspace.
 Servers started by Playwright stop when the run ends.
 
+Successful HTTP requests, expected download disconnects, and Jupyter startup
+messages are quiet by default. Server warnings and errors remain visible. To
+include request logs and Jupyter startup details, run:
+
+```sh
+FORTITUDO_TEST_SERVER_LOGS=1 pixi run --as-is jlpm test:browser
+```
+
 Chromium exercises all hosts and failure modes. Firefox and WebKit run the
 standalone workflow, real compiler matrix, and both notebook kernels. Results
 include compiler measurements, screenshots, and traces for failures. Memory

@@ -1,4 +1,4 @@
-import { BoxPanel, SplitPanel, TabPanel } from '@lumino/widgets';
+import { BoxPanel, SplitLayout, SplitPanel, TabPanel } from '@lumino/widgets';
 import type { Widget } from '@lumino/widgets';
 
 import type { Area, Pane } from '../model';
@@ -84,7 +84,12 @@ export class PanePanel extends BoxPanel {
         }
       };
     }
-    const panel = new SplitPanel({ orientation: area.orientation });
+    const panel = new SplitPanel({
+      layout: new PaneLayout({
+        orientation: area.orientation,
+        renderer: SplitPanel.defaultRenderer
+      })
+    });
     const children = area.children.map(child => this.create(child));
     for (const child of children) {
       panel.addWidget(child.widget);
@@ -111,4 +116,12 @@ export class PanePanel extends BoxPanel {
 
   private section: ISection;
   private restoring = false;
+}
+
+/** Retain proportions when the host changes size during restoration. */
+class PaneLayout extends SplitLayout {
+  protected onResize(message: Widget.ResizeMessage): void {
+    this.setRelativeSizes(this.relativeSizes(), false);
+    super.onResize(message);
+  }
 }

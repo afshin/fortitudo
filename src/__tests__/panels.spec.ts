@@ -1,4 +1,5 @@
-import { Widget } from '@lumino/widgets';
+import { MessageLoop } from '@lumino/messaging';
+import { SplitPanel, Widget } from '@lumino/widgets';
 
 import type { Area } from '../model';
 import { PanePanel } from '../ui/panels';
@@ -68,4 +69,39 @@ it('resets containers while retaining views and saving once', () => {
   }
   panel.dispose();
   expect(changes).toHaveLength(1);
+});
+
+it('preserves pane proportions while the host restores its size', () => {
+  const panel = new PanePanel(
+    views(),
+    {
+      type: 'split-area',
+      orientation: 'horizontal',
+      sizes: [0.3, 0.7],
+      children: [
+        { type: 'tab-area', widgets: ['source'], currentIndex: 0 },
+        {
+          type: 'tab-area',
+          widgets: ['assembly', 'diagnostics'],
+          currentIndex: 0
+        }
+      ]
+    },
+    () => {}
+  );
+  const split = panel.widgets[0];
+  if (!(split instanceof SplitPanel)) {
+    throw new Error('Expected a split panel.');
+  }
+  Widget.attach(panel, document.body);
+  try {
+    // Jupyter can attach the workbench before restoring its sidebars.
+    MessageLoop.sendMessage(split, new Widget.ResizeMessage(1200, 600));
+    MessageLoop.sendMessage(split, new Widget.ResizeMessage(950, 600));
+    expect(split.relativeSizes()[0]).toBeCloseTo(0.3);
+    MessageLoop.sendMessage(split, new Widget.ResizeMessage(1200, 600));
+    expect(split.relativeSizes()[0]).toBeCloseTo(0.3);
+  } finally {
+    panel.dispose();
+  }
 });
