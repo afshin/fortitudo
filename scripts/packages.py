@@ -52,7 +52,9 @@ for archive, prefix in archives:
                        for name in package.getnames())
 
 wheels = list((root / 'dist').glob('fortitudo-*.whl'))
-assert len(wheels) == 1, 'Expected one current wheel.'
+assert wheels == [root / f'dist/fortitudo-{version}-py3-none-any.whl'], (
+    'Expected one current wheel.'
+)
 with zipfile.ZipFile(wheels[0]) as package:
     matches = [name for name in package.namelist()
                if name.endswith('/static/compiler/manifest.json')]

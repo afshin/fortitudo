@@ -5,12 +5,17 @@ on:
     branches: main
   pull_request:
     branches: '*'
+  workflow_call:
+    inputs:
+      release:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: build-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -22,6 +27,8 @@ jobs:
       JUPYTER_CONFIG_DIR: ${{ github.workspace }}/work/jupyter-config
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: prefix-dev/setup-pixi@v0.10.2
         with:
           pixi-version: v0.59.0
@@ -30,12 +37,13 @@ jobs:
         run: pixi run --as-is jlpm install --immutable
       - name: Restore compiler assets
         id: compiler
+        if: ${{ !inputs.release }}
         uses: actions/cache@v4
         with:
           path: compiler
           key: >-
-            compiler-linux-${{ hashFiles(
-            'runtime/src/**', 'runtime/CMakeLists.txt', 'runtime/locks/**',
+            compiler-linux-${{ hashFiles( 'runtime/src/**',
+            'runtime/CMakeLists.txt', 'runtime/locks/**',
             'runtime/sources.json', 'runtime/licenses/**',
             'scripts/compiler.mjs') }}
       - name: Reproduce compiler
@@ -46,6 +54,7 @@ jobs:
           pixi run --as-is jlpm lint:check
           pixi run --as-is jlpm typecheck
           pixi run --as-is jlpm test
+          pixi run --as-is actionlint
       - name: Build all hosts
         run: |
           pixi run --as-is jlpm build:prod
@@ -59,6 +68,7 @@ jobs:
           pixi run --as-is jlpm pack --out dist/fortitudo.tgz
           pixi run --as-is python -m build --no-isolation
           pixi run --as-is jlpm test:packages
+          pixi run --as-is python scripts/release.py
       - name: Install browsers
         run: pixi run --as-is jlpm playwright install --with-deps
       - name: Test real browser workflows
@@ -72,12 +82,27 @@ jobs:
             test-results
       - uses: actions/upload-artifact@v4
         with:
+          name: npm-distribution
+          path: dist/fortitudo.tgz
+          if-no-files-found: error
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-distributions
+          path: |
+            dist/fortitudo-*.whl
+            dist/fortitudo-*.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        with:
           name: distributions
           path: |
             dist/fortitudo*
             dist/standalone
             lite/_output
             compiler/manifest.json
+            dist/release.json
           if-no-files-found: error
 
   wheel:

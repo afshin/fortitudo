@@ -100,12 +100,16 @@ After building all hosts:
 pixi run --as-is jlpm pack --out dist/fortitudo.tgz
 pixi run --as-is python -m build --no-isolation
 pixi run --as-is jlpm test:packages
+pixi run --as-is python scripts/release.py
+pixi run --as-is actionlint
 ```
 
 The checks read the npm archive, wheel, source distribution, extension,
 standalone site, and Lite site. Every compiler file must match the generated
 manifest; the worker and manifest must match the current build too.
 
-Package creation is local and does not publish anything. Do not invoke release
-automation, version changes, commits, or tagging without a separate user
-request. Keep `package.json` as the version source.
+The release check validates package metadata, checks PyPI's file limit, runs
+Twine and npm's publish dry run, and writes `dist/release.json` with archive
+sizes and hashes. It does not publish. See [RELEASE.md](RELEASE.md) for registry
+setup and the manually triggered release workflow. Keep `package.json` as the
+version source; staging, commits, and tags remain the user's responsibility.

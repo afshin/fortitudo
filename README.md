@@ -24,6 +24,18 @@ feedback.
 
 ## Running locally
 
+The prebuilt extension requires JupyterLab 4.6 or later. Once the release is
+published, install it with:
+
+```sh
+python -m pip install fortitudo
+```
+
+Restart JupyterLab and select **Open Fortitudo** in the launcher or command
+palette. The wheel includes the compiler; installing it does not require Node or
+a compiler build. The npm package also includes the runtime and exports the
+shared workbench for applications that supply their own Lumino host.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the complete Pixi setup and build
 sequence. The compiler is a separate heavyweight build; frontend builds require
 its generated assets and verify their hashes.

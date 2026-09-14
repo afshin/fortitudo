@@ -1,62 +1,104 @@
-name: "Step 2: Publish Release"
+name: Publish Release
+
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: "The target branch"
-        required: false
-      release_url:
-        description: "The URL of the draft GitHub release"
-        required: false
-      steps_to_skip:
-        description: "Comma separated list of steps to skip"
-        required: false
+      destination:
+        description: Registry to publish to; none only builds and validates
+        required: true
+        default: none
+        type: choice
+        options:
+          - none
+          - pypi
+          - npm
+          - both
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  publish_release:
-    runs-on: ubuntu-latest
-    environment: release
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      # actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Require the existing stable release tag
+        env:
+          RELEASE_REF: ${{ github.ref }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+
+          with open('package.json') as file:
+              package = json.load(file)
+          version = package['version']
+          assert re.fullmatch(r'\d+\.\d+\.\d+', version), version
+          assert package['name'] == 'fortitudo'
+          assert os.environ['RELEASE_REF'] == f'refs/tags/v{version}', (
+              f'Run this workflow from the existing v{version} tag.'
+          )
+          PY
+
+  build:
+    needs: release
+    uses: ./.github/workflows/build.yml
+    with:
+      release: true
+
+  pypi:
+    needs: build
+    if: inputs.destination == 'pypi' || inputs.destination == 'both'
+    runs-on: ubuntu-24.04
+    environment:
+      name: pypi
+      url: https://pypi.org/project/fortitudo/
     permissions:
+      contents: read
       id-token: write
     steps:
-      - uses: prefix-dev/setup-pixi@v0.10.2
+      # actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          pixi-version: v0.59.0
-          run-install: false
-      - uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
-
-      - uses: actions/create-github-app-token@v1
-        id: app-token
+          name: python-distributions
+          path: dist
+      - name: Publish to PyPI with trusted publishing
+        # pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33
         with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          packages-dir: dist/
 
-      - name: Populate Release
-        id: populate-release
-        uses: jupyter-server/jupyter_releaser/.github/actions/populate-release@v2
+  npm:
+    needs: build
+    if: inputs.destination == 'npm' || inputs.destination == 'both'
+    runs-on: ubuntu-24.04
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/fortitudo
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      # actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          token: ${{ steps.app-token.outputs.token }}
-          branch: ${{ github.event.inputs.branch }}
-          release_url: ${{ github.event.inputs.release_url }}
-          steps_to_skip: ${{ github.event.inputs.steps_to_skip }}
-
-      - name: Finalize Release
-        id: finalize-release
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        uses: jupyter-server/jupyter_releaser/.github/actions/finalize-release@v2
+          name: npm-distribution
+          path: dist
+      # actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          token: ${{ steps.app-token.outputs.token }}
-          release_url: ${{ steps.populate-release.outputs.release_url }}
-
-      - name: "** Next Step **"
-        if: ${{ success() }}
+          node-version: '24.19.0'
+          registry-url: https://registry.npmjs.org
+      - name: Publish to npm with trusted publishing
         run: |
-          echo "Verify the final release"
-          echo ${{ steps.finalize-release.outputs.release_url }}
-
-      - name: "** Failure Message **"
-        if: ${{ failure() }}
-        run: |
-          echo "Failed to Publish the Draft Release Url:"
-          echo ${{ steps.populate-release.outputs.release_url }}
+          npm --version
+          npm publish dist/fortitudo.tgz --access public --tag latest \
+            --ignore-scripts --registry https://registry.npmjs.org

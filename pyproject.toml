@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "hatchling>=1.5.0",
+    "hatchling>=1.27.0",
     "hatch-nodejs-version>=0.3.2",
     "jupyter-builder>=1.2.0,<2",
 ]
@@ -43,10 +43,15 @@ source = "nodejs"
 fields = ["description", "authors", "urls", "keywords"]
 
 [tool.hatch.build.targets.sdist]
+# Twine 6.2 and the publishing action validate core metadata through 2.4.
+core-metadata-version = "2.4"
 artifacts = ["fortitudo/labextension"]
 exclude = [".github", "binder"]
 
 [tool.hatch.build.targets.wheel]
+core-metadata-version = "2.4"
+# Shared data must retain the Wasm driver despite the global *.so ignore.
+ignore-vcs = true
 exclude = ["fortitudo/labextension/**"]
 
 [tool.hatch.build.targets.wheel.shared-data]
@@ -90,18 +95,6 @@ build_cmd = "install:extension"
 npm = ["jlpm"]
 source_dir = "src"
 build_dir = "fortitudo/labextension"
-
-[tool.jupyter-releaser.options]
-version_cmd = "hatch version"
-
-[tool.jupyter-releaser.hooks]
-before-build-npm = [
-    "pixi install --locked",
-    "pixi run --as-is jlpm install --immutable",
-    "pixi run --as-is jlpm build:compiler",
-    "pixi run --as-is jlpm build:prod",
-]
-
 
 [tool.check-wheel-contents]
 ignore = ["W002"]
