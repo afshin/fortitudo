@@ -130,3 +130,13 @@ dmypy.json
 
 # Yarn cache
 .yarn/
+.cache/
+/work/
+/compiler/
+runtime/.cache/
+runtime/build/
+lite/_output/
+lite/.jupyterlite.doit.db
+playwright-report/
+test-results/
+junit.xml

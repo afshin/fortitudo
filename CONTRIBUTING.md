@@ -1,80 +1,111 @@
 # Contributing
 
-## Development install
+Read [AGENTS.md](AGENTS.md) before editing. Git staging, commits, and history
+operations belong to the user. Keep handwritten source and prose within 80
+columns, use strict types, and keep domain code independent of hosts.
 
-Note: You will need Node.js to build the extension package.
-You may install it from [nodejs.org](https://nodejs.org/en/download). We
-recommend using the latest LTS version of Node.js.
+## Environment
 
-The `jlpm` command is JupyterLab's pinned version of
-[yarn](https://yarnpkg.com/) that is installed with JupyterLab. You may use
-`yarn` or `npm` in lieu of `jlpm` below.
-
-```bash
-# Clone the repo to your local environment
-# Change directory to the fortitudo directory
-
-# Set up a virtual environment and install package in development mode
-python -m venv .venv
-source .venv/bin/activate
-pip install --editable "."
-
-# Link your development version of the extension with JupyterLab
-jupyter-builder develop . --overwrite
-
-# Rebuild extension Typescript source after making changes
-# IMPORTANT: Unlike the steps above which are performed only once, do this step
-# every time you make a change.
-jlpm build
-```
-
-You can watch the source directory and run JupyterLab at the same time in different terminals to watch for changes in the extension's source and automatically rebuild the extension.
-
-```bash
-# Watch the source directory in one terminal, automatically rebuilding when needed
-jlpm watch
-# Run JupyterLab in another terminal
-jupyter lab
-```
-
-With the watch command running, every saved change will immediately be built locally and available in your running JupyterLab. Refresh JupyterLab to load the change in your browser (you may need to wait several seconds for the extension to be rebuilt).
-
-By default, the `jlpm build` command generates the source maps for this extension to make it easier to debug using the browser dev tools. To also generate source maps for the JupyterLab core extensions, you can run the following command:
-
-```bash
-jupyter lab build --minimize=False
-```
-
-## Development uninstall
-
-```bash
-pip uninstall fortitudo
-```
-
-In development mode, you will also need to remove the symlink created by `jupyter-builder develop`
-command. To find its location, you can run `jupyter labextension list` to figure out where the `labextensions`
-folder is located. Then you can remove the symlink named `fortitudo` within that folder.
-
-## Testing the extension
-
-#### Frontend tests
-
-This extension is using [Jest](https://jestjs.io/) for JavaScript code testing.
-
-To execute them, execute:
+Install Pixi, then run from this repository on macOS arm64 or Linux x64:
 
 ```sh
-jlpm
-jlpm test
+pixi install --locked
+pixi run --as-is jlpm install --immutable
 ```
 
-### Integration tests
+`pixi.lock` covers Python, Node, JupyterLab, the extension builder, JupyterLite,
+and packaging tools. `yarn.lock` covers all JavaScript code and tests. Use jlpm
+throughout. `--as-is` uses the already installed Pixi environment without
+synchronizing it on each invocation. After changing `pixi.toml`, run
+`pixi install` to update the environment and lock.
 
-This extension uses [Playwright](https://playwright.dev/docs/intro) for the integration tests (aka user level tests).
-More precisely, the JupyterLab helper [Galata](https://github.com/jupyterlab/jupyterlab/tree/master/galata) is used to handle testing the extension in JupyterLab.
+## First build
 
-More information is provided within the [ui-tests](./ui-tests/README.md) README.
+```sh
+pixi run --as-is jlpm build:compiler
+pixi run --as-is jlpm build:prod
+pixi run --as-is python -m pip install --no-build-isolation --no-deps -e .
+pixi run --as-is jupyter-builder develop . --overwrite
+pixi run --as-is jlpm build:standalone
+pixi run --as-is node scripts/lite.mjs
+```
 
-## Packaging the extension
+The compiler build downloads pinned toolchain packages and version-matched LLVM
+sources, validates their checksums and source adjustments, then builds and
+stages the runtime. Allow several gigabytes of disk space and several minutes
+for the first build. It does not use or modify a sibling WasmBolt checkout.
+Later frontend builds use the staged assets without rebuilding LLVM. Imported or
+incomplete assets do not pass production checks.
 
-See [RELEASE](RELEASE.md)
+The Lite builder discovers the installed extension. Install and link it before
+building Lite. Its output is `lite/_output`; the standalone output is
+`dist/standalone`. Both include their own copy of the compiler assets.
+
+## Development loop
+
+For JupyterLab, run these in separate terminals:
+
+```sh
+pixi run --as-is jlpm watch
+pixi run --as-is jupyter lab
+```
+
+Reload JupyterLab after changes. When editing worker code, also run
+`pixi run --as-is jlpm build:worker` and rebuild the extension before reloading.
+The heavyweight compiler build stays outside this loop.
+
+For standalone development:
+
+```sh
+pixi run --as-is jlpm dev:standalone
+```
+
+Vite serves the existing compiler directory without bundling its loader. Rebuild
+worker code explicitly when it changes. To test production assets, use
+`build:standalone` followed by `serve:standalone`.
+
+For the Correxit-style Lite testbed:
+
+```sh
+pixi run --as-is jlpm build:lite
+pixi run --as-is jlpm serve
+```
+
+## Checks
+
+```sh
+pixi run --as-is jlpm lint:check
+pixi run --as-is jlpm typecheck
+pixi run --as-is jlpm test
+pixi run --as-is jlpm playwright install
+pixi run --as-is jlpm test:browser
+```
+
+Build all three hosts before browser tests. Linux CI installs browser system
+dependencies with `jlpm playwright install --with-deps`. Browser tests start
+local servers, exercise non-root paths, and cover actual compiler behavior,
+asset failures, cancellation, recovery, persistence, and offline compilation.
+See [ui-tests/README.md](ui-tests/README.md) for the matrix.
+
+Main, worker, unit-test, and browser-test TypeScript configurations are
+separate. Worker code has worker globals rather than DOM globals. ESLint checks
+Jupyter import boundaries and pure domain imports. Vite rejects Jupyter modules
+in the standalone production build.
+
+## Packaging
+
+After building all hosts:
+
+```sh
+pixi run --as-is jlpm pack --out dist/fortitudo.tgz
+pixi run --as-is python -m build --no-isolation
+pixi run --as-is jlpm test:packages
+```
+
+The checks read the npm archive, wheel, source distribution, extension,
+standalone site, and Lite site. Every compiler file must match the generated
+manifest; the worker and manifest must match the current build too.
+
+Package creation is local and does not publish anything. Do not invoke release
+automation, version changes, commits, or tagging without a separate user
+request. Keep `package.json` as the version source.

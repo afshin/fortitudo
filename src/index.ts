@@ -1,32 +1,18 @@
-import {
-  JupyterFrontEnd,
-  JupyterFrontEndPlugin
-} from '@jupyterlab/application';
-
-import { ISettingRegistry } from '@jupyterlab/settingregistry';
-
-/**
- * Initialization data for the fortitudo extension.
- */
-const plugin: JupyterFrontEndPlugin<void> = {
-  id: 'fortitudo:plugin',
-  description: 'A JupyterLab extension.',
-  autoStart: true,
-  optional: [ISettingRegistry],
-  activate: (app: JupyterFrontEnd, settingRegistry: ISettingRegistry | null) => {
-    console.log('JupyterLab extension fortitudo is activated!');
-
-    if (settingRegistry) {
-      settingRegistry
-        .load(plugin.id)
-        .then(settings => {
-          console.log('fortitudo settings loaded:', settings.composite);
-        })
-        .catch(reason => {
-          console.error('Failed to load settings for fortitudo.', reason);
-        });
-    }
-  }
-};
-
-export default plugin;
+export { CommandIDs, registerCommands } from './commands';
+export type { IContext } from './commands';
+export { createCompiler } from './compiler/client';
+export type {
+  ICompiler,
+  Info,
+  Options,
+  Request,
+  Result
+} from './compiler/types';
+export { initial, reduce, snapshot, stale } from './model';
+export type { Action, Area, Pane, Session, State } from './model';
+export { session } from './persistence';
+export type { IPersistence } from './persistence';
+export { createStore } from './state';
+export type { IStore } from './state';
+export { createWorkbench, Workbench } from './workbench';
+export type { IWorkbenchOptions } from './workbench';

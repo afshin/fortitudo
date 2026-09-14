@@ -1,70 +1,67 @@
 import js from '@eslint/js';
 import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
-import prettierRecommended from 'eslint-plugin-prettier/recommended';
-import globals from 'globals';
-import jupyterPlugin from '@jupyter/eslint-plugin';
+import prettier from 'eslint-plugin-prettier/recommended';
+import hooks from 'eslint-plugin-react-hooks';
+
+const domain = [
+  'src/model.ts',
+  'src/persistence.ts',
+  'src/compiler/types.ts',
+  'src/compiler/request.ts',
+  'src/compiler/diagnostics.ts',
+  'src/compiler/protocol.ts'
+];
 
 export default defineConfig([
-  {
-    ignores: [
-      'node_modules',
-      'dist',
-      'coverage',
-      '**/*.js',
-      '**/*.d.ts',
-      '.venv',
-      'tests',
-      '**/__tests__',
-      'ui-tests'
-    ]
-  },
+  { ignores: ['**/*.d.ts', '**/__tests__/**'] },
   js.configs.recommended,
   tseslint.configs.recommended,
   {
-    plugins: {
-      jupyter: jupyterPlugin
-    }
-  },
-  jupyterPlugin.configs.recommended,
-  {
-    files: ['**/*.ts', '**/*.tsx'],
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.es2015,
-        ...globals.node
-      },
-      parserOptions: {
-        project: 'tsconfig.json',
-        sourceType: 'module'
-      }
-    },
+    files: ['src/**/*.{ts,tsx}'],
+    plugins: { 'react-hooks': hooks },
     rules: {
+      ...hooks.configs.recommended.rules,
       '@typescript-eslint/naming-convention': [
         'error',
         {
           selector: 'interface',
           format: ['PascalCase'],
-          custom: {
-            regex: '^I[A-Z]',
-            match: true
-          }
+          custom: { regex: '^I[A-Z]', match: true }
         }
       ],
-      '@typescript-eslint/no-unused-vars': ['warn', { args: 'none' }],
-      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { args: 'none' }],
       '@typescript-eslint/no-namespace': 'off',
-      '@typescript-eslint/no-use-before-define': 'off',
-      '@typescript-eslint/quotes': [
-        'error',
-        'single',
-        { avoidEscape: true, allowTemplateLiterals: false }
+      '@typescript-eslint/consistent-type-imports': 'error',
+      'no-restricted-globals': [
+        'error', 'process', 'require', 'module', 'Buffer', '__dirname'
       ],
       curly: ['error', 'all'],
       eqeqeq: 'error',
-      'prefer-arrow-callback': 'error'
+      'max-len': ['error', {
+        code: 80, ignoreUrls: true, ignoreStrings: true,
+        ignoreTemplateLiterals: true
+      }]
     }
   },
-  prettierRecommended
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/jupyter/**'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: ['@jupyterlab/*'] }]
+    }
+  },
+  {
+    files: domain,
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: ['@jupyterlab/*', '@lumino/*', 'react', 'react-dom/*']
+      }],
+      'no-restricted-globals': ['error',
+        'window', 'document', 'navigator', 'localStorage', 'Worker',
+        'fetch', 'performance', 'process', 'require', 'Buffer'
+      ]
+    }
+  },
+  prettier
 ]);

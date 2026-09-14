@@ -16,6 +16,8 @@ const baseConfig = jestJupyterLab(__dirname);
 
 module.exports = {
   ...baseConfig,
+  roots: ['<rootDir>/src'],
+  modulePathIgnorePatterns: ['<rootDir>/.cache/', '<rootDir>/.pixi/'],
   automock: false,
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',

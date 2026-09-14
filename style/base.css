@@ -1,5 +1,224 @@
-/*
-    See the JupyterLab Developer Guide for useful CSS Patterns:
+.fortitudo-workbench {
+  --fortitudo-background: #fff;
+  --fortitudo-muted-background: #f4f5f7;
+  --fortitudo-foreground: #242c39;
+  --fortitudo-muted: #626b7a;
+  --fortitudo-border: #dce0e6;
+  --fortitudo-accent: #365bbb;
+  --fortitudo-code-font: ui-monospace, sfmono-regular, menlo, monospace;
 
-    https://jupyterlab.readthedocs.io/en/stable/developer/css.html
-*/
+  min-width: 360px;
+  min-height: 300px;
+  color: var(--fortitudo-foreground);
+  background: var(--fortitudo-background);
+  font:
+    13px / 1.5 system-ui,
+    sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  .fortitudo-workbench {
+    --fortitudo-background: #1d222b;
+    --fortitudo-muted-background: #262d38;
+    --fortitudo-foreground: #e3e8f0;
+    --fortitudo-muted: #acb6c7;
+    --fortitudo-border: #414b5b;
+    --fortitudo-accent: #91adff;
+
+    color-scheme: dark;
+  }
+}
+
+.fortitudo-header {
+  min-height: 112px;
+  max-height: 112px;
+  overflow: auto;
+}
+
+.fortitudo-controls {
+  border-bottom: 1px solid var(--fortitudo-border);
+}
+
+.fortitudo-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 16px 20px 12px;
+}
+
+.fortitudo-brand {
+  align-self: center;
+  margin-right: 12px;
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.5px;
+}
+
+.fortitudo-toolbar label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--fortitudo-muted);
+  font-size: 11px;
+}
+
+.fortitudo-workbench button,
+.fortitudo-workbench select {
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--fortitudo-border);
+  border-radius: 4px;
+  color: var(--fortitudo-foreground);
+  background: var(--fortitudo-background);
+  font: inherit;
+}
+
+.fortitudo-workbench button {
+  cursor: pointer;
+}
+
+.fortitudo-workbench button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.fortitudo-workbench button:hover:enabled {
+  background: var(--fortitudo-muted-background);
+}
+
+.fortitudo-workbench .fortitudo-primary {
+  border-color: var(--fortitudo-accent);
+  color: var(--fortitudo-accent);
+  font-weight: 650;
+}
+
+.fortitudo-workbench :focus-visible {
+  outline: 2px solid var(--fortitudo-accent);
+  outline-offset: 2px;
+}
+
+.fortitudo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.fortitudo-status,
+.fortitudo-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--fortitudo-muted);
+  font-size: 11px;
+}
+
+.fortitudo-status {
+  padding: 0 20px 12px;
+}
+
+.fortitudo-caption {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--fortitudo-border);
+}
+
+.fortitudo-view {
+  overflow: hidden;
+}
+
+.fortitudo-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--fortitudo-background);
+}
+
+.fortitudo-editor,
+.fortitudo-output,
+.fortitudo-diagnostic-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.fortitudo-output,
+.fortitudo-diagnostic-list pre {
+  margin: 0;
+  padding: 12px;
+  font: 13px / 1.6 var(--fortitudo-code-font);
+  tab-size: 4;
+}
+
+.fortitudo-diagnostic-list details {
+  padding: 4px 12px 12px;
+}
+
+.fortitudo-diagnostic-list summary {
+  cursor: pointer;
+  color: var(--fortitudo-muted);
+}
+
+.fortitudo-workbench .fortitudo-diagnostic {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+}
+
+.fortitudo-workbench .fortitudo-diagnostic:disabled {
+  opacity: 1;
+}
+
+.fortitudo-hint {
+  margin: 8px 12px;
+  color: var(--fortitudo-muted);
+  font-size: 12px;
+}
+
+.fortitudo-notice {
+  margin: 0;
+  padding: 8px 20px;
+  border-top: 1px solid var(--fortitudo-border);
+}
+
+.fortitudo-error {
+  color: #c04d47;
+}
+
+.fortitudo-workbench .lm-TabBar {
+  min-height: 30px;
+  background: var(--fortitudo-muted-background);
+}
+
+.fortitudo-workbench .lm-TabBar-tab {
+  padding: 5px 16px;
+  border-right: 1px solid var(--fortitudo-border);
+  border-bottom: 2px solid transparent;
+}
+
+.fortitudo-workbench .lm-TabBar-tab.lm-mod-current {
+  border-bottom-color: var(--fortitudo-accent);
+  background: var(--fortitudo-background);
+}
+
+.fortitudo-workbench .lm-DockPanel-handle {
+  background: var(--fortitudo-border);
+}
+
+.fortitudo-workbench .lm-DockPanel-overlay {
+  border: 2px solid var(--fortitudo-accent);
+  background: var(--fortitudo-muted-background);
+  opacity: 0.75;
+}
+
+.fortitudo-open {
+  margin: 24px;
+  padding: 8px 16px;
+  font:
+    14px system-ui,
+    sans-serif;
+}

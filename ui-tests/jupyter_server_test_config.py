@@ -1,12 +1,17 @@
-"""Server configuration for integration tests.
+from pathlib import Path
 
-!! Never use this configuration in production because it
-opens the server to the world and provide access to JupyterLab
-JavaScript objects through the global window variable.
-"""
-from jupyterlab.galata import configure_jupyter_server
+root = Path(__file__).resolve().parent.parent
+runtime = root / '.cache' / 'jupyter'
+contents = root / 'work' / 'jupyter'
+runtime.mkdir(parents=True, exist_ok=True)
+contents.mkdir(parents=True, exist_ok=True)
 
-configure_jupyter_server(c)
-
-# Uncomment to set server log level to debug level
-# c.ServerApp.log_level = "DEBUG"
+c = get_config()  # noqa: F821
+c.ServerApp.ip = '127.0.0.1'
+c.ServerApp.port = 8766
+c.ServerApp.port_retries = 0
+c.ServerApp.open_browser = False
+c.ServerApp.root_dir = str(contents)
+c.ServerApp.base_url = '/fortitudo/'
+c.ServerApp.runtime_dir = str(runtime)
+c.IdentityProvider.token = ''

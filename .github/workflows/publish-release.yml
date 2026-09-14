@@ -19,6 +19,10 @@ jobs:
     permissions:
       id-token: write
     steps:
+      - uses: prefix-dev/setup-pixi@v0.10.2
+        with:
+          pixi-version: v0.59.0
+          run-install: false
       - uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
 
       - uses: actions/create-github-app-token@v1

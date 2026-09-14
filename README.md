@@ -1,61 +1,84 @@
-# fortitudo
+# Fortitudo
 
-[![Github Actions Status](https://github.com/afshin/fortitudo/workflows/Build/badge.svg)](https://github.com/afshin/fortitudo/actions/workflows/build.yml)
+Fortitudo is a browser-only C/C++ compiler explorer for JupyterLab, JupyterLite,
+and a standalone Lumino application. All three hosts use the same workbench and
+compiler worker. No kernel or remote compiler is needed.
 
-A JupyterLab extension.
+Edit a function, choose a language, target, and optimization level, then select
+**Compile** or press **Ctrl/Cmd+Enter**. Inspect assembly and compiler messages;
+select a diagnostic to jump to its source location. Compilation runs in a
+worker, so editing remains available. **Cancel** terminates that worker; the
+next compile loads a fresh one.
 
-## Requirements
+The defaults are C++23, WebAssembly, and O2. C23 and O0–O3 are available. The
+packaged LLVM runtime reports WebAssembly, x86-64, and AArch64 backends. Native
+targets produce assembly with Clang built-in headers only; the packaged C/C++
+system headers are for WebAssembly.
 
-- JupyterLab >= 4.0.0
+Source, options, and docked pane layout are saved by the host. Jupyter also
+keeps a browser copy scoped to the current workspace, protecting recent edits
+while its workspace writes are deferred. Reopening restores editing state
+without compiling. Output is explicitly marked out of date when source or
+options change. Invalid saved state opens a usable default session with
+feedback.
 
-## Install
+## Running locally
 
-To install the extension, execute:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the complete Pixi setup and build
+sequence. The compiler is a separate heavyweight build; frontend builds require
+its generated assets and verify their hashes.
 
-```bash
-pip install fortitudo
+For an already built checkout:
+
+```sh
+pixi run --as-is jupyter lab
+pixi run --as-is jlpm serve
+pixi run --as-is jlpm serve:standalone
 ```
 
-## Uninstall
+In JupyterLab or JupyterLite, select **Open Fortitudo** in the launcher or
+command palette. The Lite testbed is served on port 8080; the standalone preview
+prints its local address. These commands run in separate terminals.
 
-To remove the extension, execute:
+Built standalone and Lite directories can be served below a URL prefix. Keep
+each site's `compiler` assets at their generated relative location. Serve `.js`
+as JavaScript, `.wasm` as `application/wasm`, and `.data` as
+`application/octet-stream`. Compilation works offline after initialization;
+offline page reload is a separate feature.
 
-```bash
-pip uninstall fortitudo
-```
+## Architecture
 
-## Contributing
+- Pure model, request construction, and diagnostic parsing.
+- One instance-owned store outside React.
+- Lumino commands orchestrate semantic changes and compiler effects.
+- Functional React views, with explicit store and CodeMirror bridges.
+- A shared Lumino workbench owns layout, workers, and view lifecycles.
+- Thin Jupyter and standalone adapters supply shell and persistence.
 
-If you would like to contribute to this extension, please refer to the [Contributing Guide](CONTRIBUTING.md).
+The shared package entry exports these contracts. Only `src/jupyter/` imports
+JupyterLab packages; the plugin retains `fortitudo:plugin`.
 
-## AI Coding Assistant Support
+## Runtime and limits
 
-This project includes an `AGENTS.md` file with coding standards and best practices for JupyterLab extension development. The file follows the [AGENTS.md standard](https://agents.md) for cross-tool compatibility.
+The runtime is reproduced from WasmBolt with LLVM 23.1.0 and Emscripten 4.0.9.
+[runtime/README.md](runtime/README.md) records its origin, pins, licenses, and
+build details. Generated `compiler/manifest.json` records asset sizes and
+SHA-256 hashes. Browser test attachments record timings and Wasm memory
+observations.
 
-### Compatible AI Tools
+The current compiler is large and reserves 256 MiB of initial Wasm memory, with
+memory growth enabled and a 32 MiB stack. Browser memory limits still apply.
+Cancellation releases the worker; a later compile must initialize another.
+Initialization and runtime failures offer a retry path. Ordinary compiler errors
+retain diagnostics and raw output.
 
-`AGENTS.md` works with AI coding assistants that support the standard, including Cursor, GitHub Copilot, Windsurf, Aider, and others. For a current list of compatible tools, see [the AGENTS.md standard](https://agents.md).
+This implementation produces assembly. IR/AST views, MLIR tools, graphs,
+execution, a terminal, sharing, arbitrary flags, automatic compilation, and
+automatic timeouts are deferred. The optional upstream MLIR driver remains
+packaged to preserve the runtime build, but is not downloaded eagerly.
 
-Other conventions you might encounter:
+## License
 
-- `.cursorrules` - Cursor's YAML/JSON format (Cursor also supports AGENTS.md natively)
-- `CONVENTIONS.md` / `CONTRIBUTING.md` - For CodeConventions.ai and GitHub bots
-- Project-specific rules in JetBrains AI Assistant settings
-
-All tool-specific files should be symlinks to `AGENTS.md` as the single source of truth.
-
-### What's Included
-
-The `AGENTS.md` file provides guidance on:
-
-- Code quality rules and file-scoped validation commands
-- Naming conventions for packages, plugins, and files
-- Coding standards (TypeScript)
-- Development workflow and debugging
-- Common pitfalls and how to avoid them
-
-### Customization
-
-You can edit `AGENTS.md` to add project-specific conventions or adjust guidelines to match your team's practices. The file uses plain Markdown with Do/Don't patterns and references to actual project files.
-
-**Note**: `AGENTS.md` is living documentation. Update it when you change conventions, add dependencies, or discover new patterns. Include `AGENTS.md` updates in commits that modify workflows or coding standards.
+Fortitudo is BSD-3-Clause licensed. The compiler incorporates WasmBolt and other
+separately licensed software. Required notices are included in
+`runtime/licenses/` and copied into each distribution.

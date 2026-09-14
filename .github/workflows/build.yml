@@ -6,150 +6,92 @@ on:
   pull_request:
     branches: '*'
 
+permissions:
+  contents: read
+
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Base Setup
-      uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
-
-    - name: Install dependencies
-      run: python -m pip install -U "jupyterlab>=4.0.0,<5"
-
-    - name: Lint the extension
-      run: |
-        set -eux
-        jlpm
-        jlpm run lint:check
-
-    - name: Test the extension
-      run: |
-        set -eux
-        jlpm run test
-
-    - name: Build the extension
-      run: |
-        set -eux
-        python -m pip install .[test]
-
-        jupyter labextension list
-        jupyter labextension list 2>&1 | grep -ie "fortitudo.*OK"
-        python -m jupyterlab.browser_check
-
-    - name: Package the extension
-      run: |
-        set -eux
-
-        pip install build
-        python -m build
-        pip uninstall -y "fortitudo" jupyterlab
-
-    - name: Upload extension packages
-      uses: actions/upload-artifact@v4
-      with:
-        name: extension-artifacts
-        path: dist/fortitudo*
-        if-no-files-found: error
-
-  test_isolated:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Install Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-        architecture: 'x64'
-    - uses: actions/download-artifact@v4
-      with:
-        name: extension-artifacts
-    - name: Install and Test
-      run: |
-        set -eux
-        # Remove NodeJS, twice to take care of system and locally installed node versions.
-        sudo rm -rf $(which node)
-        sudo rm -rf $(which node)
-
-        pip install "jupyterlab>=4.0.0,<5" fortitudo*.whl
-
-
-        jupyter labextension list
-        jupyter labextension list 2>&1 | grep -ie "fortitudo.*OK"
-        python -m jupyterlab.browser_check --no-browser-test
-
-  integration-tests:
-    name: Integration tests
-    needs: build
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
     env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/pw-browsers
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Base Setup
-      uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
-
-    - name: Download extension package
-      uses: actions/download-artifact@v4
-      with:
-        name: extension-artifacts
-
-    - name: Install the extension
-      run: |
-        set -eux
-        python -m pip install "jupyterlab>=4.0.0,<5" fortitudo*.whl
-
-    - name: Install dependencies
-      working-directory: ui-tests
-      env:
-        YARN_ENABLE_IMMUTABLE_INSTALLS: 0
-        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-      run: jlpm install
-
-    - name: Set up browser cache
-      uses: actions/cache@v4
-      with:
-        path: |
-          ${{ github.workspace }}/pw-browsers
-        key: ${{ runner.os }}-${{ hashFiles('ui-tests/yarn.lock') }}
-
-    - name: Install browser
-      run: |
-        set -eux
-        jlpm playwright install chromium --only-shell
-      working-directory: ui-tests
-
-    - name: Execute integration tests
-      working-directory: ui-tests
-      run: |
-        jlpm playwright test
-
-    - name: Upload Playwright Test report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: fortitudo-playwright-tests
-        path: |
-          ui-tests/test-results
-          ui-tests/playwright-report
-
-  check_links:
-    name: Check Links
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/browsers
+      JUPYTER_CONFIG_DIR: ${{ github.workspace }}/work/jupyter-config
     steps:
       - uses: actions/checkout@v4
-      - uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
-      - uses: jupyterlab/maintainer-tools/.github/actions/check-links@v1
+      - uses: prefix-dev/setup-pixi@v0.10.2
+        with:
+          pixi-version: v0.59.0
+          cache: true
+      - name: Install JavaScript dependencies
+        run: pixi run --as-is jlpm install --immutable
+      - name: Restore compiler assets
+        id: compiler
+        uses: actions/cache@v4
+        with:
+          path: compiler
+          key: >-
+            compiler-linux-${{ hashFiles(
+            'runtime/src/**', 'runtime/CMakeLists.txt', 'runtime/locks/**',
+            'runtime/sources.json', 'runtime/licenses/**',
+            'scripts/compiler.mjs') }}
+      - name: Reproduce compiler
+        if: steps.compiler.outputs.cache-hit != 'true'
+        run: pixi run --as-is jlpm build:compiler
+      - name: Check source and unit tests
+        run: |
+          pixi run --as-is jlpm lint:check
+          pixi run --as-is jlpm typecheck
+          pixi run --as-is jlpm test
+      - name: Build all hosts
+        run: |
+          pixi run --as-is jlpm build:prod
+          pixi run --as-is python -m pip install \
+            --no-build-isolation --no-deps -e .
+          pixi run --as-is jupyter-builder develop . --overwrite
+          pixi run --as-is jlpm build:standalone
+          pixi run --as-is node scripts/lite.mjs
+      - name: Build and verify distributions
+        run: |
+          pixi run --as-is jlpm pack --out dist/fortitudo.tgz
+          pixi run --as-is python -m build --no-isolation
+          pixi run --as-is jlpm test:packages
+      - name: Install browsers
+        run: pixi run --as-is jlpm playwright install --with-deps
+      - name: Test real browser workflows
+        run: pixi run --as-is jlpm test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-results
+          path: |
+            playwright-report
+            test-results
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distributions
+          path: |
+            dist/fortitudo*
+            dist/standalone
+            lite/_output
+            compiler/manifest.json
+          if-no-files-found: error
+
+  wheel:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: distributions
+      - name: Verify installation without a frontend build
+        run: |
+          python -m pip install 'jupyterlab>=4.6,<5' dist/fortitudo*.whl
+          jupyter labextension list
+          python -m jupyterlab.browser_check --no-browser-test
