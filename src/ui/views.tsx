@@ -5,7 +5,6 @@ import {
   isTarget,
   labels,
   languages,
-  sourceName,
   targets
 } from '../compiler/types';
 import type { Diagnostic, Options } from '../compiler/types';
@@ -20,7 +19,7 @@ export interface IControlsProps {
   onLayout(): void;
   onRun(): void;
   onCompare(): void;
-  onShare(): void;
+  onShare?(): void;
   onExample(): void;
 }
 
@@ -142,7 +141,7 @@ export function Controls(props: IControlsProps): React.ReactElement {
             Run
           </button>
           <button onClick={props.onCompare}>Compare</button>
-          <button onClick={props.onShare}>Share</button>
+          {props.onShare && <button onClick={props.onShare}>Share</button>}
           <button onClick={props.onExample}>Reset example</button>
           <button onClick={props.onLayout} title="Restore default pane layout">
             Reset layout
@@ -193,10 +192,6 @@ export function Source({
 }): React.ReactElement {
   return (
     <section className="fortitudo-pane" aria-label="Source pane">
-      <div className="fortitudo-caption">
-        <span>{sourceName(state.options.language)}</span>
-        <span>Edit, then compile</span>
-      </div>
       {children}
       {state.options.target !== 'wasm32-unknown-emscripten' && (
         <p className="fortitudo-hint">
@@ -222,16 +217,9 @@ export function Diagnostics({
       className="fortitudo-pane fortitudo-diagnostics"
       aria-label="Diagnostics pane"
     >
-      <div className="fortitudo-caption">
-        <span>Diagnostics {stale(state) ? '(out of date)' : ''}</span>
-        <span>
-          {state.active
-            ? status(state)
-            : result
-              ? `Exit status ${result.exitCode}`
-              : 'Ready when you are'}
-        </span>
-      </div>
+      {stale(state) && (
+        <p className="fortitudo-hint">Out of date — compile to update</p>
+      )}
       <div className="fortitudo-diagnostic-list">
         {state.status === 'loading' && (
           <div className="fortitudo-loading">

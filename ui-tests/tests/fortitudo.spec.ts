@@ -357,7 +357,7 @@ for (const [host, url] of Object.entries(hosts)) {
     await page.getByRole('button', { name: 'Reset layout' }).click();
     await expect.poll(width).toBeGreaterThan(original - 3);
     await expect.poll(width).toBeLessThan(original + 3);
-    await expect(workbench.getByRole('tablist')).toHaveCount(4);
+    await expect(workbench.getByRole('tablist')).toHaveCount(3);
     await page.setViewportSize({ width: 650, height: 720 });
     await expect(
       page.getByRole('button', { name: 'Compile', exact: true })
@@ -407,7 +407,7 @@ test('previously docked tab groups restore and save their selection', async ({
   await expect(page.getByLabel('Diagnostics pane')).toBeVisible();
   await expect(page.getByLabel('Assembly output')).toBeHidden();
   await page.getByRole('button', { name: 'Reset layout' }).click();
-  await expect(workbench.getByRole('tablist')).toHaveCount(4);
+  await expect(workbench.getByRole('tablist')).toHaveCount(3);
   await expect(page.getByLabel('Assembly output')).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Source code' })).toHaveText(
     'int grouped() { return 12; }'

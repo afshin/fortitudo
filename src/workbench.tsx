@@ -190,6 +190,7 @@ export class Workbench extends BoxPanel {
         commands={this.options.commands}
         pane={pane}
         output={output}
+        canShare={!!this.options.sharing}
         onSize={resize}
       />
     ));

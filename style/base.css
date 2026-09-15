@@ -133,16 +133,12 @@
   margin-left: auto;
 }
 
-.fortitudo-status,
-.fortitudo-caption {
+.fortitudo-status {
   display: flex;
   justify-content: space-between;
   gap: 12px;
   color: var(--fortitudo-muted);
   font-size: 11px;
-}
-
-.fortitudo-status {
   flex-wrap: wrap;
   padding: 0 20px 12px;
 }
@@ -181,12 +177,6 @@
   .fortitudo-spinner {
     animation: none;
   }
-}
-
-.fortitudo-caption {
-  flex: 0 0 auto;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--fortitudo-border);
 }
 
 .fortitudo-view {
@@ -271,14 +261,17 @@
 }
 
 .fortitudo-workbench .lm-TabBar {
-  min-height: 30px;
+  min-height: 32px;
+  align-items: flex-start;
   background: var(--fortitudo-muted-background);
 }
 
 .fortitudo-workbench .lm-TabBar-tab {
+  height: 32px;
   padding: 5px 16px;
   border-right: 1px solid var(--fortitudo-border);
   border-bottom: 2px solid transparent;
+  line-height: 20px;
 }
 
 .fortitudo-workbench .lm-TabBar-tab.lm-mod-current {
@@ -368,7 +361,9 @@
 }
 
 .fortitudo-workbench .fortitudo-outputs .lm-TabBar {
-  overflow-x: auto;
+  /* Reserve room for a native scrollbar without clipping the tab labels. */
+  min-height: 48px;
+  overflow: auto hidden;
 }
 
 .fortitudo-workbench .fortitudo-outputs .lm-TabBar-tab {

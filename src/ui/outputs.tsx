@@ -49,18 +49,9 @@ export function Output({
       className="fortitudo-pane"
       aria-label={`${outputLabels[kind]} pane`}
     >
-      <div className="fortitudo-caption">
-        <span>
-          {stale(state)
-            ? 'Out of date — compile to update'
-            : outputLabels[kind]}
-        </span>
-        <span>
-          {result
-            ? `${Math.round(result.duration)} ms`
-            : 'No entry point required'}
-        </span>
-      </div>
+      {stale(state) && (
+        <p className="fortitudo-hint">Out of date — compile to update</p>
+      )}
       {kind === 'graphs' && paths.length > 0 && (
         <label className="fortitudo-file-picker">
           Function graph

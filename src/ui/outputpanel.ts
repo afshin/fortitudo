@@ -1,4 +1,5 @@
 import type { CommandRegistry } from '@lumino/commands';
+import type { Message } from '@lumino/messaging';
 import { TabPanel } from '@lumino/widgets';
 import type { Widget } from '@lumino/widgets';
 
@@ -18,10 +19,15 @@ export class OutputPanel extends TabPanel {
   ) {
     super({ tabsMovable: false });
     this.addClass('fortitudo-outputs');
+    this.node.setAttribute(
+      'aria-label',
+      group === 'primary' ? 'Outputs' : 'Comparison outputs'
+    );
     const kinds = Object.keys(outputLabels).filter(isOutputKind);
     for (const kind of kinds) {
       const widget = create(kind);
       widget.title.label = kind === 'ir' ? 'LLVM IR' : outputLabels[kind];
+      widget.title.caption = outputLabels[kind];
       this.addWidget(widget);
     }
     this.currentIndex = kinds.indexOf(store.state.outputs[group]);
@@ -29,6 +35,7 @@ export class OutputPanel extends TabPanel {
       this.currentIndex = kinds.indexOf(store.state.outputs[group]);
     });
     this.currentChanged.connect(() => {
+      this.update();
       const output = kinds[this.currentIndex];
       if (output && store.state.outputs[group] !== output) {
         void commands
@@ -46,5 +53,34 @@ export class OutputPanel extends TabPanel {
       super.dispose();
     }
   }
+
+  protected onAfterAttach(message: Message): void {
+    super.onAfterAttach(message);
+    this.update();
+  }
+
+  protected onResize(message: Widget.ResizeMessage): void {
+    super.onResize(message);
+    this.update();
+  }
+
+  protected onUpdateRequest(): void {
+    const tab = this.tabBar.contentNode.children[this.currentIndex];
+    if (!tab || !this.isVisible) {
+      return;
+    }
+    // Scroll only this tab strip; comparison changes must not move the host.
+    const bar = this.tabBar.node;
+    const bounds = bar.getBoundingClientRect();
+    const selected = tab.getBoundingClientRect();
+    const left = bounds.left + bar.clientLeft;
+    const right = left + bar.clientWidth;
+    if (selected.left < left) {
+      bar.scrollLeft -= Math.ceil(left - selected.left);
+    } else if (selected.right > right) {
+      bar.scrollLeft += Math.ceil(selected.right - right);
+    }
+  }
+
   private readonly unsubscribe: () => void;
 }

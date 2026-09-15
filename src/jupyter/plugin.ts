@@ -1,4 +1,4 @@
-import { ILayoutRestorer, IRouter } from '@jupyterlab/application';
+import { ILayoutRestorer } from '@jupyterlab/application';
 import type { JupyterFrontEndPlugin } from '@jupyterlab/application';
 import { ICommandPalette, WidgetTracker } from '@jupyterlab/apputils';
 import { PageConfig } from '@jupyterlab/coreutils';
@@ -8,7 +8,6 @@ import { IStateDB } from '@jupyterlab/statedb';
 
 import { initial, snapshot } from '../model';
 import { session } from '../persistence';
-import { createSharing } from '../share';
 import { createWorkbench } from '../workbench';
 import type { Workbench } from '../workbench';
 import { createPersistence } from './persistence';
@@ -21,29 +20,20 @@ const plugin: JupyterFrontEndPlugin<void> = {
   description: 'A browser-only C/C++ and IR compiler explorer.',
   autoStart: true,
   requires: [IStateDB],
-  optional: [
-    ICommandPalette,
-    ILauncher,
-    ISettingRegistry,
-    ILayoutRestorer,
-    IRouter
-  ],
+  optional: [ICommandPalette, ILauncher, ISettingRegistry, ILayoutRestorer],
   activate: (
     app,
     state: IStateDB,
     palette: ICommandPalette | null,
     launcher: ILauncher | null,
     settings: ISettingRegistry | null,
-    restorer: ILayoutRestorer | null,
-    router: IRouter | null
+    restorer: ILayoutRestorer | null
   ) => {
     // Tracker restoration removes entries that are not widget records.
     // Keep editing state in its own namespace.
     const tracker = new WidgetTracker<Workbench>({
       namespace: 'fortitudo-workbench'
     });
-    const url = new URL(location.href);
-    const sharing = createSharing(url);
     let current: Workbench | null = null;
     let opening: Promise<void> | null = null;
     let saved = Promise.resolve();
@@ -93,7 +83,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
           }
           const workbench = await createWorkbench({
             commands: app.commands,
-            sharing,
             workerUrl: new URL('../../compiler/worker.js', import.meta.url),
             persistence,
             defaults
@@ -115,23 +104,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
     });
     palette?.addItem({ command: openId, category: 'Fortitudo' });
     launcher?.add({ command: openId, category: 'Other', rank: 1 });
-    if (url.searchParams.has('fortitudo')) {
-      const openShared = () => {
-        router?.routed.disconnect(openShared);
-        void app.restored
-          .then(() => app.commands.execute(openId))
-          .catch(error => {
-            console.error('Fortitudo share link could not be opened.', error);
-          });
-      };
-      // Workspace routing can replace the main area after shell restoration.
-      // Open shared inputs only after that initial route has completed.
-      if (router) {
-        router.routed.connect(openShared);
-      } else {
-        openShared();
-      }
-    }
     if (restorer) {
       void restorer
         .restore(tracker, {

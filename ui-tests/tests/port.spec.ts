@@ -1,9 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import { initial, snapshot } from '../../src/model';
-import { encodeShare } from '../../src/sharing';
-
 const standalone = 'http://127.0.0.1:8765/dist/standalone/';
 
 async function edit(page: Page, source: string) {
@@ -89,7 +86,7 @@ test('one compile fills outputs and comparison uses them @compat', async ({
   await page.screenshot({ path: testInfo.outputPath('comparison.png') });
   await page.reload();
   await expect(
-    page.getByRole('tabpanel', { name: 'Comparison', exact: true })
+    page.getByRole('region', { name: 'Comparison outputs', exact: true })
   ).toBeVisible();
   await expect(
     page.getByLabel('LLVM IR — before passes output').first()
@@ -210,45 +207,3 @@ test('share links restore inputs without loading a compiler', async ({
   expect(loaded).toBe(false);
   await shared.close();
 });
-
-for (const [host, address] of [
-  ['JupyterLab', 'http://127.0.0.1:8766/fortitudo/lab'],
-  ['JupyterLite', 'http://127.0.0.1:8765/dist/site/lite/lab/index.html']
-]) {
-  test(`${host}: share links open without compilation`, async ({ page }) => {
-    const source = 'int shared(int x) { return x + 23; }';
-    const session = snapshot(initial());
-    const url = new URL(address);
-    url.searchParams.set('fortitudo', encodeShare({ ...session, source }));
-    let compilerLoaded = false;
-    page.on('request', request => {
-      if (request.url().endsWith('Compiler.wasm')) {
-        compilerLoaded = true;
-      }
-    });
-    await page.goto(url.href);
-    await expect(
-      page.getByRole('textbox', { name: 'Source code' })
-    ).toContainText(source);
-    await expect(
-      page.getByRole('button', { name: 'Compile', exact: true })
-    ).toBeEnabled();
-    expect(compilerLoaded).toBe(false);
-    const edited = source + '\n// edited after opening the share';
-    await page.getByRole('textbox', { name: 'Source code' }).fill(edited);
-    await page
-      .getByRole('tab', { name: 'Fortitudo', exact: true })
-      .locator('.lm-TabBar-tabCloseIcon')
-      .click();
-    await expect(page.locator('#fortitudo-workbench')).toHaveCount(0);
-    await page.getByRole('menuitem', { name: 'View', exact: true }).click();
-    await page.getByRole('menuitem', { name: /Command Palette/ }).click();
-    const palette = page.locator('.lm-CommandPalette-input');
-    await palette.fill('Open Fortitudo');
-    await palette.press('Enter');
-    await expect(
-      page.getByRole('textbox', { name: 'Source code' }).locator('.cm-line')
-    ).toHaveText(edited.split('\n'));
-    expect(compilerLoaded).toBe(false);
-  });
-}

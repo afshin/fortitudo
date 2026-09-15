@@ -58,7 +58,7 @@ it('resets containers while retaining views and saving once', () => {
     {
       type: 'tab-area',
       widgets: ['outputs', 'source', 'diagnostics'],
-      currentIndex: 0
+      currentIndex: 1
     },
     () => changes.push(panel.save())
   );
@@ -67,6 +67,7 @@ it('resets containers while retaining views and saving once', () => {
   expect(previous.isDisposed).toBe(true);
   expect(changes).toEqual([panel.save()]);
   expect(panel.save().type).toBe('split-area');
+  expect(panes.outputs.isHidden).toBe(false);
   for (const pane of Object.values(panes)) {
     expect(pane.isDisposed).toBe(false);
     if (pane !== panes.comparison) {
@@ -110,4 +111,26 @@ it('preserves pane proportions while the host restores its size', () => {
   } finally {
     panel.dispose();
   }
+});
+
+it('restores and resets a sole output group without disposing its views', () => {
+  const panes = views();
+  const area: Area = {
+    type: 'tab-area',
+    widgets: ['outputs'],
+    currentIndex: 0
+  };
+  const panel = new PanePanel(panes, area, () => {});
+  expect(panel.widgets[0]).toBe(panes.outputs);
+  expect(panel.save()).toEqual(area);
+  panel.compare();
+  expect(panel.contains(panes.outputs)).toBe(true);
+  expect(panel.contains(panes.comparison)).toBe(true);
+  panel.compare();
+  expect(panel.save()).toEqual(area);
+  panel.reset();
+  expect(panes.outputs.isDisposed).toBe(false);
+  expect(panel.contains(panes.outputs)).toBe(true);
+  panel.dispose();
+  expect(Object.values(panes).every(pane => pane.isDisposed)).toBe(true);
 });

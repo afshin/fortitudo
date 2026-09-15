@@ -16,6 +16,7 @@ export interface IBridgeProps {
   commands: CommandRegistry;
   pane: Pane | 'controls';
   output?: OutputKind;
+  canShare?: boolean;
   onSize(height: number): void;
 }
 
@@ -71,7 +72,11 @@ export function Bridge(props: IBridgeProps): React.ReactElement {
     case 'controls':
       return (
         <div ref={node}>
-          <Controls state={state} {...callbacks} />
+          <Controls
+            state={state}
+            {...callbacks}
+            onShare={props.canShare ? callbacks.onShare : undefined}
+          />
         </div>
       );
     case 'source':

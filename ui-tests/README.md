@@ -33,8 +33,9 @@ include request logs and Jupyter startup details, run:
 FORTITUDO_TEST_SERVER_LOGS=1 pixi run --as-is jlpm test:browser
 ```
 
-Chromium exercises all hosts and failure modes. Firefox and WebKit run the
-standalone workflow, artifact comparison, scalar execution, LLVM/MLIR tools,
+Chromium exercises all hosts and failure modes. All browsers check tab layout,
+comparison sizing, and host-specific sharing controls. Firefox and WebKit run
+the standalone workflow, artifact comparison, scalar execution, LLVM/MLIR tools,
 real compiler matrix, and both notebook kernels. Results include per-stage
 timings, artifact sizes, compiler measurements, screenshots, and traces for
 failures. Binary files are summarized rather than serialized into measurement

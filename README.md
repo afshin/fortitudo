@@ -91,9 +91,10 @@ latest snapshot. **Files** provides previews and downloads; select a manually
 linked `.wasm` file and choose **Use module** to run it. Keep files under
 `/workspace` to include them in snapshots and the runner's dependencies.
 
-**Share** copies a versioned URL containing source and semantic compiler
-options. Opening it restores inputs without compiling or running. Binaries,
-logs, layout, and execution state are excluded.
+In standalone, **Share** copies a versioned URL containing source and semantic
+compiler options. Opening it restores inputs without compiling or running.
+Binaries, logs, layout, and execution state are excluded. Sharing is unavailable
+in JupyterLab and JupyterLite, where sessions belong to the host workspace.
 
 Source, pipeline options, output selections, comparison layout, pane sizes, and
 execution timeout are saved by the host. Jupyter also keeps a browser copy

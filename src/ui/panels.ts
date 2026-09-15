@@ -75,7 +75,9 @@ export class PanePanel extends BoxPanel {
     for (const pane of Object.values(this.panes)) {
       pane.parent = null;
     }
-    this.section.widget.dispose();
+    if (!Object.values(this.panes).includes(this.section.widget)) {
+      this.section.widget.dispose();
+    }
     this.section = this.create(area);
     this.addWidget(this.section.widget);
     this.restoring = false;
@@ -89,6 +91,28 @@ export class PanePanel extends BoxPanel {
 
   private create(area: Area): ISection {
     if (area.type === 'tab-area') {
+      const pane = area.widgets[0];
+      // Output groups already own their tabs. Preserve the saved area without
+      // adding another tab bar around a group that occupies its own split.
+      if (
+        area.widgets.length === 1 &&
+        (pane === 'outputs' || pane === 'comparison')
+      ) {
+        const widget = this.panes[pane];
+        widget.node.setAttribute('role', 'region');
+        widget.show();
+        return {
+          widget,
+          save: () => area,
+          activate: target => {
+            if (target !== pane) {
+              return false;
+            }
+            widget.activate();
+            return true;
+          }
+        };
+      }
       const panel = new TabPanel({ tabsMovable: false });
       for (const pane of area.widgets) {
         panel.addWidget(this.panes[pane]);

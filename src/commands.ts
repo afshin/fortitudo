@@ -390,6 +390,7 @@ export function registerCommands(
   });
   add(CommandIDs.share, {
     label: 'Copy share link',
+    isVisible: () => !!context.sharing,
     isEnabled: () => !!context.sharing,
     execute: async () => {
       await context.sharing?.copy(snapshot(store.state));
