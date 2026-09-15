@@ -143,6 +143,9 @@ for (const [host, url] of Object.entries(hosts)) {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     await open(page, url);
+    // Jupyter may restore another output selection or comparison layout.
+    await page.getByRole('button', { name: 'Reset layout' }).click();
+    await page.getByRole('tab', { name: 'Assembly', exact: true }).click();
     await page.getByLabel('Language', { exact: true }).selectOption('cpp');
     await page
       .getByLabel('Target', { exact: true })
