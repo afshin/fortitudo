@@ -1,9 +1,10 @@
-import { defaultKeymap } from '@codemirror/commands';
-import { openSearchPanel, search, searchKeymap } from '@codemirror/search';
+import { openSearchPanel } from '@codemirror/search';
 import { EditorState } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers } from '@codemirror/view';
+import { EditorView } from '@codemirror/view';
 import { useEffect, useRef } from 'react';
 import * as React from 'react';
+
+import { editorExtensions } from './codemirror';
 
 /** Own the read-only editor; artifact content remains in the store. */
 export function TextOutput({
@@ -23,21 +24,14 @@ export function TextOutput({
       parent: node.current,
       state: EditorState.create({
         extensions: [
+          editorExtensions,
           EditorState.readOnly.of(true),
           EditorView.editable.of(false),
-          lineNumbers(),
-          search({ top: true }),
-          keymap.of([...searchKeymap, ...defaultKeymap]),
-          EditorView.contentAttributes.of({ 'aria-label': label }),
-          EditorView.theme({
-            '&': { height: '100%', fontSize: '13px' },
-            '.cm-scroller': {
-              overflow: 'auto',
-              fontFamily: 'var(--fortitudo-code-font)'
-            },
-            '.cm-gutters': { background: 'var(--fortitudo-muted-background)' },
-            '.cm-content': { padding: '8px 0' },
-            '&.cm-focused': { outline: 'none' }
+          EditorView.contentAttributes.of({
+            'aria-label': label,
+            'aria-readonly': 'true',
+            role: 'textbox',
+            tabindex: '0'
           })
         ]
       })
@@ -63,6 +57,7 @@ export function TextOutput({
     <>
       <div className="fortitudo-find">
         <button
+          title="Find in output (Ctrl/Cmd+F)"
           onClick={() => {
             if (editor.current) {
               openSearchPanel(editor.current);

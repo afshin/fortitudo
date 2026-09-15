@@ -8,7 +8,7 @@ import { command } from './compiler/terminal';
 import { isOptions, isOutputKind, sourceName } from './compiler/types';
 import type { File, ICompiler, Progress } from './compiler/types';
 import { examples } from './examples';
-import { currentModule, snapshot } from './model';
+import { canRun, currentModule, hasComparison, snapshot } from './model';
 import type { Pane } from './model';
 import { session } from './persistence';
 import type { ISharing } from './share';
@@ -150,13 +150,16 @@ export function registerCommands(
   });
   add(CommandIDs.compare, {
     label: 'Compare outputs',
+    isToggled: () => hasComparison(store.state.layout),
     execute: () => {
-      store.dispatch({ type: 'output', group: 'primary', output: 'ir' });
-      store.dispatch({
-        type: 'output',
-        group: 'comparison',
-        output: 'optimized'
-      });
+      if (!hasComparison(store.state.layout)) {
+        store.dispatch({ type: 'output', group: 'primary', output: 'ir' });
+        store.dispatch({
+          type: 'output',
+          group: 'comparison',
+          output: 'optimized'
+        });
+      }
       context.compare();
     }
   });
@@ -302,23 +305,15 @@ export function registerCommands(
   });
   add(CommandIDs.run, {
     label: 'Run',
-    isEnabled: () => idle() && !store.state.execution.active && !startingRun,
+    isEnabled: () => !disposed && !startingRun && canRun(store.state),
     execute: async () => {
-      if (!idle() || store.state.execution.active || startingRun) {
+      if (disposed || startingRun || !canRun(store.state)) {
         return;
       }
       startingRun = true;
       let id: number | null = null;
       try {
         if (!currentModule(store.state)) {
-          if (
-            store.state.options.language === 'mlir' ||
-            store.state.options.target !== 'wasm32-unknown-emscripten'
-          ) {
-            throw new Error(
-              'Select WebAssembly to build an executable module.'
-            );
-          }
           await build(true);
         }
         if (disposed) {
@@ -426,6 +421,7 @@ export function registerCommands(
       CommandIDs.compile,
       CommandIDs.cancel,
       CommandIDs.initialize,
+      CommandIDs.compare,
       CommandIDs.run,
       CommandIDs.terminal
     ]) {

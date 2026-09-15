@@ -54,6 +54,9 @@ for (const [host, url] of Object.entries(hosts)) {
     }
     await expect(page.getByLabel('Source code')).toBeVisible();
     await page.getByRole('button', { name: 'Reset layout' }).click();
+    const source = page.getByRole('textbox', { name: 'Source code' });
+    const original = await source.locator('.cm-line').allTextContents();
+    await source.fill('int undo_after_layout() { return 42; }');
     await expect(page.getByRole('button', { name: 'Share' })).toHaveCount(
       host === 'standalone' ? 1 : 0
     );
@@ -70,7 +73,10 @@ for (const [host, url] of Object.entries(hosts)) {
         .locator('.lm-TabBar-tabLabel')
     ).toBeInViewport({ ratio: 1 });
     await expectUnclippedTabs(outputs);
-    await page.getByRole('button', { name: 'Compare' }).click();
+    const compare = page.getByRole('button', { name: 'Compare' });
+    await expect(compare).toHaveAttribute('aria-pressed', 'false');
+    await compare.click();
+    await expect(compare).toHaveAttribute('aria-pressed', 'true');
     const comparison = page.getByRole('region', {
       name: 'Comparison outputs',
       exact: true
@@ -88,8 +94,21 @@ for (const [host, url] of Object.entries(hosts)) {
     ).toBeInViewport({ ratio: 1 });
     await expectUnclippedTabs(comparison);
     await page.screenshot({ path: testInfo.outputPath('output-layout.png') });
+    const assembly = outputs.getByRole('tab', {
+      name: 'Assembly',
+      exact: true
+    });
+    await assembly.click();
+    await compare.click();
+    await expect(comparison).toHaveCount(0);
+    await expect(compare).toHaveAttribute('aria-pressed', 'false');
+    await expect(assembly).toHaveAttribute('aria-selected', 'true');
+    await compare.click();
     await page.getByRole('button', { name: 'Reset layout' }).click();
+    await expect(compare).toHaveAttribute('aria-pressed', 'false');
     await expect(comparison).toHaveCount(0);
     await expect(outputs).toBeVisible();
+    await source.press('ControlOrMeta+z');
+    await expect(source.locator('.cm-line')).toHaveText(original);
   });
 }

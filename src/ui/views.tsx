@@ -8,7 +8,7 @@ import {
   targets
 } from '../compiler/types';
 import type { Diagnostic, Options } from '../compiler/types';
-import { stale } from '../model';
+import { canRun, hasComparison, stale } from '../model';
 import type { State } from '../model';
 
 export interface IControlsProps {
@@ -26,6 +26,7 @@ export interface IControlsProps {
 export function Controls(props: IControlsProps): React.ReactElement {
   const { state, onOptions } = props;
   const busy = state.active !== null;
+  const comparing = hasComparison(state.layout);
   const downloads =
     state.progress?.phase === 'downloading' ? state.progress.downloads : null;
   const loaded = downloads?.reduce((sum, item) => sum + item.loaded, 0) ?? 0;
@@ -42,14 +43,12 @@ export function Controls(props: IControlsProps): React.ReactElement {
           <select
             aria-label="Language"
             value={state.options.language}
-            onChange={event =>
-              onOptions({
-                ...state.options,
-                language: isLanguage(event.target.value)
-                  ? event.target.value
-                  : state.options.language
-              })
-            }
+            onChange={event => {
+              const language = event.target.value;
+              if (isLanguage(language)) {
+                onOptions({ ...state.options, language });
+              }
+            }}
           >
             {Object.entries(languages).map(([value, label]) => (
               <option key={value} value={value}>
@@ -128,19 +127,16 @@ export function Controls(props: IControlsProps): React.ReactElement {
           <button onClick={props.onCancel} disabled={!busy}>
             Cancel
           </button>
-          <button
-            onClick={props.onRun}
-            disabled={
-              busy ||
-              state.execution.active !== null ||
-              (!state.execution.module &&
-                (state.options.language === 'mlir' ||
-                  state.options.target !== 'wasm32-unknown-emscripten'))
-            }
-          >
+          <button onClick={props.onRun} disabled={!canRun(state)}>
             Run
           </button>
-          <button onClick={props.onCompare}>Compare</button>
+          <button
+            onClick={props.onCompare}
+            aria-pressed={comparing}
+            title={comparing ? 'Close comparison' : 'Compare outputs'}
+          >
+            Compare
+          </button>
           {props.onShare && <button onClick={props.onShare}>Share</button>}
           <button onClick={props.onExample}>Reset example</button>
           <button onClick={props.onLayout} title="Restore default pane layout">

@@ -4,7 +4,7 @@ import * as React from 'react';
 import { isTimeout } from '../compiler/execution';
 import type { Options } from '../compiler/types';
 import type { State } from '../model';
-import { currentModule } from '../model';
+import { canRun, currentModule } from '../model';
 
 export function Pipelines({
   state,
@@ -199,7 +199,9 @@ export function Run({
           ))}
         <button
           onClick={onRun}
-          disabled={busy || !!state.active || fn?.code === null}
+          disabled={
+            !canRun(state) || (currentModule(state) && fn?.code === null)
+          }
         >
           Run function
         </button>
@@ -207,7 +209,7 @@ export function Run({
       </div>
       {execution.module !== null && !currentModule(state) && (
         <p className="fortitudo-hint">
-          Out of date — Run will build current source first.
+          Out of date — Run rebuilds source when WebAssembly is selected.
         </p>
       )}
       {!execution.module && (

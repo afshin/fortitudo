@@ -2,6 +2,7 @@ import { BoxPanel, SplitLayout, SplitPanel, TabPanel } from '@lumino/widgets';
 import type { Widget } from '@lumino/widgets';
 
 import type { Area, Pane } from '../model';
+import { hasComparison } from '../model';
 
 interface ISection {
   widget: Widget;
@@ -164,12 +165,6 @@ export class PanePanel extends BoxPanel {
 
   private section: ISection;
   private restoring = false;
-}
-
-function hasComparison(area: Area): boolean {
-  return area.type === 'tab-area'
-    ? area.widgets.includes('comparison')
-    : area.children.some(hasComparison);
 }
 
 function compare(area: Area): Area {

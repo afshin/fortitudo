@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 
-/** A small React bridge with a Lumino-owned lifecycle. */
+/** Keep the React root until disposal so layout changes retain view state. */
 export class ReactWidget extends Widget {
   constructor(private readonly render: () => ReactNode) {
     super();
@@ -13,7 +13,8 @@ export class ReactWidget extends Widget {
 
   dispose(): void {
     if (!this.isDisposed) {
-      this.unmount();
+      this.root?.unmount();
+      this.root = null;
       super.dispose();
     }
   }
@@ -21,11 +22,6 @@ export class ReactWidget extends Widget {
   protected onAfterAttach(message: Message): void {
     super.onAfterAttach(message);
     this.update();
-  }
-
-  protected onBeforeDetach(message: Message): void {
-    this.unmount();
-    super.onBeforeDetach(message);
   }
 
   protected onUpdateRequest(): void {
@@ -42,11 +38,6 @@ export class ReactWidget extends Widget {
     } else {
       this.node.focus();
     }
-  }
-
-  private unmount(): void {
-    this.root?.unmount();
-    this.root = null;
   }
 
   private root: Root | null = null;

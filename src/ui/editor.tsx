@@ -1,23 +1,15 @@
-import {
-  defaultKeymap,
-  history,
-  historyKeymap,
-  indentWithTab
-} from '@codemirror/commands';
+import { history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { cpp } from '@codemirror/lang-cpp';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { openSearchPanel } from '@codemirror/search';
 import { Compartment, EditorState } from '@codemirror/state';
-import {
-  EditorView,
-  drawSelection,
-  keymap,
-  lineNumbers
-} from '@codemirror/view';
+import { EditorView, drawSelection, keymap } from '@codemirror/view';
 import { tags } from '@lezer/highlight';
 import { useEffect, useRef } from 'react';
 import * as React from 'react';
 
 import type { IStore } from '../state';
+import { editorExtensions } from './codemirror';
 
 export interface IEditorProps {
   store: IStore;
@@ -27,6 +19,7 @@ export interface IEditorProps {
 /** Own editor effects here; source text remains in the application store. */
 export function Editor({ store, onChange }: IEditorProps): React.ReactElement {
   const node = useRef<HTMLDivElement>(null);
+  const editor = useRef<EditorView | null>(null);
   useEffect(() => {
     if (!node.current) {
       return;
@@ -41,8 +34,8 @@ export function Editor({ store, onChange }: IEditorProps): React.ReactElement {
       state: EditorState.create({
         doc: store.state.source,
         extensions: [
+          editorExtensions,
           dialect.of(extensions()),
-          lineNumbers(),
           history(),
           drawSelection(),
           syntaxHighlighting(
@@ -63,32 +56,20 @@ export function Editor({ store, onChange }: IEditorProps): React.ReactElement {
               }
             ])
           ),
-          keymap.of([
-            ...defaultKeymap.filter(binding => binding.key !== 'Mod-Enter'),
-            ...historyKeymap,
-            indentWithTab
-          ]),
-          EditorView.contentAttributes.of({ 'aria-label': 'Source code' }),
+          keymap.of([...historyKeymap, indentWithTab]),
+          EditorView.contentAttributes.of({
+            'aria-label': 'Source code',
+            'aria-description': 'Press Escape, then Tab to leave the editor.'
+          }),
           EditorView.updateListener.of(update => {
             if (update.docChanged && !updating) {
               onChange(update.state.doc.toString());
             }
-          }),
-          EditorView.theme({
-            '&': { height: '100%', fontSize: '13px' },
-            '.cm-scroller': {
-              overflow: 'auto',
-              fontFamily: 'var(--fortitudo-code-font)'
-            },
-            '.cm-content': { padding: '12px 0' },
-            '.cm-line': { padding: '0 12px' },
-            '.cm-gutters': { background: 'var(--fortitudo-muted-background)' },
-            '.cm-cursor': { borderLeftColor: 'var(--fortitudo-foreground)' },
-            '&.cm-focused': { outline: 'none' }
           })
         ]
       })
     });
+    editor.current = view;
     const unsubscribe = store.subscribe(() => {
       const state = store.state;
       if (state.options.language !== language) {
@@ -131,7 +112,24 @@ export function Editor({ store, onChange }: IEditorProps): React.ReactElement {
       observer.disconnect();
       unsubscribe();
       view.destroy();
+      editor.current = null;
     };
   }, [store, onChange]);
-  return <div className="fortitudo-editor" ref={node} />;
+  return (
+    <>
+      <div className="fortitudo-find">
+        <button
+          title="Find in source (Ctrl/Cmd+F)"
+          onClick={() => {
+            if (editor.current) {
+              openSearchPanel(editor.current);
+            }
+          }}
+        >
+          Find
+        </button>
+      </div>
+      <div className="fortitudo-editor" ref={node} />
+    </>
+  );
 }

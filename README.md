@@ -27,9 +27,15 @@ and generated files. A failed stage preserves successful independent outputs.
 Select a diagnostic to jump to its source location. **Compare** opens a second
 output group, initially comparing LLVM IR before and after passes. Both groups
 have independent selections and resizable widths. Text views provide line
-numbers, search, copy, and download. Graphs have function selection, zoom, fit,
-and DOT/SVG downloads. The Wasm inspector lists size, imports, exports, and
-function signatures without executing the module.
+numbers, search, copy, and download. Select **Compare** again to close the
+second group while keeping the primary selection. **Find** or **Ctrl/Cmd+F**
+searches the focused source or text output; **Ctrl/Cmd+Enter** compiles from
+either editor. In the source editor, **Escape**, then **Tab** moves focus out
+without inserting indentation. Graphs have function selection, zoom, fit, and
+DOT/SVG downloads. The Wasm inspector lists size, imports, exports, and function
+signatures without executing the module.
+
+Comparison and layout resets preserve the source editor's undo history.
 
 The status strip shows download progress in MB, then preparation and compilation
 activity. Diagnostics lists the individual compiler downloads and any loading

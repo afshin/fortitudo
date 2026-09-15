@@ -1,4 +1,4 @@
-import { initial, options, reduce, snapshot, stale } from '../model';
+import { canRun, initial, options, reduce, snapshot, stale } from '../model';
 import type { Result } from '../compiler/types';
 import { createStore } from '../state';
 import { session } from '../persistence';
@@ -16,6 +16,30 @@ const result: Result = {
   exitCode: 0,
   duration: 10
 };
+
+it('enables Run only when a current module can be reused or built', () => {
+  const state = initial();
+  expect(canRun(state)).toBe(true);
+  expect(canRun(reduce(state, { type: 'begin', id: 1 }))).toBe(false);
+  expect(canRun(reduce(state, { type: 'run-begin', id: 1 }))).toBe(false);
+  for (const options of [
+    { ...state.options, language: 'mlir' as const },
+    { ...state.options, target: 'x86_64-unknown-linux-gnu' as const }
+  ]) {
+    const changed = reduce(state, { type: 'options', options });
+    expect(canRun(changed)).toBe(false);
+    const path = '/workspace/manual.wasm';
+    const selected = {
+      ...changed,
+      execution: { ...changed.execution, module: path },
+      moduleRevisions: { [path]: changed.revision }
+    };
+    expect(canRun(selected)).toBe(true);
+    expect(canRun(reduce(selected, { type: 'source', source: 'edited' }))).toBe(
+      false
+    );
+  }
+});
 
 it('associates output with its original input', () => {
   const original = Object.freeze(initial());

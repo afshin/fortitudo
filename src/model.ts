@@ -380,6 +380,27 @@ export function currentModule(state: State): boolean {
   return path !== null && state.moduleRevisions[path] === state.revision;
 }
 
+/** Run can reuse a current module or build one from executable inputs. */
+export function canRun(state: State): boolean {
+  return (
+    state.active === null &&
+    state.execution.active === null &&
+    (currentModule(state) ||
+      (state.options.language !== 'mlir' &&
+        state.options.target === 'wasm32-unknown-emscripten'))
+  );
+}
+
+/** Comparison is part of the saved layout, including restored tab groups. */
+export function hasComparison(area: Area | null): boolean {
+  if (area === null) {
+    return false;
+  }
+  return area.type === 'tab-area'
+    ? area.widgets.includes('comparison')
+    : area.children.some(hasComparison);
+}
+
 function selectModule(state: State, path: string | null): State {
   const previous = state.execution;
   const execution: Execution = {

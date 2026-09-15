@@ -151,6 +151,21 @@ for (const [host, url] of Object.entries(hosts)) {
       .getByLabel('Target', { exact: true })
       .selectOption('wasm32-unknown-emscripten');
     await edit(page, 'int square(int x) { return x * x; }');
+    const source = page.getByRole('textbox', { name: 'Source code' });
+    const sourcePane = page.getByLabel('Source pane');
+    await sourcePane.getByRole('button', { name: 'Find' }).click();
+    const sourceSearch = sourcePane.getByPlaceholder('Find');
+    await sourceSearch.pressSequentially('square');
+    await sourceSearch.press('Enter');
+    await expect(sourcePane.locator('.cm-searchMatch-selected')).toHaveText(
+      'square'
+    );
+    await sourceSearch.press('Escape');
+    await expect(source).toBeFocused();
+    await source.press('Escape');
+    await source.press('Tab');
+    await expect(source).not.toBeFocused();
+    await expect(source).toHaveText('int square(int x) { return x * x; }');
     const started = Date.now();
     await compile(page);
     await expect(page.getByLabel('Assembly output')).toContainText('i32.mul');
@@ -168,6 +183,27 @@ for (const [host, url] of Object.entries(hosts)) {
       .getByRole('textbox', { name: 'Source code' })
       .press('ControlOrMeta+Enter');
     await expect(page.getByLabel('Assembly output')).toContainText('twice');
+    const assemblyPane = page.getByLabel('Assembly pane');
+    const assembly = page.getByRole('textbox', { name: 'Assembly output' });
+    await expect(assembly).toHaveAttribute('aria-readonly', 'true');
+    const text = await assembly.textContent();
+    await assemblyPane.getByRole('button', { name: 'Find' }).focus();
+    await page.keyboard.press('Tab');
+    await expect(assembly).toBeFocused();
+    await assembly.press('ControlOrMeta+f');
+    const outputSearch = assemblyPane.getByPlaceholder('Find');
+    await outputSearch.pressSequentially('twice');
+    await outputSearch.press('Enter');
+    await expect(assemblyPane.locator('.cm-searchMatch-selected')).toHaveText(
+      'twice'
+    );
+    await outputSearch.press('Escape');
+    await expect(assembly).toBeFocused();
+    await assembly.press('Backspace');
+    await expect(assembly).toHaveText(text ?? '');
+    await edit(page, 'int from_output() { return 7; }');
+    await assembly.press('ControlOrMeta+Enter');
+    await expect(assembly).toContainText('from_output');
     await edit(page, 'int broken() { return missing; }');
     await page.getByRole('button', { name: 'Compile', exact: true }).click();
     const diagnostic = page.getByRole('button', {

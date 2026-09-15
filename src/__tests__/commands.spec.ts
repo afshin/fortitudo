@@ -102,3 +102,58 @@ it('keeps cancellation distinct from worker failure', async () => {
   expect(store.state.progress).toBeNull();
   registered.dispose();
 });
+
+it('keeps output selections when closing a restored comparison', async () => {
+  const commands = new CommandRegistry();
+  const store = createStore(initial());
+  const compare = jest.fn();
+  const registered = registerCommands(commands, {
+    store,
+    compiler: {
+      initialize: jest.fn(),
+      compile: jest.fn(),
+      command: jest.fn(),
+      cancel: jest.fn(),
+      dispose: jest.fn()
+    },
+    resetLayout: jest.fn(),
+    compare,
+    activatePane: jest.fn(),
+    copy: jest.fn(),
+    download: jest.fn(),
+    runner: { run: jest.fn(), reset: jest.fn(), dispose: jest.fn() }
+  });
+  expect(commands.isToggled(CommandIDs.compare)).toBe(false);
+  await commands.execute(CommandIDs.compare);
+  expect(store.state.outputs).toEqual({
+    primary: 'ir',
+    comparison: 'optimized'
+  });
+  store.dispatch({
+    type: 'layout',
+    layout: {
+      type: 'split-area',
+      orientation: 'horizontal',
+      sizes: [0.5, 0.5],
+      children: [
+        { type: 'tab-area', widgets: ['outputs'], currentIndex: 0 },
+        { type: 'tab-area', widgets: ['comparison'], currentIndex: 0 }
+      ]
+    }
+  });
+  await commands.execute(CommandIDs.output, {
+    group: 'primary',
+    output: 'assembly'
+  });
+  await commands.execute(CommandIDs.output, {
+    group: 'comparison',
+    output: 'analysis'
+  });
+  expect(commands.isToggled(CommandIDs.compare)).toBe(true);
+  const outputs = store.state.outputs;
+  await commands.execute(CommandIDs.compare);
+  expect(store.state.outputs).toBe(outputs);
+  expect(compare).toHaveBeenCalledTimes(2);
+  registered.dispose();
+  store.dispose();
+});

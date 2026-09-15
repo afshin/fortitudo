@@ -100,6 +100,20 @@ test('runner state, reset, NaN, and timeout @compat', async ({ page }) => {
   await edit(page, 'extern "C" int next() { static int x = 0; return ++x; }');
   await page.getByRole('button', { name: 'Run', exact: true }).click();
   await expect(page.getByLabel('Execution result')).toContainText('Return: 1');
+  const run = page.getByRole('button', { name: 'Run', exact: true });
+  const runFunction = page.getByRole('button', { name: 'Run function' });
+  await page
+    .getByLabel('Target', { exact: true })
+    .selectOption('x86_64-unknown-linux-gnu');
+  await expect(run).toBeDisabled();
+  await expect(runFunction).toBeDisabled();
+  await page
+    .getByLabel('Target', { exact: true })
+    .selectOption('wasm32-unknown-emscripten');
+  await expect(run).toBeEnabled();
+  await expect(runFunction).toBeEnabled();
+  await run.click();
+  await expect(page.getByLabel('Execution result')).toContainText('Return: 1');
   await page.getByRole('button', { name: 'Run function', exact: true }).click();
   await expect(page.getByLabel('Execution result')).toContainText('Return: 2');
   await page
