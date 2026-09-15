@@ -1,6 +1,7 @@
 import { isOptions, isOutputKind, pipelines } from './compiler/types';
 import { isTimeout } from './compiler/execution';
 import { isRecord } from './compiler/protocol';
+import { isToolArea } from './model';
 import type { Area, Pane, Session } from './model';
 
 export interface IPersistence {
@@ -108,13 +109,16 @@ function area(
       value.widgets.length === 0 ||
       typeof value.currentIndex !== 'number' ||
       !Number.isInteger(value.currentIndex) ||
-      value.currentIndex < 0 ||
+      value.currentIndex < -1 ||
       value.currentIndex >= value.widgets.length
     ) {
       return null;
     }
     const widgets = value.widgets.map(value => pane(value, legacy));
     if (!widgets.every((value): value is Pane => value !== null)) {
+      return null;
+    }
+    if (value.currentIndex === -1 && !isToolArea(widgets)) {
       return null;
     }
     for (const widget of widgets) {

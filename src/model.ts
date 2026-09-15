@@ -9,7 +9,7 @@ import type {
   Result,
   Stage
 } from './compiler/types';
-import { pipelines } from './compiler/types';
+import { availableOutputs, pipelines } from './compiler/types';
 import { inspectWasm } from './compiler/wasm';
 import type { WasmInfo } from './compiler/wasm';
 import { examples } from './examples';
@@ -118,10 +118,7 @@ export function initial(session: Session | null = null): State {
     source: session?.source ?? examples.cpp,
     options: session?.options ?? options,
     layout: session?.layout ?? null,
-    outputs: session?.outputs ?? {
-      primary: 'assembly',
-      comparison: 'optimized'
-    },
+    outputs: outputSelection(session?.options ?? options, session?.outputs),
     timeout: session?.timeout ?? 10000,
     revision: 0,
     status: 'idle',
@@ -166,11 +163,19 @@ export function reduce(state: State, action: Action): State {
         : {
             ...state,
             options: action.options,
+            source:
+              state.source === examples[state.options.language]
+                ? examples[action.options.language]
+                : state.source,
+            outputs: outputSelection(action.options, state.outputs),
             revision: state.revision + 1
           };
     case 'layout':
       return { ...state, layout: action.layout };
     case 'output':
+      if (!availableOutputs(state.options).includes(action.output)) {
+        return state;
+      }
       return {
         ...state,
         outputs: { ...state.outputs, [action.group]: action.output }
@@ -461,6 +466,26 @@ export function snapshot(state: State): Session {
     outputs: state.outputs,
     timeout: state.timeout
   };
+}
+
+function outputSelection(
+  options: Options,
+  outputs?: Session['outputs']
+): Session['outputs'] {
+  const kinds = availableOutputs(options);
+  const primary = outputs?.primary ?? 'assembly';
+  const comparison = outputs?.comparison ?? 'optimized';
+  return {
+    primary: kinds.includes(primary) ? primary : kinds[0],
+    comparison: kinds.includes(comparison) ? comparison : kinds[1]
+  };
+}
+
+/** Only auxiliary tab groups can fold away while leaving their tabs visible. */
+export function isToolArea(panes: readonly Pane[]): boolean {
+  return panes.every(
+    pane => !['source', 'outputs', 'comparison'].includes(pane)
+  );
 }
 
 function equalOptions(left: Options, right: Options): boolean {

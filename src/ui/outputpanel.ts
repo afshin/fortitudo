@@ -4,7 +4,7 @@ import { TabPanel } from '@lumino/widgets';
 import type { Widget } from '@lumino/widgets';
 
 import { CommandIDs } from '../commands';
-import { isOutputKind, outputLabels } from '../compiler/types';
+import { availableOutputs, outputLabels } from '../compiler/types';
 import type { OutputKind } from '../compiler/types';
 import type { OutputGroup } from '../model';
 import type { IStore } from '../state';
@@ -23,21 +23,34 @@ export class OutputPanel extends TabPanel {
       'aria-label',
       group === 'primary' ? 'Outputs' : 'Comparison outputs'
     );
-    const kinds = Object.keys(outputLabels).filter(isOutputKind);
-    for (const kind of kinds) {
-      const widget = create(kind);
-      widget.title.label = kind === 'ir' ? 'LLVM IR' : outputLabels[kind];
-      widget.title.caption = outputLabels[kind];
-      this.addWidget(widget);
-    }
-    this.currentIndex = kinds.indexOf(store.state.outputs[group]);
-    this.unsubscribe = store.subscribe(() => {
+    let kinds: readonly OutputKind[] = [];
+    let updating = false;
+    const sync = () => {
+      updating = true;
+      const next = availableOutputs(store.state.options);
+      if (next.join() !== kinds.join()) {
+        for (const widget of [...this.widgets]) {
+          widget.parent = null;
+          widget.dispose();
+        }
+        kinds = next;
+        for (const kind of kinds) {
+          const widget = create(kind);
+          widget.title.label = kind === 'ir' ? 'LLVM IR' : outputLabels[kind];
+          widget.title.caption = outputLabels[kind];
+          this.addWidget(widget);
+        }
+      }
       this.currentIndex = kinds.indexOf(store.state.outputs[group]);
-    });
+      updating = false;
+      this.update();
+    };
+    sync();
+    this.unsubscribe = store.subscribe(sync);
     this.currentChanged.connect(() => {
       this.update();
       const output = kinds[this.currentIndex];
-      if (output && store.state.outputs[group] !== output) {
+      if (!updating && output && store.state.outputs[group] !== output) {
         void commands
           .execute(CommandIDs.selectOutput, { group, output })
           .catch(error =>

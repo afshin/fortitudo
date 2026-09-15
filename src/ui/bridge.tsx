@@ -73,8 +73,8 @@ export function Bridge(props: IBridgeProps): React.ReactElement {
         execute(CommandIDs.setTimeout, { timeout }),
       onSelectModule: (path: string) =>
         execute(CommandIDs.selectModule, { path }),
-      onCopy: (path: string, workspace: boolean) =>
-        execute(CommandIDs.copy, { path, workspace }),
+      onCopy: (path: string, workspace: boolean, hideMetadata: boolean) =>
+        execute(CommandIDs.copy, { path, workspace, hideMetadata }),
       onDownload: (path: string, workspace: boolean) =>
         execute(CommandIDs.download, { path, workspace }),
       onNavigate: ({ line, column }: Diagnostic) =>
@@ -97,7 +97,12 @@ export function Bridge(props: IBridgeProps): React.ReactElement {
     case 'source':
       return (
         <Source state={state}>
-          <Editor store={store} onChange={callbacks.onChange} />
+          <Editor
+            store={store}
+            language={state.options.language}
+            onChange={callbacks.onChange}
+            onResetExample={callbacks.onResetExample}
+          />
         </Source>
       );
     case 'outputs':

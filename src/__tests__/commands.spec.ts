@@ -14,6 +14,7 @@ const info = {
 it('routes edits and releases command registrations', async () => {
   const commands = new CommandRegistry();
   const store = createStore(initial());
+  const activatePane = jest.fn();
   let finish: (result: Result) => void = () => {
     throw new Error('not started');
   };
@@ -32,7 +33,7 @@ it('routes edits and releases command registrations', async () => {
     compiler,
     resetLayout: jest.fn(),
     compare: jest.fn(),
-    activatePane: jest.fn(),
+    activatePane,
     copy: jest.fn(),
     download: jest.fn(),
     runner: { run: jest.fn(), reset: jest.fn(), dispose: jest.fn() }
@@ -54,11 +55,12 @@ it('routes edits and releases command registrations', async () => {
     commands: [],
     stdout: '',
     stderr: '',
-    exitCode: 0,
+    exitCode: 1,
     duration: 1
   });
   await running;
   expect(stale(store.state)).toBe(true);
+  expect(activatePane).not.toHaveBeenCalled();
   expect(commands.isEnabled(CommandIDs.compile)).toBe(true);
   registered.dispose();
   expect(commands.hasCommand(CommandIDs.compile)).toBe(false);

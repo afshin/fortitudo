@@ -2,13 +2,14 @@ import type { CommandRegistry } from '@lumino/commands';
 import { DisposableSet } from '@lumino/disposable';
 import type { IDisposable } from '@lumino/disposable';
 
+import { assemblyText } from './compiler/assembly';
 import type { IRunner } from './compiler/execution';
 import { isTimeout } from './compiler/execution';
 import { command } from './compiler/terminal';
 import { isOptions, isOutputKind, sourceName } from './compiler/types';
 import type { File, ICompiler, Progress } from './compiler/types';
 import { examples } from './examples';
-import { canRun, currentModule, hasComparison, snapshot } from './model';
+import { canRun, currentModule, hasComparison, snapshot, stale } from './model';
 import type { Pane } from './model';
 import { session } from './persistence';
 import type { ISharing } from './share';
@@ -90,7 +91,12 @@ export function registerCommands(
           { id, source, options },
           progress
         );
-        store.dispatch({ type: 'finished', id, result });
+        if (!disposed && store.state.active?.id === id) {
+          store.dispatch({ type: 'finished', id, result });
+          if (result.exitCode !== 0 && !stale(store.state)) {
+            context.activatePane('diagnostics');
+          }
+        }
       }
     } catch (error) {
       if (!disposed) {
@@ -155,11 +161,16 @@ export function registerCommands(
     isToggled: () => hasComparison(store.state.layout),
     execute: () => {
       if (!hasComparison(store.state.layout)) {
-        store.dispatch({ type: 'output', group: 'primary', output: 'ir' });
+        const mlir = store.state.options.language === 'mlir';
+        store.dispatch({
+          type: 'output',
+          group: 'primary',
+          output: mlir ? 'mlir' : 'ir'
+        });
         store.dispatch({
           type: 'output',
           group: 'comparison',
-          output: 'optimized'
+          output: mlir ? 'graphs' : 'optimized'
         });
       }
       context.compare();
@@ -409,7 +420,12 @@ export function registerCommands(
           throw new Error('The file is no longer available.');
         }
         if (id === CommandIDs.copy) {
-          await context.copy(new TextDecoder().decode(file.data));
+          const text = new TextDecoder().decode(file.data);
+          await context.copy(
+            args.hideMetadata === true && file.path.endsWith('.s')
+              ? assemblyText(text)
+              : text
+          );
         } else {
           context.download(file);
         }

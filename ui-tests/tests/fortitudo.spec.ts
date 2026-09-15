@@ -97,6 +97,7 @@ test.describe('loading feedback', () => {
         const total = Number(await progress.getAttribute('max'));
         expect(loaded).toBeLessThan(total);
         await expect(progress).toHaveAttribute('aria-valuetext', / MB$/);
+        await page.getByRole('tab', { name: 'Diagnostics' }).click();
         const diagnostics = page.getByLabel('Diagnostics pane');
         await expect(diagnostics).toContainText('Compiler.data');
         await expect(diagnostics).toContainText('Compiler.wasm');
@@ -144,6 +145,7 @@ for (const [host, url] of Object.entries(hosts)) {
     page.on('pageerror', error => errors.push(error.message));
     await open(page, url);
     // Jupyter may restore another output selection or comparison layout.
+    await page.getByText('More', { exact: true }).click();
     await page.getByRole('button', { name: 'Reset layout' }).click();
     await page.getByRole('tab', { name: 'Assembly', exact: true }).click();
     await page.getByLabel('Language', { exact: true }).selectOption('cpp');
@@ -210,6 +212,14 @@ for (const [host, url] of Object.entries(hosts)) {
       name: /error Line 1: use of undeclared identifier 'missing'/
     });
     await expect(diagnostic).toBeVisible();
+    // A fresh Jupyter profile can show its news prompt over this button.
+    const notification = page.getByRole('button', {
+      name: 'Hide notification',
+      exact: true
+    });
+    if (await notification.isVisible()) {
+      await notification.click();
+    }
     await diagnostic.click();
     await expect(
       page.getByRole('textbox', { name: 'Source code' })
@@ -356,6 +366,14 @@ test('initialized compiler can compile changed source offline', async ({
 for (const [host, url] of Object.entries(hosts)) {
   test(`${host}: resize and reset panes within the host`, async ({ page }) => {
     await open(page, url);
+    if (host === 'jupyterlab') {
+      // Host sidebar widths are independent of Fortitudo's saved layout.
+      const files = page.getByRole('tab', { name: /^File Browser/ });
+      if ((await files.getAttribute('aria-selected')) === 'true') {
+        await files.click();
+      }
+    }
+    await page.getByText('More', { exact: true }).click();
     await page.getByRole('button', { name: 'Reset layout' }).click();
     await edit(page, 'int resized() { return 12; }');
     const workbench = page.locator('#fortitudo-workbench');
@@ -393,6 +411,7 @@ for (const [host, url] of Object.entries(hosts)) {
     await expect(page.getByRole('textbox', { name: 'Source code' })).toHaveText(
       'int resized() { return 12; }'
     );
+    await page.getByText('More', { exact: true }).click();
     await page.getByRole('button', { name: 'Reset layout' }).click();
     await expect.poll(width).toBeGreaterThan(original - 3);
     await expect.poll(width).toBeLessThan(original + 3);
@@ -445,6 +464,7 @@ test('previously docked tab groups restore and save their selection', async ({
   await page.reload();
   await expect(page.getByLabel('Diagnostics pane')).toBeVisible();
   await expect(page.getByLabel('Assembly output')).toBeHidden();
+  await page.getByText('More', { exact: true }).click();
   await page.getByRole('button', { name: 'Reset layout' }).click();
   await expect(workbench.getByRole('tablist')).toHaveCount(3);
   await expect(page.getByLabel('Assembly output')).toBeVisible();

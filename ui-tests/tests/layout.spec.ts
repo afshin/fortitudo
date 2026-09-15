@@ -53,6 +53,7 @@ for (const [host, url] of Object.entries(hosts)) {
       await page.getByText('Open Fortitudo', { exact: true }).click();
     }
     await expect(page.getByLabel('Source code')).toBeVisible();
+    await page.getByText('More', { exact: true }).click();
     await page.getByRole('button', { name: 'Reset layout' }).click();
     const source = page.getByRole('textbox', { name: 'Source code' });
     const original = await source.locator('.cm-line').allTextContents();
@@ -134,6 +135,7 @@ for (const [host, url] of Object.entries(hosts)) {
     await expect(compare).toHaveAttribute('aria-pressed', 'false');
     await expect(assembly).toHaveAttribute('aria-selected', 'true');
     await compare.click();
+    await page.getByText('More', { exact: true }).click();
     await page.getByRole('button', { name: 'Reset layout' }).click();
     await expect(compare).toHaveAttribute('aria-pressed', 'false');
     await expect(comparison).toHaveCount(0);

@@ -154,6 +154,25 @@ export const outputLabels: Readonly<Record<OutputKind, string>> = {
   object: 'Object'
 };
 
+/** Representations produced by one compilation, in workbench order. */
+export function availableOutputs(options: Options): readonly OutputKind[] {
+  if (options.language === 'mlir') {
+    return ['mlir', 'graphs'];
+  }
+  return [
+    'assembly',
+    ...(options.language === 'llvm' ? [] : (['ast'] as const)),
+    'ir',
+    'optimized',
+    'analysis',
+    'graphs',
+    ...(options.target === 'wasm32-unknown-emscripten'
+      ? (['wasm'] as const)
+      : []),
+    'object'
+  ];
+}
+
 export function isLanguage(value: unknown): value is Language {
   return Object.keys(languageLabels).some(language => language === value);
 }

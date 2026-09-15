@@ -22,7 +22,7 @@ interface IControlsProps {
   onRun(): void;
   onCompare(): void;
   onShare?(): void;
-  onResetExample(): void;
+  onStop(): void;
   onGuide(): void;
 }
 
@@ -60,64 +60,60 @@ export function Controls(props: IControlsProps): React.ReactElement {
             ))}
           </select>
         </label>
-        <label>
-          <span>Target</span>
-          <select
-            aria-label="Target"
-            disabled={state.options.language === 'mlir'}
-            value={state.options.target}
-            onChange={event => {
-              const target = event.target.value;
-              if (isTarget(target)) {
-                onOptions({ ...state.options, target });
-              }
-            }}
-          >
-            {targets
-              .filter(
-                target =>
-                  target === 'wasm32-unknown-emscripten' ||
-                  target === state.options.target ||
-                  state.info?.targets.includes(target)
-              )
-              .map(target => (
-                <option
-                  key={target}
-                  value={target}
-                  disabled={
-                    state.info !== null && !state.info.targets.includes(target)
+        {state.options.language !== 'mlir' && (
+          <>
+            <label>
+              <span>Target</span>
+              <select
+                aria-label="Target"
+                value={state.options.target}
+                onChange={event => {
+                  const target = event.target.value;
+                  if (isTarget(target)) {
+                    onOptions({ ...state.options, target });
                   }
-                >
-                  {targetLabels[target]}
-                </option>
-              ))}
-          </select>
-        </label>
-        <label>
-          <span>Optimization</span>
-          <select
-            aria-label="Optimization"
-            disabled={state.options.language === 'mlir'}
-            value={state.options.optimization}
-            onChange={event => {
-              const optimization = Number(event.target.value);
-              if (
-                optimization === 0 ||
-                optimization === 1 ||
-                optimization === 2 ||
-                optimization === 3
-              ) {
-                onOptions({ ...state.options, optimization });
-              }
-            }}
-          >
-            {[0, 1, 2, 3].map(level => (
-              <option key={level} value={level}>
-                O{level}
-              </option>
-            ))}
-          </select>
-        </label>
+                }}
+              >
+                {targets.map(target => (
+                  <option
+                    key={target}
+                    value={target}
+                    disabled={
+                      state.info !== null &&
+                      !state.info.targets.includes(target)
+                    }
+                  >
+                    {targetLabels[target]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Optimization</span>
+              <select
+                aria-label="Optimization"
+                value={state.options.optimization}
+                onChange={event => {
+                  const optimization = Number(event.target.value);
+                  if (
+                    optimization === 0 ||
+                    optimization === 1 ||
+                    optimization === 2 ||
+                    optimization === 3
+                  ) {
+                    onOptions({ ...state.options, optimization });
+                  }
+                }}
+              >
+                {[0, 1, 2, 3].map(level => (
+                  <option key={level} value={level}>
+                    O{level}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
+        )}
         <div className="fortitudo-actions">
           <button
             className="fortitudo-primary"
@@ -127,12 +123,23 @@ export function Controls(props: IControlsProps): React.ReactElement {
           >
             {state.status === 'failed' ? 'Retry compilation' : 'Compile'}
           </button>
-          <button onClick={props.onCancel} disabled={!busy}>
-            Cancel
-          </button>
-          <button onClick={props.onRun} disabled={!canRun(state)}>
-            Run
-          </button>
+          {busy && <button onClick={props.onCancel}>Cancel</button>}
+          {(state.options.language !== 'mlir' || state.execution.module) &&
+            (state.execution.active ? (
+              <button onClick={props.onStop}>Stop</button>
+            ) : (
+              <button
+                onClick={props.onRun}
+                disabled={!canRun(state)}
+                title={
+                  state.options.target === 'wasm32-unknown-emscripten'
+                    ? 'Compile if needed, then run a WebAssembly function'
+                    : 'Select WebAssembly to run your code'
+                }
+              >
+                Run
+              </button>
+            ))}
           <button
             onClick={props.onCompare}
             aria-pressed={comparing}
@@ -141,14 +148,20 @@ export function Controls(props: IControlsProps): React.ReactElement {
             Compare
           </button>
           {props.onShare && <button onClick={props.onShare}>Share</button>}
-          <button onClick={props.onResetExample}>Reset example</button>
-          <button
-            onClick={props.onResetLayout}
-            title="Restore default pane layout"
-          >
-            Reset layout
-          </button>
           <button onClick={props.onGuide}>Guide</button>
+          <details className="fortitudo-more">
+            <summary>More</summary>
+            <button
+              onClick={event => {
+                props.onResetLayout();
+                const details = event.currentTarget.closest('details');
+                details?.removeAttribute('open');
+                details?.querySelector('summary')?.focus();
+              }}
+            >
+              Reset layout
+            </button>
+          </details>
         </div>
       </div>
       <div className="fortitudo-status">
@@ -268,26 +281,31 @@ export function Diagnostics({
         ) : state.active === null && state.status !== 'failed' ? (
           <p className="fortitudo-hint">
             {result
-              ? 'No structured diagnostics.'
+              ? result.exitCode === 0
+                ? 'No errors or warnings.'
+                : 'See build details for the failed stages.'
               : 'Compiler messages appear here.'}
           </p>
         ) : null}
         {result && result.stages.length > 0 && (
-          <ul className="fortitudo-stages" aria-label="Compilation stages">
-            {result.stages.map(stage => (
-              <li key={stage.name}>
-                <strong>
-                  {isOutputKind(stage.name)
-                    ? outputLabels[stage.name]
-                    : stage.name}
-                </strong>
-                : {stage.status}
-                {' · '}
-                {Math.round(stage.duration)} ms
-                {stage.status !== 'success' && <pre>{stage.stderr}</pre>}
-              </li>
-            ))}
-          </ul>
+          <details open={result.exitCode !== 0}>
+            <summary>Build details · {Math.round(result.duration)} ms</summary>
+            <ul className="fortitudo-stages" aria-label="Compilation stages">
+              {result.stages.map(stage => (
+                <li key={stage.name}>
+                  <strong>
+                    {isOutputKind(stage.name)
+                      ? outputLabels[stage.name]
+                      : stage.name}
+                  </strong>
+                  : {stage.status}
+                  {' · '}
+                  {Math.round(stage.duration)} ms
+                  {stage.status !== 'success' && <pre>{stage.stderr}</pre>}
+                </li>
+              ))}
+            </ul>
+          </details>
         )}
         {result && (
           <details>
@@ -307,7 +325,7 @@ export function Diagnostics({
 function status(state: State): string {
   switch (state.status) {
     case 'idle':
-      return 'Ready to load the compiler';
+      return 'Ready when you are · Ctrl/Cmd+Enter to compile';
     case 'loading':
       return state.progress?.phase === 'downloading'
         ? 'Downloading compiler…'
@@ -323,10 +341,10 @@ function status(state: State): string {
     case 'failed':
       return 'Compiler unavailable — retry to load it again';
     case 'ready':
-      return state.result?.value.exitCode
-        ? 'Some outputs failed — inspect diagnostics'
-        : stale(state)
-          ? 'Source or options changed — compile to update'
+      return stale(state)
+        ? 'Source or options changed — compile to update'
+        : state.result?.value.exitCode
+          ? 'Some outputs failed — inspect diagnostics'
           : state.result
             ? 'Compilation complete'
             : 'Compiler ready';

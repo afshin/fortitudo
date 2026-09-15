@@ -139,3 +139,38 @@ it('validates saved inputs and pane identities', () => {
   };
   expect(session({ ...saved, layout })?.layout).toEqual(layout);
 });
+
+it('keeps output selections applicable when language and target change', () => {
+  let state = reduce(initial(), {
+    type: 'output',
+    group: 'primary',
+    output: 'wasm'
+  });
+  state = reduce(state, {
+    type: 'options',
+    options: { ...state.options, target: 'x86_64-unknown-linux-gnu' }
+  });
+  expect(state.outputs.primary).toBe('assembly');
+  state = reduce(state, {
+    type: 'options',
+    options: { ...state.options, language: 'mlir' }
+  });
+  expect(state.outputs).toEqual({ primary: 'mlir', comparison: 'graphs' });
+  expect(
+    reduce(state, { type: 'output', group: 'primary', output: 'ast' })
+  ).toBe(state);
+  const saved = { ...snapshot(state), outputs: initial().outputs };
+  expect(initial(saved).outputs).toEqual(state.outputs);
+});
+
+it('changes untouched examples but preserves edited source', () => {
+  const original = initial();
+  const mlir = { ...original.options, language: 'mlir' as const };
+  expect(reduce(original, { type: 'options', options: mlir }).source).toContain(
+    'func.func'
+  );
+  const edited = reduce(original, { type: 'source', source: 'my experiment' });
+  expect(reduce(edited, { type: 'options', options: mlir }).source).toBe(
+    'my experiment'
+  );
+});

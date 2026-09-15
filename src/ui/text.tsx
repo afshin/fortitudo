@@ -9,10 +9,12 @@ import { editorExtensions } from './codemirror';
 /** Own the read-only editor; artifact content remains in the store. */
 export function TextOutput({
   text,
-  label
+  label,
+  children
 }: {
   text: string;
   label: string;
+  children?: React.ReactNode;
 }): React.ReactElement {
   const node = useRef<HTMLDivElement>(null);
   const editor = useRef<EditorView | null>(null);
@@ -55,7 +57,8 @@ export function TextOutput({
   }, [text, label]);
   return (
     <>
-      <div className="fortitudo-find">
+      <div className="fortitudo-file-actions">
+        {children}
         <button
           title="Find in output (Ctrl/Cmd+F)"
           onClick={() => {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import * as React from 'react';
 
+import { assemblyText } from '../compiler/assembly';
 import type { File, OutputKind } from '../compiler/types';
 import { outputLabels } from '../compiler/types';
 import { inspectWasm } from '../compiler/wasm';
@@ -9,7 +10,7 @@ import type { State } from '../model';
 import { TextOutput } from './text';
 
 interface IFileActions {
-  onCopy(path: string, workspace: boolean): void;
+  onCopy(path: string, workspace: boolean, hideMetadata: boolean): void;
   onDownload(path: string, workspace: boolean): void;
   onSelectModule(path: string): void;
 }
@@ -73,12 +74,27 @@ export function Output({
           label={`${outputLabels[kind]} output`}
           {...actions}
         />
+      ) : !result && !state.active && state.status !== 'failed' ? (
+        <div
+          className="fortitudo-empty"
+          aria-label={`${outputLabels[kind]} output`}
+        >
+          <h2>See what your code becomes.</h2>
+          <p>Compile your source, then explore every output.</p>
+          <p className="fortitudo-hint">
+            The first compile downloads a large compiler. Progress appears
+            above. Once loaded, compilation works offline in this tab. Your code
+            stays in your browser.
+          </p>
+        </div>
       ) : (
         <pre
           className="fortitudo-output"
           aria-label={`${outputLabels[kind]} output`}
         >
-          {message}
+          {state.active && !result
+            ? 'You can keep editing while the compiler works.'
+            : message}
         </pre>
       )}
     </section>
@@ -136,6 +152,8 @@ function FileOutput({
   workspace: boolean;
   label: string;
 }): React.ReactElement {
+  const [hideMetadata, setHideMetadata] = useState(true);
+  const assembly = file.path.endsWith('.s');
   const wasm = file.path.endsWith('.wasm');
   const extension = file.path.split('.').pop()?.toLowerCase() ?? '';
   const imageTypes: Readonly<Record<string, string>> = {
@@ -151,37 +169,59 @@ function FileOutput({
     wasm ||
     ['o', 'a', 'so', 'bc', 'bin'].includes(extension) ||
     file.data.subarray(0, 1024).includes(0);
-  const text = useMemo(
-    () => (binary ? '' : new TextDecoder().decode(file.data)),
-    [file.data, binary]
+  const text = useMemo(() => {
+    const text = binary ? '' : new TextDecoder().decode(file.data);
+    return assembly && hideMetadata ? assemblyText(text) : text;
+  }, [file.data, binary, assembly, hideMetadata]);
+  const buttons = (
+    <>
+      <span>{filename(file.path)}</span>
+      {assembly && (
+        <label className="fortitudo-filter">
+          <input
+            type="checkbox"
+            checked={hideMetadata}
+            onChange={event => setHideMetadata(event.target.checked)}
+          />
+          Hide metadata
+        </label>
+      )}
+      {!binary && !image && (
+        <button
+          onClick={() =>
+            actions.onCopy(file.path, workspace, assembly && hideMetadata)
+          }
+        >
+          Copy
+        </button>
+      )}
+      <button
+        onClick={() => actions.onDownload(file.path, workspace)}
+        title="Download original file"
+      >
+        Download
+      </button>
+      {image && file.path.endsWith('.dot.svg') && (
+        <button
+          onClick={() =>
+            actions.onDownload(file.path.replace(/\.svg$/, ''), workspace)
+          }
+        >
+          Download DOT
+        </button>
+      )}
+      {wasm && workspace && (
+        <button onClick={() => actions.onSelectModule(file.path)}>
+          Use module
+        </button>
+      )}
+    </>
   );
   return (
     <>
-      <div className="fortitudo-file-actions">
-        <span>{filename(file.path)}</span>
-        {!binary && !image && (
-          <button onClick={() => actions.onCopy(file.path, workspace)}>
-            Copy
-          </button>
-        )}
-        <button onClick={() => actions.onDownload(file.path, workspace)}>
-          Download
-        </button>
-        {image && file.path.endsWith('.dot.svg') && (
-          <button
-            onClick={() =>
-              actions.onDownload(file.path.replace(/\.svg$/, ''), workspace)
-            }
-          >
-            Download DOT
-          </button>
-        )}
-        {wasm && workspace && (
-          <button onClick={() => actions.onSelectModule(file.path)}>
-            Use module
-          </button>
-        )}
-      </div>
+      {(binary || image) && (
+        <div className="fortitudo-file-actions">{buttons}</div>
+      )}
       {wasm ? (
         <WasmOutput file={file} />
       ) : image ? (
@@ -194,7 +234,9 @@ function FileOutput({
           ).join(' ')}
         </pre>
       ) : (
-        <TextOutput text={text} label={label} />
+        <TextOutput text={text} label={label}>
+          {buttons}
+        </TextOutput>
       )}
     </>
   );

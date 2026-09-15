@@ -8,16 +8,25 @@ import { tags } from '@lezer/highlight';
 import { useEffect, useRef } from 'react';
 import * as React from 'react';
 
+import { sourceName } from '../compiler/types';
+import type { Language } from '../compiler/types';
 import type { IStore } from '../state';
 import { editorExtensions } from './codemirror';
 
 interface IEditorProps {
   store: IStore;
+  language: Language;
   onChange(source: string): void;
+  onResetExample(): void;
 }
 
 /** Own editor effects here; source text remains in the application store. */
-export function Editor({ store, onChange }: IEditorProps): React.ReactElement {
+export function Editor({
+  store,
+  language,
+  onChange,
+  onResetExample
+}: IEditorProps): React.ReactElement {
   const node = useRef<HTMLDivElement>(null);
   const editor = useRef<EditorView | null>(null);
   useEffect(() => {
@@ -117,7 +126,14 @@ export function Editor({ store, onChange }: IEditorProps): React.ReactElement {
   }, [store, onChange]);
   return (
     <>
-      <div className="fortitudo-find">
+      <div className="fortitudo-file-actions">
+        <span>{sourceName(language)}</span>
+        <button
+          onClick={onResetExample}
+          title="Replace source with this language's example (undo to restore)"
+        >
+          Reset example
+        </button>
         <button
           title="Find in source (Ctrl/Cmd+F)"
           onClick={() => {

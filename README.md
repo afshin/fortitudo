@@ -53,20 +53,31 @@ terminates that worker; the next compile loads a fresh one.
 - WebAssembly target with C/C++ or LLVM IR: also a linked Wasm module and its
   metadata.
 
+The workbench starts with source beside output. Only outputs for the selected
+language and target are shown. The tools along the bottom open when selected;
+select the active tool again to fold it away, with the mouse or Enter/Space.
+Compilation errors open Diagnostics automatically. **More → Reset layout**
+restores this arrangement without changing your source.
+
 Every compilation includes diagnostics, recorded commands, raw streams, timings,
 and generated files. A failed stage preserves successful independent outputs.
-Select a diagnostic to jump to its source location. **Compare** opens a second
-output group, initially comparing LLVM IR before and after passes. Both groups
-have independent selections and resizable widths. Text views provide line
-numbers, search, copy, and download. Select **Compare** again to close the
-second group while keeping the primary selection. **Find** or **Ctrl/Cmd+F**
-searches the focused source or text output; **Ctrl/Cmd+Enter** compiles from
-either editor. In the source editor, **Escape**, then **Tab** moves focus out
-without inserting indentation. Graphs have function selection, zoom, fit, and
-DOT/SVG downloads. The Wasm inspector lists size, imports, exports, and function
-signatures without executing the module.
+Expand **Build details** in Diagnostics for stage status and timings. Select a
+diagnostic to jump to its source location. **Compare** opens a second output
+group, initially comparing LLVM IR before and after passes, or MLIR beside its
+operation graph. Both groups have independent selections and resizable widths.
+Text views provide line numbers, search, copy, and download. Select **Compare**
+again to close the second group while keeping the primary selection. **Find** or
+**Ctrl/Cmd+F** searches the focused source or text output; **Ctrl/Cmd+Enter**
+compiles from either editor. In the source editor, **Escape**, then **Tab**
+moves focus out without inserting indentation. Graphs have function selection,
+zoom, fit, and DOT/SVG downloads. The Wasm inspector lists size, imports,
+exports, and function signatures without executing the module.
 
-Comparison and layout resets preserve the source editor's undo history.
+Comparison and layout resets preserve the source editor's undo history. Copy,
+download, and search share one row above each text output. Assembly hides
+compiler provenance by default, retaining code, data, and their directives.
+Uncheck **Hide metadata** to see it all. **Copy** uses the displayed text;
+**Download** always saves the original file.
 
 The status strip shows download progress in MB, then preparation and compilation
 activity. Diagnostics lists the individual compiler downloads and any loading
@@ -87,8 +98,10 @@ Frontend semantics and backend code generation also use that level. The first IR
 view has LLVM optimization passes disabled. Analysis defaults to dominator trees
 and loops; MLIR defaults to `builtin.module(canonicalize,cse)`. LLVM inputs with
 incompatible target triples or layouts report an error instead of being silently
-retargeted. Changing language preserves your source; **Reset example**
-explicitly replaces it with that language's example.
+retargeted. Changing language switches an untouched example to that language;
+edited source is preserved. **Reset example**, beside the source filename,
+explicitly replaces it with that language's example and can be undone. Pipelines
+shows only the fields relevant to the selected language.
 
 ## Execution
 
@@ -105,9 +118,10 @@ selection. `main(i32, i32)` receives `argc = 0` and a null `argv`.
 The pane shows the return value, stdout, stderr, status, and errors. Repeated
 calls retain module state. **Reset execution**, **Stop**, timeout, traps, and
 module replacement discard the runner without losing compilation artifacts. The
-default execution timeout is 10 seconds, configurable in Pipelines; it starts
-after initialization. Legitimate NaN returns are displayed as results. Execution
-requires WebAssembly; native targets remain available for inspection.
+default execution timeout is 10 seconds, configurable under **Execution
+settings** in the Run pane; it starts after initialization. Legitimate NaN
+returns are displayed as results. Execution requires WebAssembly; native targets
+remain available for inspection.
 
 ## Commands, files, and sharing
 

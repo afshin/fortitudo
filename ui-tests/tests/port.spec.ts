@@ -13,7 +13,10 @@ async function compile(page: Page) {
   );
 }
 async function tab(page: Page, name: string) {
-  await page.getByRole('tab', { name, exact: true }).first().click();
+  const tab = page.getByRole('tab', { name, exact: true }).first();
+  if ((await tab.getAttribute('aria-selected')) !== 'true') {
+    await tab.click();
+  }
 }
 
 test('one compile fills outputs and comparison uses them @compat', async ({
@@ -45,6 +48,16 @@ test('one compile fills outputs and comparison uses them @compat', async ({
   await expect(
     page.getByLabel('Assembly output', { exact: true })
   ).toContainText('square');
+  const metadata = page.getByRole('checkbox', { name: 'Hide metadata' });
+  await expect(metadata).toBeChecked();
+  await expect(
+    page.getByLabel('Assembly output', { exact: true })
+  ).not.toContainText('.custom_section.producers');
+  await metadata.uncheck();
+  await expect(
+    page.getByLabel('Assembly output', { exact: true })
+  ).toContainText('.custom_section.producers');
+  await metadata.check();
   await tab(page, 'AST');
   await expect(page.getByLabel('AST output', { exact: true })).toContainText(
     'TranslationUnitDecl'
@@ -128,7 +141,7 @@ test('runner state, reset, NaN, and timeout @compat', async ({ page }) => {
   await expect(page.getByLabel('Execution result')).toContainText(
     'Return: NaN'
   );
-  await tab(page, 'Pipelines');
+  await page.getByText('Execution settings', { exact: true }).click();
   await page.getByLabel('Execution timeout (seconds)').fill('0.1');
   await edit(
     page,
@@ -185,6 +198,7 @@ test('LLVM, MLIR, commands, and invalid pass recovery @compat', async ({
   await expect(page.getByRole('status').first()).toContainText(
     'Some outputs failed'
   );
+  await tab(page, 'Pipelines');
   await page
     .getByLabel('MLIR pipeline', { exact: true })
     .fill('builtin.module(canonicalize,cse)');

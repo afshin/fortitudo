@@ -8,7 +8,10 @@ async function edit(page: Page, source: string) {
 }
 
 async function tab(page: Page, name: string) {
-  await page.getByRole('tab', { name, exact: true }).first().click();
+  const tab = page.getByRole('tab', { name, exact: true }).first();
+  if ((await tab.getAttribute('aria-selected')) !== 'true') {
+    await tab.click();
+  }
 }
 
 async function compile(page: Page, failed = false) {
@@ -122,10 +125,16 @@ int cpp(int x) { return x + 9; }`
     .selectOption('spin');
   await page.getByRole('button', { name: 'Run function' }).click();
   await expect(page.getByLabel('Run pane')).toContainText('Running program');
-  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await page
+    .getByLabel('Run pane')
+    .getByRole('button', { name: 'Stop', exact: true })
+    .click();
   await expect(
-    page.getByRole('button', { name: 'Reset execution' })
-  ).toBeVisible();
+    page.getByRole('button', { name: 'Stop', exact: true })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Run function' })
+  ).toBeEnabled();
   await compile(page);
   await expect(
     page.getByLabel('Assembly output', { exact: true })
@@ -152,6 +161,7 @@ test('partial builds, invalid IR targets, and empty graphs recover', async ({
   await expect(page.getByLabel('AST output', { exact: true })).toContainText(
     'TranslationUnitDecl'
   );
+  await tab(page, 'Pipelines');
   await page
     .getByLabel('Analysis pipeline', { exact: true })
     .fill('print<domtree>,print<loops>');
@@ -165,6 +175,7 @@ test('partial builds, invalid IR targets, and empty graphs recover', async ({
   await expect(
     page.getByLabel('Assembly output', { exact: true })
   ).toContainText('Skipped');
+  await tab(page, 'Pipelines');
   await page.getByLabel('LLVM pipeline', { exact: true }).fill('');
   await edit(page, 'extern int declaration(int);');
   await compile(page);

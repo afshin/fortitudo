@@ -2,7 +2,7 @@ import { BoxPanel, SplitLayout, SplitPanel, TabPanel } from '@lumino/widgets';
 import type { Widget } from '@lumino/widgets';
 
 import type { Area, Pane } from '../model';
-import { hasComparison } from '../model';
+import { hasComparison, isToolArea } from '../model';
 
 interface ISection {
   widget: Widget;
@@ -26,8 +26,8 @@ const defaultArea: Area = {
     },
     {
       type: 'tab-area',
-      widgets: ['diagnostics', 'files', 'run', 'terminal', 'pipelines'],
-      currentIndex: 0
+      widgets: ['diagnostics', 'run', 'files', 'terminal', 'pipelines'],
+      currentIndex: -1
     }
   ]
 };
@@ -90,7 +90,7 @@ export class PanePanel extends BoxPanel {
     this.section.activate(pane);
   }
 
-  private create(area: Area): ISection {
+  private create(area: Area, changed = () => this.changed()): ISection {
     if (area.type === 'tab-area') {
       const pane = area.widgets[0];
       // Output groups already own their tabs. Preserve the saved area without
@@ -114,12 +114,43 @@ export class PanePanel extends BoxPanel {
           }
         };
       }
+      const tools = isToolArea(area.widgets);
       const panel = new TabPanel({ tabsMovable: false });
+      panel.tabBar.allowDeselect = tools;
+      if (tools) {
+        panel.addClass('fortitudo-tools');
+        panel.tabBar.node.title = 'Select a tool to open or close it';
+        const keydown = (event: KeyboardEvent) => {
+          const tab = panel.tabBar.contentNode.children[panel.currentIndex];
+          if (
+            (event.key === 'Enter' || event.key === ' ') &&
+            tab?.contains(document.activeElement)
+          ) {
+            event.preventDefault();
+            event.stopPropagation();
+            panel.currentIndex = -1;
+          }
+        };
+        panel.tabBar.node.addEventListener('keydown', keydown, true);
+        panel.disposed.connect(() =>
+          panel.tabBar.node.removeEventListener('keydown', keydown, true)
+        );
+      }
+      const resize = () => {
+        const collapsed = tools && panel.currentIndex === -1;
+        panel.toggleClass('fortitudo-collapsed', collapsed);
+        panel.stackedPanel.setHidden(collapsed);
+        panel.fit();
+      };
       for (const pane of area.widgets) {
         panel.addWidget(this.panes[pane]);
       }
       panel.currentIndex = area.currentIndex;
-      panel.currentChanged.connect(this.changed, this);
+      resize();
+      panel.currentChanged.connect(() => {
+        resize();
+        changed();
+      });
       return {
         widget: panel,
         save: () => ({ ...area, currentIndex: panel.currentIndex }),
@@ -139,18 +170,27 @@ export class PanePanel extends BoxPanel {
         renderer: SplitPanel.defaultRenderer
       })
     });
-    const children = area.children.map(child => this.create(child));
+    // Keep expanded proportions while a tool group is folded away.
+    let sizes = [...area.sizes];
+    const resized = () => {
+      panel.setRelativeSizes(sizes);
+      changed();
+    };
+    const children = area.children.map(child => this.create(child, resized));
     for (const child of children) {
       panel.addWidget(child.widget);
     }
     panel.setRelativeSizes([...area.sizes]);
-    panel.handleMoved.connect(this.changed, this);
+    panel.handleMoved.connect(() => {
+      sizes = panel.relativeSizes();
+      changed();
+    });
     return {
       widget: panel,
       save: () => ({
         type: 'split-area',
         orientation: panel.orientation,
-        sizes: panel.relativeSizes(),
+        sizes,
         children: children.map(child => child.save())
       }),
       activate: pane => children.some(child => child.activate(pane))
@@ -194,7 +234,7 @@ function removeComparison(area: Area): Area {
     return {
       ...area,
       widgets,
-      currentIndex: Math.min(area.currentIndex, Math.max(0, widgets.length - 1))
+      currentIndex: Math.min(area.currentIndex, widgets.length - 1)
     };
   }
   const entries = area.children

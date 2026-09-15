@@ -8,72 +8,61 @@ import { canRun, currentModule } from '../model';
 
 export function Pipelines({
   state,
-  onOptions,
-  onTimeout
+  onOptions
 }: {
   state: State;
   onOptions(options: Options): void;
-  onTimeout(timeout: number): void;
 }): React.ReactElement {
   return (
     <section className="fortitudo-form" aria-label="Pipelines pane">
       <p>Compile generates every applicable output using these pipelines.</p>
-      <label>
-        LLVM pipeline
-        <input
-          value={state.options.llvmPipeline ?? ''}
-          placeholder={`default<O${state.options.optimization}>`}
-          onChange={event =>
-            onOptions({
-              ...state.options,
-              llvmPipeline: event.target.value || null
-            })
-          }
-        />
-      </label>
-      <label>
-        Analysis pipeline
-        <input
-          value={state.options.analysisPipeline}
-          onChange={event =>
-            onOptions({
-              ...state.options,
-              analysisPipeline: event.target.value
-            })
-          }
-        />
-      </label>
-      <label>
-        MLIR pipeline
-        <input
-          value={state.options.mlirPipeline}
-          onChange={event =>
-            onOptions({
-              ...state.options,
-              mlirPipeline: event.target.value
-            })
-          }
-        />
-      </label>
-      <label>
-        Execution timeout (seconds)
-        <input
-          type="number"
-          min="0.1"
-          max="2147483.647"
-          step="0.1"
-          value={state.timeout / 1000}
-          onChange={event => {
-            const seconds = Number(event.target.value);
-            if (isTimeout(seconds * 1000)) {
-              onTimeout(seconds * 1000);
+      {state.options.language !== 'mlir' && (
+        <>
+          <label>
+            LLVM pipeline
+            <input
+              value={state.options.llvmPipeline ?? ''}
+              placeholder={`default<O${state.options.optimization}>`}
+              onChange={event =>
+                onOptions({
+                  ...state.options,
+                  llvmPipeline: event.target.value || null
+                })
+              }
+            />
+          </label>
+          <label>
+            Analysis pipeline
+            <input
+              value={state.options.analysisPipeline}
+              onChange={event =>
+                onOptions({
+                  ...state.options,
+                  analysisPipeline: event.target.value
+                })
+              }
+            />
+          </label>
+        </>
+      )}
+      {state.options.language === 'mlir' && (
+        <label>
+          MLIR pipeline
+          <input
+            value={state.options.mlirPipeline}
+            onChange={event =>
+              onOptions({
+                ...state.options,
+                mlirPipeline: event.target.value
+              })
             }
-          }}
-        />
-      </label>
+          />
+        </label>
+      )}
       <p className="fortitudo-hint">
-        An empty LLVM pipeline follows the optimization level. Native targets
-        use built-in headers. MLIR produces inspection outputs only.
+        {state.options.language === 'mlir'
+          ? 'MLIR produces transformed IR and an operation graph.'
+          : 'Leave the LLVM pipeline empty to follow the optimization level.'}
       </p>
     </section>
   );
@@ -142,13 +131,15 @@ export function Run({
   onRun,
   onStop,
   onSelectExport,
-  onArguments
+  onArguments,
+  onTimeout
 }: {
   state: State;
   onRun(): void;
   onStop(): void;
   onSelectExport(symbol: string): void;
   onArguments(values: readonly string[]): void;
+  onTimeout(timeout: number): void;
 }): React.ReactElement {
   const execution = state.execution;
   const fn = execution.info?.functions.find(fn => fn.name === execution.symbol);
@@ -176,7 +167,6 @@ export function Run({
             ))}
           </select>
         </label>
-        {fn && <span>Signature: {fn.signature}</span>}
         {!main &&
           fn?.params.map((type, index) => (
             <label key={index}>
@@ -205,7 +195,9 @@ export function Run({
         >
           Run function
         </button>
-        <button onClick={onStop}>{busy ? 'Stop' : 'Reset execution'}</button>
+        {(busy || execution.result) && (
+          <button onClick={onStop}>{busy ? 'Stop' : 'Reset execution'}</button>
+        )}
       </div>
       {execution.module !== null && !currentModule(state) && (
         <p className="fortitudo-hint">
@@ -213,7 +205,11 @@ export function Run({
         </p>
       )}
       {!execution.module && (
-        <p>Compile for WebAssembly or select a Wasm file.</p>
+        <p className="fortitudo-hint">
+          {canRun(state)
+            ? 'Run builds your source and calls a supported exported function.'
+            : 'Choose WebAssembly to run your code, or use a Wasm file.'}
+        </p>
       )}
       {fn?.signatureCode === null && (
         <p>This signature cannot be called by the scalar runner.</p>
@@ -244,11 +240,30 @@ export function Run({
           {Math.round(execution.result.duration)} ms
         </pre>
       )}
-      <p className="fortitudo-hint">
-        Calls support simple scalar Wasm signatures. Pointer and aggregate
-        values are not marshaled. Repeated calls retain module state until
-        reset.
-      </p>
+      <details>
+        <summary>Execution settings</summary>
+        <label>
+          Execution timeout (seconds)
+          <input
+            type="number"
+            min="0.1"
+            max="2147483.647"
+            step="0.1"
+            value={state.timeout / 1000}
+            onChange={event => {
+              const seconds = Number(event.target.value);
+              if (isTimeout(seconds * 1000)) {
+                onTimeout(seconds * 1000);
+              }
+            }}
+          />
+        </label>
+        <p className="fortitudo-hint">
+          Calls support simple scalar Wasm signatures. Pointer and aggregate
+          values are not marshaled. Repeated calls retain module state until
+          reset.
+        </p>
+      </details>
     </section>
   );
 }

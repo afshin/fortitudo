@@ -1,7 +1,9 @@
 import { MessageLoop } from '@lumino/messaging';
-import { SplitPanel, Widget } from '@lumino/widgets';
+import { SplitPanel, TabPanel, Widget } from '@lumino/widgets';
 
+import { initial, snapshot } from '../model';
 import type { Area } from '../model';
+import { session } from '../persistence';
 import { PanePanel } from '../ui/panels';
 
 function views() {
@@ -113,7 +115,7 @@ it('preserves pane proportions while the host restores its size', () => {
   }
 });
 
-it('restores and resets a sole output group without disposing its views', () => {
+it('restores and resets a sole output group, retaining its views', () => {
   const panes = views();
   const area: Area = {
     type: 'tab-area',
@@ -133,4 +135,50 @@ it('restores and resets a sole output group without disposing its views', () => 
   expect(panel.contains(panes.outputs)).toBe(true);
   panel.dispose();
   expect(Object.values(panes).every(pane => pane.isDisposed)).toBe(true);
+});
+
+it('folds tools without losing split proportions or the source view', () => {
+  const panes = views();
+  const panel = new PanePanel(panes, null, () => {});
+  const closed = panel.save();
+  expect(panes.diagnostics.isHidden).toBe(true);
+  panel.activatePane('diagnostics');
+  expect(panes.diagnostics.isHidden).toBe(false);
+  expect(panel.save()).toMatchObject({ sizes: [0.75, 0.25] });
+  const tools = panes.diagnostics.parent?.parent;
+  if (!(tools instanceof TabPanel)) {
+    throw new Error('Expected the tools tab panel.');
+  }
+  tools.currentIndex = -1;
+  expect(panel.save()).toEqual(closed);
+  panel.compare();
+  panel.compare();
+  expect(panel.save()).toEqual(closed);
+  expect(panes.source.isDisposed).toBe(false);
+  panel.dispose();
+});
+
+it('restores collapsed tools but rejects a collapsed source area', () => {
+  const panel = new PanePanel(views(), null, () => {});
+  const saved = { ...snapshot(initial()), layout: panel.save() };
+  expect(session(saved)).toEqual(saved);
+  expect(
+    session({
+      ...saved,
+      layout: {
+        type: 'tab-area',
+        widgets: [
+          'source',
+          'outputs',
+          'diagnostics',
+          'run',
+          'files',
+          'terminal',
+          'pipelines'
+        ],
+        currentIndex: -1
+      }
+    })
+  ).toBeNull();
+  panel.dispose();
 });
