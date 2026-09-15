@@ -42,13 +42,15 @@ for (const [host, url] of Object.entries(hosts)) {
   test(`${host}: output tabs fit and sharing follows the host @compat`, async ({
     page
   }, testInfo) => {
-    await page.goto(url);
+    // Reset layout only resets Fortitudo, not Jupyter's saved sidebar widths.
+    // Keep this geometry test independent of other tests and browser runs.
+    const address =
+      host === 'jupyterlab'
+        ? `${url}/workspaces/fortitudo-layout-${testInfo.project.name}?reset`
+        : url;
+    await page.goto(address);
     if (host !== 'standalone') {
-      await page.getByRole('menuitem', { name: 'View', exact: true }).click();
-      await page.getByRole('menuitem', { name: /Command Palette/ }).click();
-      const palette = page.locator('.lm-CommandPalette-input');
-      await palette.fill('Open Fortitudo');
-      await palette.press('Enter');
+      await page.getByText('Open Fortitudo', { exact: true }).click();
     }
     await expect(page.getByLabel('Source code')).toBeVisible();
     await page.getByRole('button', { name: 'Reset layout' }).click();

@@ -25,6 +25,10 @@ ports 8765 and 8766. The JupyterLab test server uses `work/jupyter-config` for
 settings and saved workspaces so tests do not restore your personal workspace.
 Servers started by Playwright stop when the run ends.
 
+JupyterLab layout tests reset a dedicated workspace for each browser. This keeps
+host sidebar widths from earlier resize tests out of the geometry checks;
+Fortitudo's **Reset layout** only resets the workbench's own panes.
+
 Successful HTTP requests, expected download disconnects, and Jupyter startup
 messages are quiet by default. Server warnings and errors remain visible. To
 include request logs and Jupyter startup details, run:
