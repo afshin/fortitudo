@@ -47,3 +47,5 @@ if (bytes > 1_000_000_000) {
   throw new Error(`The site exceeds the GitHub Pages size limit: ${bytes}`);
 }
 process.stdout.write(`GitHub Pages site: ${bytes} bytes\n`);
+
+await import('./local.mjs');

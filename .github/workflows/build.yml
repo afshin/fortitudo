@@ -75,7 +75,15 @@ jobs:
           pixi run --as-is python scripts/release.py
       - name: Install browsers
         run: pixi run --as-is jlpm playwright install --with-deps
+      - name: Test the installed launcher without JupyterLab
+        run: |
+          pixi run --as-is python -m venv work/wheel-env
+          work/wheel-env/bin/python -m pip install --no-index --no-deps \
+            dist/fortitudo-*.whl
+          work/wheel-env/bin/python -I -m unittest discover -s tests -v
       - name: Test real browser workflows
+        env:
+          FORTITUDO_LOCAL_COMMAND: work/wheel-env/bin/fortitudo
         run: pixi run --as-is jlpm test:browser
       - name: Upload GitHub Pages site
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

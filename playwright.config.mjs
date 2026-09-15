@@ -33,6 +33,13 @@ export default defineConfig({
   ],
   webServer: [
     {
+      command:
+        (process.env.FORTITUDO_LOCAL_COMMAND ?? 'python -m fortitudo') +
+        ' --no-browser --port 8767',
+      url: 'http://127.0.0.1:8767/',
+      reuseExistingServer: !process.env.CI
+    },
+    {
       command: 'python ui-tests/server.py',
       url: 'http://127.0.0.1:8765/dist/standalone/',
       reuseExistingServer: !process.env.CI

@@ -25,6 +25,11 @@ ports 8765 and 8766. The JupyterLab test server uses `work/jupyter-config` for
 settings and saved workspaces so tests do not restore your personal workspace.
 Servers started by Playwright stop when the run ends.
 
+The local launcher runs on port 8767. By default, tests use
+`python -m fortitudo` from the checkout. Set `FORTITUDO_LOCAL_COMMAND` to the
+installed command to test a wheel; CI uses a clean environment without
+JupyterLab. Build the combined site before starting either version.
+
 JupyterLab layout tests reset a dedicated workspace for each browser. This keeps
 host sidebar widths from earlier resize tests out of the geometry checks;
 Fortitudo's **Reset layout** only resets the workbench's own panes.
@@ -52,7 +57,8 @@ need a remote compilation service. The Pages tests also execute the bundled C23
 and C++23 notebooks with the actual xeus kernel, follow their links to the
 rendered guide, and compile from Lite under the combined site's URL prefix.
 Navigation to Lite stays in the same tab and supports returning to the explorer.
-The network-disconnect test covers compilation after initialization, not offline
+The local launcher runs these same tests with external requests blocked. The
+network-disconnect test covers compilation after initialization, not offline
 page reload.
 
 Explorer coverage checks that one Compile populates applicable outputs and

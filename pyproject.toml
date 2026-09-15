@@ -33,6 +33,9 @@ dependencies = [
 ]
 dynamic = ["version", "description", "authors", "urls", "keywords"]
 
+[project.scripts]
+fortitudo = "fortitudo.server:main"
+
 [project.optional-dependencies]
 dev = [
     "jupyterlab>=4.6,<5",
@@ -48,7 +51,7 @@ fields = ["description", "authors", "urls", "keywords"]
 [tool.hatch.build.targets.sdist]
 # Twine 6.2 and the publishing action validate core metadata through 2.4.
 core-metadata-version = "2.4"
-artifacts = ["fortitudo/labextension"]
+artifacts = ["fortitudo/labextension", "fortitudo/site"]
 exclude = [".github", "binder", "*.tgz"]
 
 [tool.hatch.build.targets.wheel]
@@ -68,6 +71,7 @@ path = "fortitudo/_version.py"
 dependencies = ["hatch-jupyter-builder>=0.5"]
 build-function = "hatch_jupyter_builder.npm_builder"
 ensured-targets = [
+    "fortitudo/site/routes.json",
     "fortitudo/labextension/static/style.js",
     "fortitudo/labextension/package.json",
     "fortitudo/labextension/static/compiler/manifest.json",
@@ -81,6 +85,7 @@ ensured-targets = [
 
 ]
 skip-if-exists = [
+    "fortitudo/site/routes.json",
     "fortitudo/labextension/static/compiler/manifest.json",
     "fortitudo/labextension/static/compiler/worker.js",
     "fortitudo/labextension/static/compiler/Compiler.js",
@@ -90,7 +95,7 @@ skip-if-exists = [
 ]
 
 [tool.hatch.build.hooks.jupyter-builder.build-kwargs]
-build_cmd = "build:prod"
+build_cmd = "build:package"
 npm = ["jlpm"]
 
 [tool.hatch.build.hooks.jupyter-builder.editable-build-kwargs]

@@ -9,6 +9,7 @@ import zipfile
 
 root = Path(__file__).resolve().parent.parent
 project = json.loads((root / 'package.json').read_text())
+routes = json.loads((root / 'fortitudo/site/routes.json').read_text())
 version = project['version']
 manifest = json.loads((root / 'compiler/manifest.json').read_text())
 assert manifest['origin'] == 'source', 'Build the pinned compiler first.'
@@ -48,6 +49,25 @@ def verify_metadata(data, label):
     readme = (root / 'README.md').read_text()
     assert description.strip() == readme.strip(), label
     print(f'{label}: package metadata and README verified')
+
+
+def verify_site(label, read):
+    files = {
+        '/' + path.relative_to(root / 'dist/site').as_posix(): path
+        for path in (root / 'dist/site').rglob('*') if path.is_file()
+    }
+    assert set(routes) == set(files), f'{label}: missing site URLs'
+    for url, (scope, path) in routes.items():
+        assert read(scope, path) == files[url].read_bytes(), (
+            f'{label}: stale or missing {url}'
+        )
+    print(f'{label}: {len(routes)} local site URLs verified')
+
+
+verify_site('local build', lambda scope, path: (
+    root / 'fortitudo' / ('labextension' if scope == 'extension' else 'site')
+    / path
+).read_bytes())
 
 
 guide = (root / 'lite/files/Fortitudo guide.md').read_bytes()
@@ -101,18 +121,32 @@ for archive, prefix in archives:
             metadata = package.extractfile(f'fortitudo-{version}/PKG-INFO')
             assert metadata is not None, 'Missing Python metadata.'
             verify_metadata(metadata.read(), archive.name)
+            def read_site(scope, path):
+                directory = 'labextension' if scope == 'extension' else 'site'
+                member = package.extractfile(
+                    f'fortitudo-{version}/fortitudo/{directory}/{path}'
+                )
+                assert member is not None, path
+                return member.read()
+            verify_site(archive.name, read_site)
         assert not any('/.cache/' in name or '/node_modules/' in name
                        for name in package.getnames())
 
 wheel = root / f'dist/fortitudo-{version}-py3-none-any.whl'
 assert wheel.is_file(), 'Build the current wheel first.'
 with zipfile.ZipFile(wheel) as package:
+    entry = package.read(f'fortitudo-{version}.dist-info/entry_points.txt')
+    assert b'fortitudo = fortitudo.server:main' in entry
     verify_metadata(
         package.read(f'fortitudo-{version}.dist-info/METADATA'), wheel.name
     )
     matches = [name for name in package.namelist()
                if name.endswith('/static/compiler/manifest.json')]
     assert len(matches) == 1, 'The wheel must contain one compiler copy.'
+    extension = matches[0].removesuffix('static/compiler/manifest.json')
+    verify_site(wheel.name, lambda scope, path: package.read(
+        (extension if scope == 'extension' else 'fortitudo/site/') + path
+    ))
     for match in matches:
         prefix = match.removesuffix('manifest.json')
         verify(wheel.name, lambda name: package.read(prefix + name))

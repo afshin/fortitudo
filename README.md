@@ -13,18 +13,29 @@ is available as **Fortitudo guide.md** in JupyterLite.
 
 <!-- guide:start -->
 
-## Install in JupyterLab
+## Install Fortitudo
 
-Use Fortitudo in your own JupyterLab 4.6 or later installation:
+Install once, then open Fortitudo locally:
 
 ```sh
 pip install fortitudo
+fortitudo
 ```
 
-Restart JupyterLab and select **Open Fortitudo** in the launcher or command
-palette. The Python package includes the compiler; installing it does not
-require Node or a compiler build. The npm package also includes the runtime and
-exports the shared workbench for applications that supply their own Lumino host.
+The command opens the explorer in your browser. **Try in Jupyter** opens the
+bundled JupyterLite environment with C23 and C++23 notebooks in the same tab.
+Everything is served from your computer; compilation and notebook execution stay
+in the browser. No JupyterLab installation, Node, or compiler build is required.
+
+Keep the terminal open while using Fortitudo; press **Ctrl+C** to stop serving
+it. Use `fortitudo --no-browser` to print the address, or
+`fortitudo --port 8001` to choose another port. Your browser saves sessions
+separately for each address.
+
+If you have JupyterLab 4.6 or later, the same package also provides its
+extension. Restart JupyterLab and select **Open Fortitudo** in the launcher or
+command palette. The npm package includes the compiler and shared workbench for
+applications that supply their own Lumino host.
 
 ## Compile and inspect
 
@@ -148,8 +159,8 @@ The first kernel start downloads the interpreter and its libraries. Browser
 memory limits apply; native processes, native platform APIs, and arbitrary
 native libraries are unavailable.
 
-These kernels are included in our Lite site, not installed into native
-JupyterLab by the Fortitudo Python package.
+These kernels run in the bundled JupyterLite environment. They are not native
+JupyterLab kernels.
 
 <!-- guide:end -->
 

@@ -89,6 +89,13 @@ standalone navigation opens Lite in the current tab. The separate
 remain relative, including compiler and notebook kernel assets. The site build
 checks required entry points and the 1 GB Pages size limit.
 
+The same build stages `fortitudo/site` for the Python launcher. Its URL manifest
+maps identical assets to one stored file, sharing the compiler with the
+JupyterLab extension. `fortitudo --no-browser` serves this packaged site on
+localhost; it never serves the current working directory. Both generated site
+directories are ignored by Git. Lite omits source maps to keep the installation
+within PyPI's archive size limit.
+
 GitHub Pages uses **GitHub Actions** as its source. The Build workflow tests the
 combined site on pull requests, main pushes, and release builds. Successful main
 pushes deploy it after both the build and wheel installation checks pass. Pull
@@ -143,6 +150,17 @@ their source cells short, preserve kernel metadata, and save without execution
 counts or outputs. Link to the generated guide for explorer instructions. Run
 both notebooks through the browser suite after editing their code or links.
 
+`lite/empack_config.yaml` excludes the shared interpreter libraries from kernel
+package archives because xeus loads them through the kernelspec's `shared`
+metadata. The libraries remain in the site; both kernels must run successfully
+after changes to these filters.
+
+The Lite build also defers jupyterlite-xeus 5.0's optional PyPI/conda name
+lookup until use. The upstream eager fetch otherwise rejects during offline
+notebook startup. This checked adaptation touches only generated bundles and
+must be reviewed when updating jupyterlite-xeus. It preserves the lookup for
+package commands.
+
 ## Checks
 
 ```sh
@@ -179,7 +197,23 @@ pixi run --as-is actionlint
 
 The checks read the npm archive, wheel, source distribution, extension,
 standalone site, and Lite site. Every compiler file must match the generated
-manifest; the worker and manifest must match the current build too.
+manifest; the worker and manifest must match the current build too. They also
+verify every local site URL against the combined static site. Source archives
+include the built local site, so installing one requires no frontend build.
+
+Test the actual wheel in a clean environment without JupyterLab:
+
+```sh
+pixi run --as-is python -m venv work/wheel-env
+work/wheel-env/bin/python -m pip install --no-index --no-deps dist/fortitudo-*.whl
+work/wheel-env/bin/python -I -m unittest discover -s tests -v
+FORTITUDO_LOCAL_COMMAND=work/wheel-env/bin/fortitudo \
+  pixi run --as-is jlpm test:browser ui-tests/tests/site.spec.ts
+```
+
+The browser tests launch the installed command and run the explorer and both
+notebook kernels with external requests blocked. CI runs this alongside the
+native JupyterLab extension installation check.
 
 The release check validates package metadata, checks PyPI's file limit, runs
 Twine and npm's offline pack dry run, and writes `dist/release.json` with

@@ -17,8 +17,9 @@ the maintainer's responsibility.
 5. Confirm that the workflow succeeds and the expected version appears on
    [npm](https://www.npmjs.com/package/fortitudo) and
    [PyPI](https://pypi.org/project/fortitudo/). Install that exact Python
-   version in a fresh JupyterLab environment, open Fortitudo, and compile a
-   function.
+   version in a fresh Python environment. Run `fortitudo`, compile a function,
+   and run both example notebooks through **Try in Jupyter**. Also check the
+   extension in a JupyterLab environment.
 
 The workflow requires the tag to match the package version. Drafts wait until
 publication, and prereleases are skipped. Ordinary pushes, pull requests, and

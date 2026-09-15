@@ -68,7 +68,7 @@ for (const [host, url] of Object.entries(hosts)) {
     await guideButton.press('Enter');
     await expect(guide).toBeVisible();
     await expect(
-      guide.getByText('pip install fortitudo', { exact: true })
+      guide.locator('pre').filter({ hasText: 'pip install fortitudo' })
     ).toBeInViewport();
     await guide.getByRole('button', { name: 'Execution', exact: true }).click();
     await expect(

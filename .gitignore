@@ -134,6 +134,7 @@ dmypy.json
 /work/
 /compiler/
 /src/generated/
+/fortitudo/site/
 /lite/files/Fortitudo guide.md
 runtime/.cache/
 runtime/build/

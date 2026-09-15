@@ -45,6 +45,7 @@
     "scripts": {
         "build": "jlpm build:lib && jlpm build:worker && jlpm check:compiler && jlpm build:labextension:dev",
         "build:prod": "jlpm build:lib && jlpm build:worker && jlpm check:compiler && jlpm build:labextension",
+        "build:package": "jlpm build:prod && jlpm build:site",
         "build:labextension": "jupyter-builder build .",
         "build:labextension:dev": "jupyter-builder build --development True .",
         "build:lib": "jlpm build:guide && tsc -b tsconfig.json tsconfig.worker.json",
