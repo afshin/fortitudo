@@ -221,3 +221,8 @@ archive sizes and hashes. It validates local archives even when their version is
 already published. See [RELEASE.md](RELEASE.md) for publishing from GitHub
 releases and recovering failed uploads. Keep `package.json` as the version
 source; staging, commits, and tags remain the user's responsibility.
+
+If installing a release in Pixi fails on `labextensions/fortitudo/package.json`,
+run `unlink .pixi/envs/default/share/jupyter/labextensions/fortitudo` from the
+repository root to remove the broken development link, then retry with
+`pixi run --as-is python -m pip install --force-reinstall fortitudo`.
