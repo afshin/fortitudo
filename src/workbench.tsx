@@ -207,7 +207,7 @@ export class Workbench extends BoxPanel {
       return;
     }
     void this.options.commands
-      .execute(CommandIDs.layoutChanged, {
+      .execute(CommandIDs.saveLayout, {
         layout: this.panels.save()
       })
       .catch(error => {

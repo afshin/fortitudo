@@ -1,4 +1,4 @@
-import { record } from './compiler/protocol';
+import { isRecord } from './compiler/protocol';
 import type { Session } from './model';
 import { session } from './persistence';
 
@@ -30,7 +30,7 @@ export function decodeShare(value: string): Session {
   const decoded: unknown = JSON.parse(
     new TextDecoder('utf-8', { fatal: true }).decode(bytes)
   );
-  const saved = record(decoded)
+  const saved = isRecord(decoded)
     ? session({
         version: decoded.version,
         source: decoded.source,

@@ -1,17 +1,24 @@
 import type { CommandRegistry } from '@lumino/commands';
 import * as React from 'react';
-import { useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import {
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore
+} from 'react';
 
 import { CommandIDs } from '../commands';
 import type { Diagnostic, Options, OutputKind } from '../compiler/types';
 import type { Pane } from '../model';
 import type { IStore } from '../state';
 import { Editor } from './editor';
+import { Guide } from './guide';
 import { Files, Output } from './outputs';
 import { Pipelines, Run, Terminal } from './tools';
 import { Controls, Diagnostics, Source } from './views';
 
-export interface IBridgeProps {
+interface IBridgeProps {
   store: IStore;
   commands: CommandRegistry;
   pane: Pane | 'controls';
@@ -23,6 +30,7 @@ export interface IBridgeProps {
 /** Subscribe here; views receive state and command-backed callbacks. */
 export function Bridge(props: IBridgeProps): React.ReactElement {
   const { store, commands, pane, onSize } = props;
+  const [guideOpen, setGuideOpen] = useState(false);
   const node = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const element = node.current;
@@ -43,23 +51,28 @@ export function Bridge(props: IBridgeProps): React.ReactElement {
       });
     };
     return {
-      onChange: (source: string) => execute(CommandIDs.source, { source }),
-      onOptions: (options: Options) => execute(CommandIDs.options, { options }),
+      onChange: (source: string) => execute(CommandIDs.setSource, { source }),
+      onOptions: (options: Options) =>
+        execute(CommandIDs.setOptions, { options }),
       onCompile: () => execute(CommandIDs.compile),
       onCancel: () => execute(CommandIDs.cancel),
-      onLayout: () => execute(CommandIDs.layout),
+      onResetLayout: () => execute(CommandIDs.resetLayout),
       onCompare: () => execute(CommandIDs.compare),
       onShare: () => execute(CommandIDs.share),
-      onExample: () => execute(CommandIDs.example),
+      onResetExample: () => execute(CommandIDs.resetExample),
       onRun: () => execute(CommandIDs.run),
       onStop: () => execute(CommandIDs.stop),
-      onCommand: (command: string) => execute(CommandIDs.terminal, { command }),
+      onCommand: (command: string) =>
+        execute(CommandIDs.runCommand, { command }),
       onClear: () => execute(CommandIDs.clearTerminal),
-      onSymbol: (symbol: string) => execute(CommandIDs.symbol, { symbol }),
+      onSelectExport: (symbol: string) =>
+        execute(CommandIDs.selectExport, { symbol }),
       onArguments: (values: readonly string[]) =>
-        execute(CommandIDs.runArguments, { values }),
-      onTimeout: (timeout: number) => execute(CommandIDs.timeout, { timeout }),
-      onModule: (path: string) => execute(CommandIDs.module, { path }),
+        execute(CommandIDs.setArguments, { values }),
+      onTimeout: (timeout: number) =>
+        execute(CommandIDs.setTimeout, { timeout }),
+      onSelectModule: (path: string) =>
+        execute(CommandIDs.selectModule, { path }),
       onCopy: (path: string, workspace: boolean) =>
         execute(CommandIDs.copy, { path, workspace }),
       onDownload: (path: string, workspace: boolean) =>
@@ -76,7 +89,9 @@ export function Bridge(props: IBridgeProps): React.ReactElement {
             state={state}
             {...callbacks}
             onShare={props.canShare ? callbacks.onShare : undefined}
+            onGuide={() => setGuideOpen(true)}
           />
+          {guideOpen && <Guide onClose={() => setGuideOpen(false)} />}
         </div>
       );
     case 'source':

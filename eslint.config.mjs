@@ -19,7 +19,7 @@ const domain = [
 ];
 
 export default defineConfig([
-  { ignores: ['**/*.d.ts', '**/__tests__/**'] },
+  { ignores: ['**/*.d.ts', '**/__tests__/**', 'src/generated/**'] },
   js.configs.recommended,
   tseslint.configs.recommended,
   {

@@ -4,9 +4,29 @@ Fortitudo is a browser-only compiler explorer for C, C++, LLVM IR, and MLIR in
 JupyterLab, JupyterLite, and a standalone Lumino application. All three hosts
 use the same workbench and workers. No kernel or remote compiler is needed.
 
-The [web app](https://afshin.github.io/fortitudo/) opens the standalone
-explorer. Select **Try in Jupyter** to use the explorer alongside C23 and C++23
-notebooks. Both applications run in the browser.
+The [web app](https://fortitudo.cc) opens the standalone explorer. Select **Try
+in Jupyter** to use the explorer alongside C23 and C++23 notebooks. Both
+applications run in the browser.
+
+Select **Guide** in the explorer to read the feature guide below. The same guide
+is available as **Fortitudo guide.md** in JupyterLite.
+
+<!-- guide:start -->
+
+## Install in JupyterLab
+
+Use Fortitudo in your own JupyterLab 4.6 or later installation:
+
+```sh
+pip install fortitudo
+```
+
+Restart JupyterLab and select **Open Fortitudo** in the launcher or command
+palette. The Python package includes the compiler; installing it does not
+require Node or a compiler build. The npm package also includes the runtime and
+exports the shared workbench for applications that supply their own Lumino host.
+
+## Compile and inspect
 
 Edit a function, choose a language, target, and optimization level, then select
 **Compile** or press **Ctrl/Cmd+Enter**. One compilation generates every
@@ -22,7 +42,7 @@ terminates that worker; the next compile loads a fresh one.
 - WebAssembly target with C/C++ or LLVM IR: also a linked Wasm module and its
   metadata.
 
-Every build includes diagnostics, recorded commands, raw streams, stage timings,
+Every compilation includes diagnostics, recorded commands, raw streams, timings,
 and generated files. A failed stage preserves successful independent outputs.
 Select a diagnostic to jump to its source location. **Compare** opens a second
 output group, initially comparing LLVM IR before and after passes. Both groups
@@ -48,11 +68,13 @@ packaged LLVM runtime reports WebAssembly, x86-64, and AArch64 backends. Native
 targets produce inspection artifacts with Clang built-in headers only; the C/C++
 system headers are for WebAssembly.
 
+## Pipelines
+
 **Pipelines** exposes LLVM optimization, analysis, and MLIR passes. An empty
-LLVM field follows the selected O level, for example `default<O2>`. Frontend
-semantics and backend code generation also use that O level. The first IR view
-has LLVM optimization passes disabled. Analysis defaults to dominator trees and
-loops; MLIR defaults to `builtin.module(canonicalize,cse)`. LLVM inputs with
+LLVM pipeline follows the optimization level, for example `default<O2>`.
+Frontend semantics and backend code generation also use that level. The first IR
+view has LLVM optimization passes disabled. Analysis defaults to dominator trees
+and loops; MLIR defaults to `builtin.module(canonicalize,cse)`. LLVM inputs with
 incompatible target triples or layouts report an error instead of being silently
 retargeted. Changing language preserves your source; **Reset example**
 explicitly replaces it with that language's example.
@@ -67,7 +89,7 @@ or `f64` returns with zero, one, or two matching arguments, and `void()`.
 Unsupported signatures remain visible. Pointer and aggregate values are not
 marshaled. A compatible selection survives a rebuild; otherwise the runner
 prefers supported `main`, then a sole callable export. Ambiguous exports require
-selection. `main(i32, i32)` receives zero arguments and a null argv.
+selection. `main(i32, i32)` receives `argc = 0` and a null `argv`.
 
 The pane shows the return value, stdout, stderr, status, and errors. Repeated
 calls retain module state. **Reset execution**, **Stop**, timeout, traps, and
@@ -112,19 +134,26 @@ to version 2, preserving source and split proportions and replacing the Assembly
 pane with an output group selecting Assembly. Compiled artifacts, command files,
 and running processes are not persisted.
 
-## Running locally
+## C and C++ notebooks
 
-The prebuilt extension requires JupyterLab 4.6 or later. Once the release is
-published, install it with:
+Our JupyterLite site includes xeus-cpp 0.10.0, with C23 and C++23 kernels. Open
+**C++ examples.ipynb** or **C examples.ipynb** and choose **Run → Run All
+Cells**. The examples use packaged standard library headers, define functions,
+and reuse state across cells.
 
-```sh
-python -m pip install fortitudo
-```
+The notebook interpreter runs in its own browser worker. It is independent of
+Fortitudo's compiler explorer: code, options, and results are not synchronized
+between them. Its Clang version also differs from the explorer's LLVM runtime.
+The first kernel start downloads the interpreter and its libraries. Browser
+memory limits apply; native processes, native platform APIs, and arbitrary
+native libraries are unavailable.
 
-Restart JupyterLab and select **Open Fortitudo** in the launcher or command
-palette. The wheel includes the compiler; installing it does not require Node or
-a compiler build. The npm package also includes the runtime and exports the
-shared workbench for applications that supply their own Lumino host.
+These kernels are included in our Lite site, not installed into native
+JupyterLab by the Fortitudo Python package.
+
+<!-- guide:end -->
+
+## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the complete Pixi setup and build
 sequence. The compiler is a separate heavyweight build; frontend builds require
@@ -163,33 +192,25 @@ page reload is a separate feature.
 The shared package entry exports these contracts. Only `src/jupyter/` imports
 JupyterLab packages; the plugin retains `fortitudo:plugin`.
 
-The compiler API now returns `Result.artifacts`, `Result.stages`, and
-`Result.files` instead of `Result.assembly`. Artifacts carry their build ID,
-kind, path, and text or binary content. Stages record status, commands, raw
-streams, diagnostics, and duration. Consumers should select artifacts by kind
-and account for partial failures. `ICompiler.compile` accepts stage progress;
-`ICompiler.command` returns a stage and replacement workspace snapshot.
-`Options` includes the three pipeline fields and the four input languages.
-`IRunner`, `RunRequest`, `RunResult`, and `inspectWasm` are exported separately.
-Treat all returned binary buffers as immutable; transport never detaches buffers
-already owned by application state.
+The compiler API returns `Result.artifacts`, `Result.stages`, and
+`Result.files`. Artifacts carry their build ID, kind, path, and text or binary
+content. Stages record status, commands, raw streams, diagnostics, and duration.
+Consumers should select artifacts by kind and account for partial failures.
+`ICompiler.compile` accepts stage progress; `ICompiler.command` returns a stage
+and replacement workspace snapshot. `Options` includes the three pipeline fields
+and the four input languages. `IRunner`, `RunRequest`, `RunResult`, and
+`inspectWasm` are exported separately. Treat all returned binary buffers as
+immutable; transport never detaches buffers already owned by application state.
 
-## C and C++ notebooks
+Command names describe actions, such as `CommandIDs.setSource`,
+`CommandIDs.resetLayout`, and `CommandIDs.selectOutput`. Their IDs use the same
+words in kebab case, such as `fortitudo:set-source`. Jupyter registers
+`CommandIDs.open`; `registerCommands` takes an `ICommandContext` for the shared
+commands.
 
-Our JupyterLite site includes xeus-cpp 0.10.0, with C23 and C++23 kernels. Open
-**Getting started.ipynb** or **C examples.ipynb** and choose **Run → Run All
-Cells**. The examples use packaged standard library headers, define functions,
-and reuse state across cells.
-
-The notebook interpreter runs in its own browser worker. It is independent of
-Fortitudo's compiler explorer: code, options, and results are not synchronized
-between them. Its Clang version also differs from the explorer's LLVM runtime.
-The first kernel start downloads the interpreter and its libraries. Browser
-memory limits apply; native processes, native platform APIs, and arbitrary
-native libraries are unavailable.
-
-These kernels are included in our Lite site, not installed into native
-JupyterLab by the Fortitudo Python package.
+`WasmFunction.signature` is display text, such as `i32(i32)`.
+`WasmFunction.signatureCode` is the numeric runner ABI code, or null for an
+unsupported export. Pass that code as `RunRequest.signatureCode`.
 
 ## Runtime and limits
 
@@ -209,7 +230,7 @@ compiler errors retain diagnostics and raw output.
 The optional MLIR driver downloads only when MLIR is used, with the same
 integrity checks, progress, cancellation, and retry behavior as the core. MLIR
 exploration uses explicit passes; automatic lowering to an executable, automatic
-compilation, and notebook synchronization remain outside this port.
+compilation, and notebook synchronization remain outside the explorer.
 
 ## Acknowledgments
 

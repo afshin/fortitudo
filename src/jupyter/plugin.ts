@@ -6,6 +6,7 @@ import { ILauncher } from '@jupyterlab/launcher';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { IStateDB } from '@jupyterlab/statedb';
 
+import { CommandIDs } from '../commands';
 import { initial, snapshot } from '../model';
 import { session } from '../persistence';
 import { createWorkbench } from '../workbench';
@@ -13,11 +14,10 @@ import type { Workbench } from '../workbench';
 import { createPersistence } from './persistence';
 
 const pluginId = 'fortitudo:plugin';
-const openId = 'fortitudo:open';
 
 const plugin: JupyterFrontEndPlugin<void> = {
   id: pluginId,
-  description: 'A browser-only C/C++ and IR compiler explorer.',
+  description: 'Explore C, C++, LLVM IR, and MLIR in your browser.',
   autoStart: true,
   requires: [IStateDB],
   optional: [ICommandPalette, ILauncher, ISettingRegistry, ILayoutRestorer],
@@ -43,7 +43,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
       state,
       `fortitudo:session:${path}:${workspace}`
     );
-    app.commands.addCommand(openId, {
+    app.commands.addCommand(CommandIDs.open, {
       label: 'Open Fortitudo',
       caption: 'Explore compiler outputs and run WebAssembly in your browser',
       iconClass: 'fortitudo-icon',
@@ -102,12 +102,12 @@ const plugin: JupyterFrontEndPlugin<void> = {
         return opening;
       }
     });
-    palette?.addItem({ command: openId, category: 'Fortitudo' });
-    launcher?.add({ command: openId, category: 'Other', rank: 1 });
+    palette?.addItem({ command: CommandIDs.open, category: 'Fortitudo' });
+    launcher?.add({ command: CommandIDs.open, category: 'Other', rank: 1 });
     if (restorer) {
       void restorer
         .restore(tracker, {
-          command: openId,
+          command: CommandIDs.open,
           name: () => 'workbench'
         })
         .catch(error => {

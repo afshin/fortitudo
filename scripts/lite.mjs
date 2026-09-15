@@ -9,6 +9,8 @@ import {
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
+import './guide.mjs';
+
 const root = resolve(import.meta.dirname, '..');
 const prefix = resolve(root, 'work/xeus-cpp');
 

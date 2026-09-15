@@ -73,8 +73,7 @@ export function Pipelines({
       </label>
       <p className="fortitudo-hint">
         An empty LLVM pipeline follows the optimization level. Native targets
-        use built-in headers. MLIR uses explicit passes and does not execute
-        automatically.
+        use built-in headers. MLIR produces inspection outputs only.
       </p>
     </section>
   );
@@ -93,7 +92,7 @@ export function Terminal({
   return (
     <section className="fortitudo-pane" aria-label="Terminal pane">
       <div className="fortitudo-caption">
-        <span>clang · opt · llc · wasm-ld · mlir-opt · dot</span>
+        <span>clang · clang++ · opt · llc · wasm-ld · mlir-opt · dot</span>
         <button onClick={onClear}>Clear log</button>
       </div>
       <pre className="fortitudo-output" aria-label="Command log">
@@ -142,18 +141,18 @@ export function Run({
   state,
   onRun,
   onStop,
-  onSymbol,
+  onSelectExport,
   onArguments
 }: {
   state: State;
   onRun(): void;
   onStop(): void;
-  onSymbol(symbol: string): void;
+  onSelectExport(symbol: string): void;
   onArguments(values: readonly string[]): void;
 }): React.ReactElement {
   const execution = state.execution;
   const fn = execution.info?.functions.find(fn => fn.name === execution.symbol);
-  const main = fn?.name === 'main' && fn.code === 2;
+  const main = fn?.name === 'main' && fn.signatureCode === 2;
   const busy = execution.active !== null;
   const value =
     execution.result?.status === 'success' ? execution.result.value : null;
@@ -166,18 +165,18 @@ export function Run({
           <select
             value={execution.symbol}
             disabled={busy}
-            onChange={event => onSymbol(event.target.value)}
+            onChange={event => onSelectExport(event.target.value)}
           >
             <option value="">Select an export</option>
             {execution.info?.functions.map(fn => (
               <option key={fn.name} value={fn.name}>
                 {fn.name} · {fn.signature}
-                {fn.code === null ? ' (unsupported)' : ''}
+                {fn.signatureCode === null ? ' (unsupported)' : ''}
               </option>
             ))}
           </select>
         </label>
-        {fn && <span>Wasm ABI: {fn.signature}</span>}
+        {fn && <span>Signature: {fn.signature}</span>}
         {!main &&
           fn?.params.map((type, index) => (
             <label key={index}>
@@ -200,7 +199,8 @@ export function Run({
         <button
           onClick={onRun}
           disabled={
-            !canRun(state) || (currentModule(state) && fn?.code === null)
+            !canRun(state) ||
+            (currentModule(state) && fn?.signatureCode === null)
           }
         >
           Run function
@@ -215,7 +215,7 @@ export function Run({
       {!execution.module && (
         <p>Compile for WebAssembly or select a Wasm file.</p>
       )}
-      {fn?.code === null && (
+      {fn?.signatureCode === null && (
         <p>This signature cannot be called by the scalar runner.</p>
       )}
       {busy && (

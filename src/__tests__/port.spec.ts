@@ -19,7 +19,7 @@ it('reads exported scalar signatures without executing the module', () => {
       params: ['i32'],
       results: ['i32'],
       signature: 'i32(i32)',
-      code: 1
+      signatureCode: 1
     }
   ]);
   for (let i = 1; i < wasm.length; i++) {
@@ -201,20 +201,20 @@ it('guards binary snapshots and calls, allowing NaN returns', () => {
   expect(isFiles([{ path: '/workspace/a', data: [1, 2] }])).toBe(false);
   expect(isFiles([{ path: '/workspace//a', data: wasm }])).toBe(false);
   expect(isFiles([{ path: '/workspace/', data: wasm }])).toBe(false);
-  expect(
-    isInput({
-      kind: 'execute',
-      id: 1,
-      request: {
-        id: 1,
-        module: '/workspace/program.wasm',
-        symbol: 'square',
-        signature: 1,
-        files: [{ path: '/workspace/program.wasm', data: wasm }],
-        args: [1.5]
-      }
-    })
-  ).toBe(false);
+  const request = {
+    id: 1,
+    module: '/workspace/program.wasm',
+    symbol: 'square',
+    signatureCode: 1,
+    files: [{ path: '/workspace/program.wasm', data: wasm }],
+    args: [5]
+  };
+  expect(isInput({ kind: 'execute', id: 1, request })).toBe(true);
+  for (const args of [[1.5], [], [1, 2]]) {
+    expect(
+      isInput({ kind: 'execute', id: 1, request: { ...request, args } })
+    ).toBe(false);
+  }
   expect(
     isOutput({
       kind: 'execution',

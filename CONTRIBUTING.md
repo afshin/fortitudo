@@ -84,10 +84,10 @@ pixi run --as-is jlpm serve:site
 ```
 
 `dist/site` serves standalone at its root and JupyterLite under `lite/`. The
-standalone navigation opens Lite in a new tab, retaining the explorer. The
-separate `dist/standalone` build has no link to an unbundled Lite site. All
-asset URLs remain relative, including compiler and notebook kernel assets. The
-site build checks required entry points and the 1 GB Pages size limit.
+standalone navigation opens Lite in the current tab. The separate
+`dist/standalone` build has no link to an unbundled Lite site. All asset URLs
+remain relative, including compiler and notebook kernel assets. The site build
+checks required entry points and the 1 GB Pages size limit.
 
 GitHub Pages uses **GitHub Actions** as its source. The Build workflow tests the
 combined site on pull requests, main pushes, and release builds. Successful main
@@ -122,12 +122,26 @@ Vite serves the existing compiler directory without bundling its loader. Rebuild
 worker code explicitly when it changes. To test production assets, use
 `build:standalone` followed by `serve:standalone`.
 
-For the Correxit-style Lite testbed:
+For the JupyterLite site:
 
 ```sh
 pixi run --as-is jlpm build:lite
 pixi run --as-is jlpm serve
 ```
+
+## User guide and notebooks
+
+Edit the feature guide between `guide:start` and `guide:end` in `README.md`.
+`build:guide` generates the shared UI content in `src/generated/guide.ts` and
+`lite/files/Fortitudo guide.md`. Both are ignored build outputs. Frontend and
+Lite builds regenerate them; the main watch command also watches the README.
+During standalone development, run `jlpm watch:guide` in a Pixi shell to update
+the guide as you edit it.
+
+The two notebooks in `lite/files` demonstrate the C23 and C++23 kernels. Keep
+their source cells short, preserve kernel metadata, and save without execution
+counts or outputs. Link to the generated guide for explorer instructions. Run
+both notebooks through the browser suite after editing their code or links.
 
 ## Checks
 

@@ -31,14 +31,11 @@ export default defineConfig(({ mode }) => {
                 {
                   tag: 'a',
                   attrs: {
-                    href: './lite/lab/index.html',
-                    target: '_blank',
-                    rel: 'noopener'
+                    href: './lite/lab/index.html'
                   },
                   children:
                     '<img src="./jupyter.svg" alt="" width="18" height="18">' +
-                    '<span>Try in Jupyter</span>' +
-                    '<span aria-hidden="true">↗</span>'
+                    '<span>Try in Jupyter</span>'
                 }
               ],
               injectTo: 'body-prepend'

@@ -15,7 +15,8 @@ export type RunRequest = Readonly<{
   module: string;
   files: readonly File[];
   symbol: string;
-  signature: number;
+  /** Use the selected WasmFunction's signatureCode from inspectWasm. */
+  signatureCode: number;
   args: readonly number[];
 }>;
 

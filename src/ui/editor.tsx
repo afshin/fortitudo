@@ -11,7 +11,7 @@ import * as React from 'react';
 import type { IStore } from '../state';
 import { editorExtensions } from './codemirror';
 
-export interface IEditorProps {
+interface IEditorProps {
   store: IStore;
   onChange(source: string): void;
 }

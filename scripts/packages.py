@@ -1,5 +1,6 @@
 """Verify the actual distributions, including every compiler asset."""
 
+from email.parser import BytesParser
 import hashlib
 import json
 from pathlib import Path
@@ -7,7 +8,8 @@ import tarfile
 import zipfile
 
 root = Path(__file__).resolve().parent.parent
-version = json.loads((root / 'package.json').read_text())['version']
+project = json.loads((root / 'package.json').read_text())
+version = project['version']
 manifest = json.loads((root / 'compiler/manifest.json').read_text())
 assert manifest['origin'] == 'source', 'Build the pinned compiler first.'
 expected = dict(manifest['files'])
@@ -27,6 +29,33 @@ def verify(label, read):
             f'{label}: {name} has wrong hash'
         )
     print(f'{label}: {len(expected)} compiler files verified')
+
+
+def verify_metadata(data, label):
+    metadata = BytesParser().parsebytes(data)
+    assert metadata['Name'] == project['name'], label
+    assert metadata['Version'] == version, label
+    assert metadata['Summary'] == project['description'], label
+    assert set(metadata['Keywords'].split(',')) == set(project['keywords']), (
+        label
+    )
+    urls = dict(value.split(', ', 1)
+                for value in metadata.get_all('Project-URL'))
+    assert urls['Homepage'] == project['homepage'], label
+    assert urls['Bug Tracker'] == project['bugs']['url'], label
+    assert urls['Repository'] == project['repository']['url'], label
+    description = metadata.get_payload(decode=True).decode('utf-8')
+    readme = (root / 'README.md').read_text()
+    assert description.strip() == readme.strip(), label
+    print(f'{label}: package metadata and README verified')
+
+
+guide = (root / 'lite/files/Fortitudo guide.md').read_bytes()
+for name in [
+    'lite/_output/files/Fortitudo guide.md',
+    'dist/site/lite/files/Fortitudo guide.md',
+]:
+    assert (root / name).read_bytes() == guide, f'{name}: stale guide'
 
 
 for name in [
@@ -51,6 +80,14 @@ for archive, prefix in archives:
             return member.read()
         verify(archive.name, read)
         if prefix == 'package/compiler/':
+            metadata = package.extractfile('package/package.json')
+            assert metadata is not None, 'Missing npm metadata.'
+            assert json.load(metadata) == project, 'Stale npm metadata.'
+            guide_module = package.extractfile('package/lib/generated/guide.js')
+            assert guide_module is not None, 'Missing generated guide.'
+            assert guide_module.read() == (
+                root / 'lib/generated/guide.js'
+            ).read_bytes(), 'Stale npm guide.'
             for module in ['types', 'execution', 'runner', 'wasm', 'terminal']:
                 for suffix in ['js', 'd.ts']:
                     name = f'package/lib/compiler/{module}.{suffix}'
@@ -60,12 +97,19 @@ for archive, prefix in archives:
             declarations = entry.read().decode()
             for contract in ['Artifact', 'Stage', 'IRunner', 'inspectWasm']:
                 assert contract in declarations, f'Missing {contract} export'
+        else:
+            metadata = package.extractfile(f'fortitudo-{version}/PKG-INFO')
+            assert metadata is not None, 'Missing Python metadata.'
+            verify_metadata(metadata.read(), archive.name)
         assert not any('/.cache/' in name or '/node_modules/' in name
                        for name in package.getnames())
 
 wheel = root / f'dist/fortitudo-{version}-py3-none-any.whl'
 assert wheel.is_file(), 'Build the current wheel first.'
 with zipfile.ZipFile(wheel) as package:
+    verify_metadata(
+        package.read(f'fortitudo-{version}.dist-info/METADATA'), wheel.name
+    )
     matches = [name for name in package.namelist()
                if name.endswith('/static/compiler/manifest.json')]
     assert len(matches) == 1, 'The wheel must contain one compiler copy.'

@@ -64,13 +64,13 @@ export function command(text: string): Command {
     throw new Error('Unclosed quote in command.');
   }
   finish();
-  const arguments_: string[] = [];
+  const args: string[] = [];
   let stdout: string | null = null;
   let stderr: string | null = null;
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     if (!token.redirect) {
-      arguments_.push(token.text);
+      args.push(token.text);
       continue;
     }
     const path = tokens[++i];
@@ -83,7 +83,7 @@ export function command(text: string): Command {
       stdout = path.text;
     }
   }
-  const tool = arguments_[0];
+  const tool = args[0];
   if (
     !['clang', 'clang++', 'opt', 'llc', 'wasm-ld', 'mlir-opt', 'dot'].includes(
       tool
@@ -93,5 +93,5 @@ export function command(text: string): Command {
       'Choose clang, clang++, opt, llc, wasm-ld, mlir-opt or dot.'
     );
   }
-  return { tool, command: serialize(arguments_), stdout, stderr };
+  return { tool, command: serialize(args), stdout, stderr };
 }

@@ -63,16 +63,18 @@ test('one compile fills outputs and comparison uses them @compat', async ({
     'DominatorTree'
   );
   await tab(page, 'Graphs');
-  await expect(page.getByLabel('Function graph').locator('option')).toHaveCount(
-    2
-  );
+  await expect(
+    page.getByRole('combobox', { name: 'Graph', exact: true }).locator('option')
+  ).toHaveCount(2);
   await expect(page.getByAltText('Compiler graph')).toBeVisible();
-  await page.getByLabel('Function graph').selectOption({ index: 1 });
+  await page
+    .getByRole('combobox', { name: 'Graph', exact: true })
+    .selectOption({ index: 1 });
   await expect(page.getByAltText('Compiler graph')).toHaveJSProperty(
     'complete',
     true
   );
-  await tab(page, 'Wasm Module');
+  await tab(page, 'Wasm module');
   await expect(page.getByLabel('Wasm module output')).toContainText('i32(i32)');
   const downloaded = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download', exact: true }).click();

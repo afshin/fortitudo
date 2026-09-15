@@ -1,4 +1,4 @@
-/** Source languages supported by the core explorer. */
+/** Source languages supported by the explorer. */
 export type Language = 'c' | 'cpp' | 'llvm' | 'mlir';
 
 /** Targets exposed when their backend is present in the runtime. */
@@ -135,7 +135,7 @@ export const pipelines = {
   mlirPipeline: 'builtin.module(canonicalize,cse)'
 } as const;
 
-export const languages: Readonly<Record<Language, string>> = {
+export const languageLabels: Readonly<Record<Language, string>> = {
   cpp: 'C++23',
   c: 'C23',
   llvm: 'LLVM IR',
@@ -149,13 +149,13 @@ export const outputLabels: Readonly<Record<OutputKind, string>> = {
   optimized: 'Optimized IR',
   analysis: 'Analysis',
   graphs: 'Graphs',
-  wasm: 'Wasm Module',
+  wasm: 'Wasm module',
   mlir: 'MLIR',
   object: 'Object'
 };
 
 export function isLanguage(value: unknown): value is Language {
-  return Object.keys(languages).some(language => language === value);
+  return Object.keys(languageLabels).some(language => language === value);
 }
 
 export function isOutputKind(value: unknown): value is OutputKind {
@@ -176,7 +176,7 @@ export const targets: readonly Target[] = [
   'aarch64-unknown-linux-gnu'
 ];
 
-export const labels: Readonly<Record<Target, string>> = {
+export const targetLabels: Readonly<Record<Target, string>> = {
   'wasm32-unknown-emscripten': 'WebAssembly',
   'x86_64-unknown-linux-gnu': 'x86-64',
   'aarch64-unknown-linux-gnu': 'AArch64'

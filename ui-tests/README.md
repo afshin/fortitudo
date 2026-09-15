@@ -38,26 +38,29 @@ FORTITUDO_TEST_SERVER_LOGS=1 pixi run --as-is jlpm test:browser
 ```
 
 Chromium exercises all hosts and failure modes. All browsers check tab layout,
-comparison sizing, and host-specific sharing controls. Firefox and WebKit run
-the standalone workflow, artifact comparison, scalar execution, LLVM/MLIR tools,
-real compiler matrix, and both notebook kernels. Results include per-stage
-timings, artifact sizes, compiler measurements, screenshots, and traces for
-failures. Binary files are summarized rather than serialized into measurement
-attachments. Memory measurements observe the worker's Wasm linear memory; they
-exclude browser overhead.
+comparison sizing, host-specific sharing controls, and guide navigation with
+keyboard focus restoration. The standalone guide also opens offline. Firefox and
+WebKit run the standalone workflow, artifact comparison, scalar execution,
+LLVM/MLIR tools, real compiler matrix, and both notebook kernels. Results
+include per-stage timings, artifact sizes, compiler measurements, screenshots,
+and traces for failures. Binary files are summarized rather than serialized into
+measurement attachments. Memory measurements observe the worker's Wasm linear
+memory; they exclude browser overhead.
 
 These tests use the actual shared workbench and actual compiler. They do not
 need a remote compilation service. The Pages tests also execute the bundled C23
-and C++23 notebooks with the actual xeus kernel, check the navigation link, and
-compile from Lite under the combined site's URL prefix. The network-disconnect
-test covers compilation after initialization, not offline page reload.
+and C++23 notebooks with the actual xeus kernel, follow their links to the
+rendered guide, and compile from Lite under the combined site's URL prefix.
+Navigation to Lite stays in the same tab and supports returning to the explorer.
+The network-disconnect test covers compilation after initialization, not offline
+page reload.
 
-Port coverage checks that one Compile populates applicable outputs and changing
-tabs does no compiler work. It also covers independent comparison selections,
-downloads, custom passes, lazy MLIR loading and retry, command redirection,
-manual modules, scalar signatures, stateful calls, NaN, traps, Stop, timeout,
-and replacement modules. Unit tests cover stage dependencies and partial
-failure, buffer ownership, stale responses, worker generations, session
+Explorer coverage checks that one Compile populates applicable outputs and
+changing tabs does no compiler work. It also covers independent comparison
+selections, downloads, custom passes, lazy MLIR loading and retry, command
+redirection, manual modules, scalar signatures, stateful calls, NaN, traps,
+Stop, timeout, and replacement modules. Unit tests cover stage dependencies and
+partial failure, buffer ownership, stale responses, worker generations, session
 migration, and malformed protocol or Wasm data.
 
 CI runs the full configured suite on main branch pushes, pull requests, and

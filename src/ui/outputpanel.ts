@@ -39,7 +39,7 @@ export class OutputPanel extends TabPanel {
       const output = kinds[this.currentIndex];
       if (output && store.state.outputs[group] !== output) {
         void commands
-          .execute(CommandIDs.output, { group, output })
+          .execute(CommandIDs.selectOutput, { group, output })
           .catch(error =>
             store.dispatch({ type: 'notice', message: String(error) })
           );

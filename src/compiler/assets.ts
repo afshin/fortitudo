@@ -1,4 +1,4 @@
-import { record } from './protocol';
+import { isRecord } from './protocol';
 import type { Download, Progress } from './types';
 
 type Asset = Readonly<{ name: string; bytes: number; sha256: string }>;
@@ -38,9 +38,9 @@ async function loadAssets(
     throw new Error('Compiler verification requires HTTPS or localhost.');
   }
   const entries = names.map(name => {
-    const entry = record(files) ? files[name] : null;
+    const entry = isRecord(files) ? files[name] : null;
     if (
-      !record(entry) ||
+      !isRecord(entry) ||
       typeof entry.sha256 !== 'string' ||
       !/^[a-f0-9]{64}$/.test(entry.sha256) ||
       typeof entry.bytes !== 'number' ||

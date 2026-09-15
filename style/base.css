@@ -377,3 +377,72 @@
   padding-right: 10px;
   padding-left: 10px;
 }
+
+.fortitudo-guide {
+  box-sizing: border-box;
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  padding: 0;
+  border: 1px solid var(--fortitudo-border);
+  border-radius: 8px;
+  color: var(--fortitudo-foreground);
+  background: var(--fortitudo-background);
+  font: inherit;
+}
+
+.fortitudo-guide[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.fortitudo-guide::backdrop {
+  background: rgb(0 0 0 / 35%);
+}
+
+.fortitudo-guide header,
+.fortitudo-guide nav {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--fortitudo-border);
+}
+
+.fortitudo-guide header {
+  justify-content: space-between;
+}
+
+.fortitudo-guide h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.fortitudo-guide article {
+  min-height: 0;
+  padding: 0 24px 20px;
+  overflow: auto;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.fortitudo-guide h3 {
+  margin: 24px 0 12px;
+  font-size: 18px;
+  scroll-margin-top: 20px;
+}
+
+.fortitudo-guide pre {
+  padding: 12px;
+  overflow: auto;
+  background: var(--fortitudo-muted-background);
+}
+
+.fortitudo-guide code {
+  font-family: var(--fortitudo-code-font);
+}
+
+.fortitudo-guide a {
+  color: var(--fortitudo-accent);
+}

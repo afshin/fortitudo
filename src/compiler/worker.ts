@@ -51,7 +51,11 @@ self.addEventListener('message', (event: MessageEvent<unknown>) => {
           inspectWasm(file.data).functions.find(
             fn => fn.name === request.symbol
           );
-        if (!fn || fn.code === null || fn.code !== request.signature) {
+        if (
+          !fn ||
+          fn.signatureCode === null ||
+          fn.signatureCode !== request.signatureCode
+        ) {
           throw new Error(
             'The requested call does not match an exported signature.'
           );
@@ -64,7 +68,7 @@ self.addEventListener('message', (event: MessageEvent<unknown>) => {
         const captured = module.call(
           request.module,
           request.symbol,
-          request.signature,
+          request.signatureCode,
           request.args
         );
         const value = captured.value;
@@ -80,7 +84,7 @@ self.addEventListener('message', (event: MessageEvent<unknown>) => {
               ? value
               : {
                   status: 'success',
-                  value: request.signature === 6 ? null : value.value
+                  value: request.signatureCode === 6 ? null : value.value
                 })
           }
         });

@@ -8,10 +8,10 @@ import { stale } from '../model';
 import type { State } from '../model';
 import { TextOutput } from './text';
 
-export interface IFileActions {
+interface IFileActions {
   onCopy(path: string, workspace: boolean): void;
   onDownload(path: string, workspace: boolean): void;
-  onModule(path: string): void;
+  onSelectModule(path: string): void;
 }
 
 export function Output({
@@ -41,7 +41,7 @@ export function Output({
       ? 'This output does not apply to the compiled language or target.'
       : stage.status === 'success'
         ? kind === 'graphs'
-          ? 'No function graphs were generated.'
+          ? 'No graphs were generated.'
           : 'This stage produced no file.'
         : `${failure}: ${stage.stderr}`;
   return (
@@ -54,7 +54,7 @@ export function Output({
       )}
       {kind === 'graphs' && paths.length > 0 && (
         <label className="fortitudo-file-picker">
-          Function graph
+          Graph
           <select value={path} onChange={event => select(event.target.value)}>
             {paths.map(path => (
               <option key={path} value={path}>
@@ -177,7 +177,7 @@ function FileOutput({
           </button>
         )}
         {wasm && workspace && (
-          <button onClick={() => actions.onModule(file.path)}>
+          <button onClick={() => actions.onSelectModule(file.path)}>
             Use module
           </button>
         )}

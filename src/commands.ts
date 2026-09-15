@@ -15,31 +15,33 @@ import type { ISharing } from './share';
 import type { IStore } from './state';
 
 export namespace CommandIDs {
+  export const open = 'fortitudo:open';
   export const initialize = 'fortitudo:initialize';
-  export const source = 'fortitudo:source';
-  export const options = 'fortitudo:options';
+  export const setSource = 'fortitudo:set-source';
+  export const setOptions = 'fortitudo:set-options';
   export const compile = 'fortitudo:compile';
   export const cancel = 'fortitudo:cancel';
-  export const layout = 'fortitudo:reset-layout';
-  export const layoutChanged = 'fortitudo:layout-changed';
+  export const resetLayout = 'fortitudo:reset-layout';
+  export const saveLayout = 'fortitudo:save-layout';
   export const navigate = 'fortitudo:navigate';
-  export const output = 'fortitudo:output';
+  export const selectOutput = 'fortitudo:select-output';
   export const compare = 'fortitudo:compare';
-  export const example = 'fortitudo:example';
-  export const terminal = 'fortitudo:terminal';
+  export const resetExample = 'fortitudo:reset-example';
+  export const runCommand = 'fortitudo:run-command';
   export const clearTerminal = 'fortitudo:clear-terminal';
   export const run = 'fortitudo:run';
   export const stop = 'fortitudo:stop';
-  export const module = 'fortitudo:module';
-  export const symbol = 'fortitudo:symbol';
-  export const runArguments = 'fortitudo:arguments';
-  export const timeout = 'fortitudo:timeout';
+  export const selectModule = 'fortitudo:select-module';
+  export const selectExport = 'fortitudo:select-export';
+  export const setArguments = 'fortitudo:set-arguments';
+  export const setTimeout = 'fortitudo:set-timeout';
   export const share = 'fortitudo:share';
   export const copy = 'fortitudo:copy';
   export const download = 'fortitudo:download';
 }
 
-export interface IContext {
+/** Explicit services and host actions used by the shared commands. */
+export interface ICommandContext {
   readonly store: IStore;
   readonly compiler: ICompiler;
   readonly runner: IRunner;
@@ -51,10 +53,10 @@ export interface IContext {
   download(file: File): void;
 }
 
-/** Register the complete controller against either host's command registry. */
+/** Register shared commands; each host owns the open command. */
 export function registerCommands(
   commands: CommandRegistry,
-  context: IContext
+  context: ICommandContext
 ): IDisposable {
   const { store, compiler, runner } = context;
   const disposables = new DisposableSet();
@@ -117,7 +119,7 @@ export function registerCommands(
       }
     }
   });
-  add(CommandIDs.source, {
+  add(CommandIDs.setSource, {
     label: 'Edit source',
     execute: args => {
       if (typeof args.source !== 'string') {
@@ -126,7 +128,7 @@ export function registerCommands(
       store.dispatch({ type: 'source', source: args.source });
     }
   });
-  add(CommandIDs.options, {
+  add(CommandIDs.setOptions, {
     label: 'Change compiler options',
     execute: args => {
       if (!isOptions(args.options)) {
@@ -135,8 +137,8 @@ export function registerCommands(
       store.dispatch({ type: 'options', options: args.options });
     }
   });
-  add(CommandIDs.example, {
-    label: 'Reset to example',
+  add(CommandIDs.resetExample, {
+    label: 'Reset example',
     execute: () => {
       store.dispatch({
         type: 'source',
@@ -144,8 +146,8 @@ export function registerCommands(
       });
     }
   });
-  add(CommandIDs.layout, {
-    label: 'Restore default layout',
+  add(CommandIDs.resetLayout, {
+    label: 'Reset layout',
     execute: () => context.resetLayout()
   });
   add(CommandIDs.compare, {
@@ -163,7 +165,7 @@ export function registerCommands(
       context.compare();
     }
   });
-  add(CommandIDs.output, {
+  add(CommandIDs.selectOutput, {
     label: 'Select output',
     execute: args => {
       if (
@@ -179,7 +181,7 @@ export function registerCommands(
       });
     }
   });
-  add(CommandIDs.layoutChanged, {
+  add(CommandIDs.saveLayout, {
     label: 'Save pane layout',
     execute: args => {
       const saved = session({ ...snapshot(store.state), layout: args.layout });
@@ -206,7 +208,7 @@ export function registerCommands(
       store.dispatch({ type: 'navigate', line, column });
     }
   });
-  add(CommandIDs.terminal, {
+  add(CommandIDs.runCommand, {
     label: 'Run command',
     isEnabled: idle,
     execute: async args => {
@@ -250,7 +252,7 @@ export function registerCommands(
       store.dispatch({ type: 'clear-terminal' });
     }
   });
-  add(CommandIDs.module, {
+  add(CommandIDs.selectModule, {
     label: 'Select Wasm module',
     execute: args => {
       if (
@@ -264,7 +266,7 @@ export function registerCommands(
       context.activatePane('run');
     }
   });
-  add(CommandIDs.symbol, {
+  add(CommandIDs.selectExport, {
     label: 'Select export',
     execute: args => {
       if (typeof args.symbol !== 'string' || store.state.execution.active) {
@@ -273,7 +275,7 @@ export function registerCommands(
       store.dispatch({ type: 'symbol', symbol: args.symbol });
     }
   });
-  add(CommandIDs.runArguments, {
+  add(CommandIDs.setArguments, {
     label: 'Change arguments',
     execute: args => {
       if (
@@ -287,17 +289,20 @@ export function registerCommands(
       store.dispatch({ type: 'arguments', args: args.values });
     }
   });
-  add(CommandIDs.timeout, {
+  add(CommandIDs.setTimeout, {
     label: 'Change execution timeout',
     execute: args => {
       if (!isTimeout(args.timeout)) {
-        throw new Error('Timeout is outside the browser timer range.');
+        throw new Error(
+          'Execution timeout is outside the browser timer range.'
+        );
       }
       store.dispatch({ type: 'timeout', timeout: args.timeout });
     }
   });
   add(CommandIDs.stop, {
-    label: 'Stop / reset execution',
+    label: () =>
+      store.state.execution.active ? 'Stop execution' : 'Reset execution',
     execute: () => {
       store.dispatch({ type: 'run-reset' });
       runner.reset();
@@ -330,13 +335,13 @@ export function registerCommands(
         const fn = execution.info?.functions.find(
           fn => fn.name === execution.symbol
         );
-        if (!execution.module || !fn || fn.code === null) {
+        if (!execution.module || !fn || fn.signatureCode === null) {
           throw new Error(
             execution.notice || 'Select a supported export in the Run pane.'
           );
         }
         const values =
-          fn.name === 'main' && fn.code === 2
+          fn.name === 'main' && fn.signatureCode === 2
             ? [0, 0]
             : execution.args.map(value => (value.trim() ? Number(value) : NaN));
         if (
@@ -344,7 +349,7 @@ export function registerCommands(
           values.some(
             value =>
               !Number.isFinite(value) ||
-              (Number(fn.code) <= 2 &&
+              (Number(fn.signatureCode) <= 2 &&
                 (!Number.isInteger(value) ||
                   value < -2147483648 ||
                   value > 2147483647))
@@ -363,7 +368,7 @@ export function registerCommands(
             module: execution.module,
             files: state.files,
             symbol: fn.name,
-            signature: fn.code,
+            signatureCode: fn.signatureCode,
             args: values
           },
           state.timeout,
@@ -423,7 +428,8 @@ export function registerCommands(
       CommandIDs.initialize,
       CommandIDs.compare,
       CommandIDs.run,
-      CommandIDs.terminal
+      CommandIDs.stop,
+      CommandIDs.runCommand
     ]) {
       commands.notifyCommandChanged(id);
     }

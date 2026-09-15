@@ -23,8 +23,8 @@ function digest(bytes) {
   return createHash('sha256').update(bytes).digest('hex');
 }
 
-function run(command, arguments_, options = {}) {
-  const result = spawnSync(command, arguments_, {
+function run(command, args, options = {}) {
+  const result = spawnSync(command, args, {
     cwd: root,
     stdio: 'inherit',
     env: { ...process.env, XDG_CACHE_HOME: resolve(root, '.cache') },

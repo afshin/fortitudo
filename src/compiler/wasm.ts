@@ -4,7 +4,8 @@ export type WasmFunction = Readonly<{
   params: readonly string[];
   results: readonly string[];
   signature: string;
-  code: number | null;
+  /** Numeric runner ABI code; null means this export cannot be called. */
+  signatureCode: number | null;
 }>;
 
 export type WasmInfo = Readonly<{
@@ -115,12 +116,15 @@ export function inspectWasm(bytes: Uint8Array): WasmInfo {
         const signature =
           `${type.results.join(', ') || 'void'}` +
           `(${type.params.join(', ')})`;
-        const code = signatures.indexOf(signature);
+        const signatureCode = signatures.indexOf(signature);
         return {
           name: entry.name,
           ...type,
           signature,
-          code: code < 0 || entry.name.startsWith('__') ? null : code
+          signatureCode:
+            signatureCode < 0 || entry.name.startsWith('__')
+              ? null
+              : signatureCode
         };
       })
   };

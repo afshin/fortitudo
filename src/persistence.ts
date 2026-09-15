@@ -1,6 +1,6 @@
 import { isOptions, isOutputKind, pipelines } from './compiler/types';
 import { isTimeout } from './compiler/execution';
-import { record } from './compiler/protocol';
+import { isRecord } from './compiler/protocol';
 import type { Area, Pane, Session } from './model';
 
 export interface IPersistence {
@@ -8,7 +8,7 @@ export interface IPersistence {
   save(session: Session): Promise<void>;
 }
 
-export const panes: readonly Pane[] = [
+const panes: readonly Pane[] = [
   'source',
   'outputs',
   'diagnostics',
@@ -21,10 +21,10 @@ export const panes: readonly Pane[] = [
 /** Validate and migrate editing state without initializing the compiler. */
 export function session(value: unknown): Session | null {
   if (
-    !record(value) ||
+    !isRecord(value) ||
     (value.version !== 1 && value.version !== 2) ||
     typeof value.source !== 'string' ||
-    !record(value.options)
+    !isRecord(value.options)
   ) {
     return null;
   }
@@ -53,7 +53,7 @@ export function session(value: unknown): Session | null {
     : value.outputs;
   const timeout = legacy ? 10000 : value.timeout;
   if (
-    !record(outputs) ||
+    !isRecord(outputs) ||
     !isOutputKind(outputs.primary) ||
     !isOutputKind(outputs.comparison) ||
     !isTimeout(timeout)
@@ -99,7 +99,7 @@ function area(
   depth: number,
   legacy: boolean
 ): Area | null {
-  if (!record(value) || depth > 8) {
+  if (!isRecord(value) || depth > 8) {
     return null;
   }
   if (value.type === 'tab-area') {

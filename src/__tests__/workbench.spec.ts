@@ -23,9 +23,9 @@ it('coalesces saved edits and finishes persistence after closing', async () => {
       }
     }
   });
-  await commands.execute(CommandIDs.source, { source: 'first' });
-  await commands.execute(CommandIDs.source, { source: 'second' });
-  await commands.execute(CommandIDs.source, { source: 'third' });
+  await commands.execute(CommandIDs.setSource, { source: 'first' });
+  await commands.execute(CommandIDs.setSource, { source: 'second' });
+  await commands.execute(CommandIDs.setSource, { source: 'third' });
   workbench.close();
   expect(workbench.isDisposed).toBe(true);
   expect(commands.hasCommand(CommandIDs.compile)).toBe(false);
@@ -73,7 +73,7 @@ it('saves navigation and layout reset without losing edits', async () => {
     ...saved.layout,
     currentIndex: 1
   });
-  await commands.execute(CommandIDs.layout);
+  await commands.execute(CommandIDs.resetLayout);
   await workbench.saved;
   expect(writes.at(-1)?.layout?.type).toBe('split-area');
   expect(writes.every(value => value.source === saved.source)).toBe(true);

@@ -111,12 +111,11 @@ export const options: Options = {
   optimization: 2,
   ...pipelines
 };
-export const example = examples.cpp;
 
 /** Create an independent application state from a validated session. */
 export function initial(session: Session | null = null): State {
   return {
-    source: session?.source ?? example,
+    source: session?.source ?? examples.cpp,
     options: session?.options ?? options,
     layout: session?.layout ?? null,
     outputs: session?.outputs ?? {
@@ -421,7 +420,7 @@ function selectModule(state: State, path: string | null): State {
   }
   try {
     const info = inspectWasm(file.data);
-    const supported = info.functions.filter(fn => fn.code !== null);
+    const supported = info.functions.filter(fn => fn.signatureCode !== null);
     const old = previous.info?.functions.find(
       fn => fn.name === previous.symbol
     );
@@ -464,7 +463,7 @@ export function snapshot(state: State): Session {
   };
 }
 
-export function equalOptions(left: Options, right: Options): boolean {
+function equalOptions(left: Options, right: Options): boolean {
   return (
     left.language === right.language &&
     left.target === right.target &&

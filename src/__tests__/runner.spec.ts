@@ -26,7 +26,7 @@ function setup() {
     module: '/workspace/program.wasm',
     files: [{ path: '/workspace/program.wasm', data: Uint8Array.of(1) }],
     symbol: 'square',
-    signature: 1,
+    signatureCode: 1,
     args: [5]
   };
   const reply = (output: Output) =>

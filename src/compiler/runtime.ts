@@ -1,6 +1,5 @@
 import { diagnostics, uniqueDiagnostics } from './diagnostics';
 import { files, restore } from './files';
-import { initialize as loadModule } from './module';
 import type { IModuleRuntime } from './module';
 import { invocation, serialize } from './request';
 import type { Step } from './request';
@@ -28,13 +27,6 @@ export interface IRuntime {
     request: CommandRequest,
     onProgress: (progress: Progress) => void
   ): Promise<CommandResult>;
-}
-
-export async function initialize(
-  base: string,
-  onProgress: (progress: Progress) => void
-): Promise<IRuntime> {
-  return runtime(await loadModule(base, onProgress));
 }
 
 /** Execute a pure build plan against an instance-owned virtual filesystem. */

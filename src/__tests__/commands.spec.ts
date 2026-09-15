@@ -41,7 +41,7 @@ it('routes edits and releases command registrations', async () => {
   expect(commands.isEnabled(CommandIDs.compile)).toBe(false);
   expect(commands.isEnabled(CommandIDs.cancel)).toBe(true);
   await Promise.resolve();
-  await commands.execute(CommandIDs.source, {
+  await commands.execute(CommandIDs.setSource, {
     source: 'edited while compiling'
   });
   finish({
@@ -141,11 +141,11 @@ it('keeps output selections when closing a restored comparison', async () => {
       ]
     }
   });
-  await commands.execute(CommandIDs.output, {
+  await commands.execute(CommandIDs.selectOutput, {
     group: 'primary',
     output: 'assembly'
   });
-  await commands.execute(CommandIDs.output, {
+  await commands.execute(CommandIDs.selectOutput, {
     group: 'comparison',
     output: 'analysis'
   });

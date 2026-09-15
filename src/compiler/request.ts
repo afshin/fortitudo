@@ -209,8 +209,8 @@ export function invocation(
 }
 
 /** Quote arguments for LLVM's GNU command-line tokenizer, not a shell. */
-export function serialize(arguments_: readonly string[]): string {
-  return arguments_
+export function serialize(args: readonly string[]): string {
+  return args
     .map(argument => {
       if (argument.includes('\0')) {
         throw new Error('Compiler arguments cannot contain null bytes.');

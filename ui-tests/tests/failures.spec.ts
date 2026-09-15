@@ -169,9 +169,7 @@ test('partial builds, invalid IR targets, and empty graphs recover', async ({
   await edit(page, 'extern int declaration(int);');
   await compile(page);
   await tab(page, 'Graphs');
-  await expect(page.getByLabel('Graphs output')).toContainText(
-    'No function graphs'
-  );
+  await expect(page.getByLabel('Graphs output')).toContainText('No graphs');
   await page.getByLabel('Language', { exact: true }).selectOption('llvm');
   for (const target of [
     'target triple = "x86_64-unknown-linux-gnu"',
@@ -238,10 +236,10 @@ test('MLIR retry and commands preserve build artifacts', async ({ page }) => {
   await expect(
     page.getByLabel('Assembly output', { exact: true })
   ).toContainText('scalar');
-  await tab(page, 'Wasm Module');
+  await tab(page, 'Wasm module');
   await expect(
     page
-      .getByRole('tabpanel', { name: 'Wasm Module', exact: true })
+      .getByRole('tabpanel', { name: 'Wasm module', exact: true })
       .getByLabel('Wasm module output')
   ).toContainText('scalar');
   await edit(page, 'extern "C" int scalar() { return 19; }');

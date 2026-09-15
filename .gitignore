@@ -133,6 +133,8 @@ dmypy.json
 .cache/
 /work/
 /compiler/
+/src/generated/
+/lite/files/Fortitudo guide.md
 runtime/.cache/
 runtime/build/
 lite/_output/

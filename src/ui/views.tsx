@@ -2,25 +2,28 @@ import * as React from 'react';
 
 import {
   isLanguage,
+  isOutputKind,
   isTarget,
-  labels,
-  languages,
+  languageLabels,
+  outputLabels,
+  targetLabels,
   targets
 } from '../compiler/types';
 import type { Diagnostic, Options } from '../compiler/types';
 import { canRun, hasComparison, stale } from '../model';
 import type { State } from '../model';
 
-export interface IControlsProps {
+interface IControlsProps {
   state: State;
   onOptions(options: Options): void;
   onCompile(): void;
   onCancel(): void;
-  onLayout(): void;
+  onResetLayout(): void;
   onRun(): void;
   onCompare(): void;
   onShare?(): void;
-  onExample(): void;
+  onResetExample(): void;
+  onGuide(): void;
 }
 
 export function Controls(props: IControlsProps): React.ReactElement {
@@ -50,7 +53,7 @@ export function Controls(props: IControlsProps): React.ReactElement {
               }
             }}
           >
-            {Object.entries(languages).map(([value, label]) => (
+            {Object.entries(languageLabels).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>
@@ -85,7 +88,7 @@ export function Controls(props: IControlsProps): React.ReactElement {
                     state.info !== null && !state.info.targets.includes(target)
                   }
                 >
-                  {labels[target]}
+                  {targetLabels[target]}
                 </option>
               ))}
           </select>
@@ -138,10 +141,14 @@ export function Controls(props: IControlsProps): React.ReactElement {
             Compare
           </button>
           {props.onShare && <button onClick={props.onShare}>Share</button>}
-          <button onClick={props.onExample}>Reset example</button>
-          <button onClick={props.onLayout} title="Restore default pane layout">
+          <button onClick={props.onResetExample}>Reset example</button>
+          <button
+            onClick={props.onResetLayout}
+            title="Restore default pane layout"
+          >
             Reset layout
           </button>
+          <button onClick={props.onGuide}>Guide</button>
         </div>
       </div>
       <div className="fortitudo-status">
@@ -167,7 +174,7 @@ export function Controls(props: IControlsProps): React.ReactElement {
           )}
         </div>
         <span>
-          {state.info?.version ?? 'Clang / LLVM'} · Runs in your browser
+          {state.info?.version ?? 'Clang/LLVM'} · Runs in your browser
         </span>
       </div>
       {state.notice && (
@@ -189,12 +196,13 @@ export function Source({
   return (
     <section className="fortitudo-pane" aria-label="Source pane">
       {children}
-      {state.options.target !== 'wasm32-unknown-emscripten' && (
-        <p className="fortitudo-hint">
-          This target has Clang built-in headers. Use WebAssembly for the
-          packaged C/C++ system headers.
-        </p>
-      )}
+      {(state.options.language === 'c' || state.options.language === 'cpp') &&
+        state.options.target !== 'wasm32-unknown-emscripten' && (
+          <p className="fortitudo-hint">
+            This target has Clang built-in headers. Use WebAssembly for the
+            packaged C/C++ system headers.
+          </p>
+        )}
     </section>
   );
 }
@@ -265,10 +273,15 @@ export function Diagnostics({
           </p>
         ) : null}
         {result && result.stages.length > 0 && (
-          <ul className="fortitudo-stages" aria-label="Build stages">
+          <ul className="fortitudo-stages" aria-label="Compilation stages">
             {result.stages.map(stage => (
               <li key={stage.name}>
-                <strong>{stage.name}</strong>: {stage.status}
+                <strong>
+                  {isOutputKind(stage.name)
+                    ? outputLabels[stage.name]
+                    : stage.name}
+                </strong>
+                : {stage.status}
                 {' · '}
                 {Math.round(stage.duration)} ms
                 {stage.status !== 'success' && <pre>{stage.stderr}</pre>}

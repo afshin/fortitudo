@@ -56,6 +56,36 @@ for (const [host, url] of Object.entries(hosts)) {
     await page.getByRole('button', { name: 'Reset layout' }).click();
     const source = page.getByRole('textbox', { name: 'Source code' });
     const original = await source.locator('.cm-line').allTextContents();
+    const guideButton = page.getByRole('button', {
+      name: 'Guide',
+      exact: true
+    });
+    const guide = page.getByRole('dialog', { name: 'Fortitudo guide' });
+    if (host === 'standalone') {
+      await page.context().setOffline(true);
+    }
+    await guideButton.focus();
+    await guideButton.press('Enter');
+    await expect(guide).toBeVisible();
+    await expect(
+      guide.getByText('pip install fortitudo', { exact: true })
+    ).toBeInViewport();
+    await guide.getByRole('button', { name: 'Execution', exact: true }).click();
+    await expect(
+      guide.getByRole('heading', { name: 'Execution', exact: true })
+    ).toBeInViewport();
+    await expect(guide).toContainText('Repeated calls retain module state.');
+    await page.keyboard.press('Escape');
+    await expect(guide).toHaveCount(0);
+    await expect(guideButton).toBeFocused();
+    await guideButton.click();
+    await page.screenshot({ path: testInfo.outputPath('guide.png') });
+    await guide.getByRole('button', { name: 'Close guide' }).click();
+    await expect(guide).toHaveCount(0);
+    await expect(source.locator('.cm-line')).toHaveText(original);
+    if (host === 'standalone') {
+      await page.context().setOffline(false);
+    }
     await source.fill('int undo_after_layout() { return 42; }');
     await expect(page.getByRole('button', { name: 'Share' })).toHaveCount(
       host === 'standalone' ? 1 : 0

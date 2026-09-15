@@ -1,15 +1,15 @@
 import { asset, assets } from './assets';
-import { record } from './protocol';
+import { isRecord } from './protocol';
 import type { Info, Progress, Target } from './types';
 
 export interface IFilesystem {
   mkdirTree(path: string): void;
   writeFile(path: string, data: string | Uint8Array): void;
   readFile(path: string): Uint8Array;
+  readFile(path: string, options: { encoding: 'utf8' }): string;
   chdir(path: string): void;
   stat(path: string): { mode: number };
   isDir(mode: number): boolean;
-  readFile(path: string, options: { encoding: 'utf8' }): string;
   readdir(path: string): string[];
   unlink(path: string): void;
   rmdir(path: string): void;
@@ -25,7 +25,7 @@ interface IModule {
     name: string,
     result: string,
     types: string[],
-    arguments_: unknown[]
+    args: unknown[]
   ): unknown;
 }
 
@@ -37,13 +37,13 @@ interface IModuleOptions {
   stderr(byte: number): void;
 }
 
-export type Capture<T> = Readonly<{
+type Capture<T> = Readonly<{
   value: T;
   stdout: string;
   stderr: string;
 }>;
 
-export type Call =
+type Call =
   | Readonly<{ status: 'success'; value: number }>
   | Readonly<{ status: 'failed'; message: string }>;
 
@@ -56,7 +56,7 @@ export interface IModuleRuntime {
   call(
     path: string,
     symbol: string,
-    signature: number,
+    signatureCode: number,
     args: readonly number[]
   ): Capture<Call>;
 }
@@ -72,7 +72,7 @@ export async function initialize(
   }
   const manifest: unknown = await response.json();
   if (
-    !record(manifest) ||
+    !isRecord(manifest) ||
     manifest.format !== 1 ||
     typeof manifest.version !== 'string' ||
     typeof manifest.resourceDirectory !== 'string'
@@ -87,7 +87,7 @@ export async function initialize(
     import(/* @vite-ignore */ url),
     assets(base, manifest.files, onProgress)
   ]);
-  if (!record(loader) || !factory(loader.default)) {
+  if (!isRecord(loader) || !isModuleFactory(loader.default)) {
     throw new Error('The compiler loader does not export a module factory.');
   }
   // LLVM flushes within diagnostic lines. Capture bytes instead of treating
@@ -107,7 +107,7 @@ export async function initialize(
     stdout: byte => stdout.push(byte),
     stderr: byte => stderr.push(byte)
   });
-  if (!module(loaded)) {
+  if (!isModule(loaded)) {
     throw new Error('The compiler runtime is missing required exports.');
   }
   const version = loaded.ccall('wasmbolt_version', 'string', [], []);
@@ -183,14 +183,14 @@ export async function initialize(
       });
       await mlir;
     },
-    call(path, symbol, signature, args) {
+    call(path, symbol, signatureCode, args) {
       return capture<Call>(() => {
         try {
           const value = loaded.ccall(
             'load_and_call_numeric',
             'number',
             ['string', 'string', 'number', 'number', 'number'],
-            [path, symbol, signature, args[0] ?? 0, args[1] ?? 0]
+            [path, symbol, signatureCode, args[0] ?? 0, args[1] ?? 0]
           );
           const error = loaded.ccall('wasmbolt_call_error', 'string', [], []);
           if (typeof error !== 'string' || typeof value !== 'number') {
@@ -209,19 +209,19 @@ export async function initialize(
   };
 }
 
-function factory(
+function isModuleFactory(
   value: unknown
 ): value is (options: IModuleOptions) => Promise<unknown> {
   return typeof value === 'function';
 }
 
-function module(value: unknown): value is IModule {
+function isModule(value: unknown): value is IModule {
   if (
-    !record(value) ||
+    !isRecord(value) ||
     typeof value.ccall !== 'function' ||
     typeof value._wasmbolt_call_error !== 'function' ||
     typeof value.loadDynamicLibrary !== 'function' ||
-    !record(value.FS)
+    !isRecord(value.FS)
   ) {
     return false;
   }

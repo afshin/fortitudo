@@ -25,7 +25,7 @@ export type Output =
   | Readonly<{ kind: 'execution'; id: number; result: RunResult }>
   | Readonly<{ kind: 'error'; id: number; message: string }>;
 
-export function record(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
@@ -36,7 +36,7 @@ export function isFiles(value: unknown): value is readonly File[] {
   const paths = new Set<string>();
   return value.every(file => {
     if (
-      !record(file) ||
+      !isRecord(file) ||
       typeof file.path !== 'string' ||
       !file.path.startsWith('/workspace/') ||
       file.path
@@ -55,7 +55,7 @@ export function isFiles(value: unknown): value is readonly File[] {
 }
 
 export function isInput(value: unknown): value is Input {
-  if (!record(value) || !Number.isSafeInteger(value.id)) {
+  if (!isRecord(value) || !Number.isSafeInteger(value.id)) {
     return false;
   }
   if (value.kind === 'initialize') {
@@ -66,7 +66,7 @@ export function isInput(value: unknown): value is Input {
   }
   const request = value.request;
   if (
-    !record(request) ||
+    !isRecord(request) ||
     !Number.isSafeInteger(request.id) ||
     !isFiles(request.files)
   ) {
@@ -82,17 +82,17 @@ export function isInput(value: unknown): value is Input {
     typeof request.symbol === 'string' &&
     request.symbol.length > 0 &&
     !request.symbol.includes('\0') &&
-    typeof request.signature === 'number' &&
-    Number.isInteger(request.signature) &&
-    request.signature >= 0 &&
-    request.signature <= 6 &&
+    typeof request.signatureCode === 'number' &&
+    Number.isInteger(request.signatureCode) &&
+    request.signatureCode >= 0 &&
+    request.signatureCode <= 6 &&
     Array.isArray(request.args) &&
-    request.args.length === [0, 1, 2, 0, 1, 2, 0][request.signature] &&
+    request.args.length === [0, 1, 2, 0, 1, 2, 0][request.signatureCode] &&
     request.args.every(
       arg =>
         typeof arg === 'number' &&
         Number.isFinite(arg) &&
-        (Number(request.signature) > 2 ||
+        (Number(request.signatureCode) > 2 ||
           (Number.isInteger(arg) && arg >= -2147483648 && arg <= 2147483647))
     )
   );
@@ -100,7 +100,7 @@ export function isInput(value: unknown): value is Input {
 
 export function isProgress(value: unknown): value is Progress {
   return (
-    record(value) &&
+    isRecord(value) &&
     (value.phase === 'preparing' ||
       (value.phase === 'working' && typeof value.stage === 'string') ||
       (value.phase === 'downloading' &&
@@ -108,7 +108,7 @@ export function isProgress(value: unknown): value is Progress {
         value.downloads.length > 0 &&
         value.downloads.every(
           download =>
-            record(download) &&
+            isRecord(download) &&
             typeof download.name === 'string' &&
             typeof download.loaded === 'number' &&
             Number.isSafeInteger(download.loaded) &&
@@ -126,7 +126,7 @@ function diagnostics(value: unknown): boolean {
     Array.isArray(value) &&
     value.every(
       diagnostic =>
-        record(diagnostic) &&
+        isRecord(diagnostic) &&
         (diagnostic.file === null || typeof diagnostic.file === 'string') &&
         (diagnostic.line === null || Number.isInteger(diagnostic.line)) &&
         (diagnostic.column === null || Number.isInteger(diagnostic.column)) &&
@@ -146,9 +146,9 @@ function streams(value: Record<string, unknown>): boolean {
   );
 }
 
-function stage(value: unknown): value is Stage {
+function isStage(value: unknown): value is Stage {
   return (
-    record(value) &&
+    isRecord(value) &&
     typeof value.name === 'string' &&
     streams(value) &&
     ['success', 'failed', 'skipped'].includes(String(value.status)) &&
@@ -160,7 +160,7 @@ function stage(value: unknown): value is Stage {
 }
 
 export function isOutput(value: unknown): value is Output {
-  if (!record(value) || !Number.isSafeInteger(value.id)) {
+  if (!isRecord(value) || !Number.isSafeInteger(value.id)) {
     return false;
   }
   if (value.kind === 'error') {
@@ -172,7 +172,7 @@ export function isOutput(value: unknown): value is Output {
   if (value.kind === 'ready') {
     const info = value.info;
     return (
-      record(info) &&
+      isRecord(info) &&
       typeof info.version === 'string' &&
       typeof info.resourceDirectory === 'string' &&
       Array.isArray(info.targets) &&
@@ -180,7 +180,7 @@ export function isOutput(value: unknown): value is Output {
     );
   }
   const result = value.result;
-  if (!record(result) || !Number.isSafeInteger(result.id)) {
+  if (!isRecord(result) || !Number.isSafeInteger(result.id)) {
     return false;
   }
   if (value.kind === 'execution') {
@@ -192,7 +192,7 @@ export function isOutput(value: unknown): value is Output {
     );
   }
   if (value.kind === 'command') {
-    return stage(result.stage) && isFiles(result.files);
+    return isStage(result.stage) && isFiles(result.files);
   }
   return (
     value.kind === 'result' &&
@@ -203,12 +203,12 @@ export function isOutput(value: unknown): value is Output {
     Array.isArray(result.commands) &&
     result.commands.every(command => typeof command === 'string') &&
     Array.isArray(result.stages) &&
-    result.stages.every(stage) &&
+    result.stages.every(isStage) &&
     isFiles(result.files) &&
     Array.isArray(result.artifacts) &&
     result.artifacts.every(
       artifact =>
-        record(artifact) &&
+        isRecord(artifact) &&
         artifact.build === result.id &&
         isOutputKind(artifact.kind) &&
         typeof artifact.path === 'string' &&
