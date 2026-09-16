@@ -101,7 +101,9 @@ test.describe('loading feedback', () => {
         const diagnostics = page.getByLabel('Diagnostics pane');
         await expect(diagnostics).toContainText('Compiler.data');
         await expect(diagnostics).toContainText('Compiler.wasm');
-        await expect(diagnostics).not.toContainText('Ready when you are');
+        await expect(diagnostics).not.toContainText(
+          'Ctrl/Cmd+Enter to compile'
+        );
         await expect(
           page.getByRole('button', { name: 'Cancel' })
         ).toBeEnabled();
@@ -233,14 +235,14 @@ for (const [host, url] of Object.entries(hosts)) {
       '3'
     );
     await expect(page.getByLabel('Assembly output')).toContainText(
-      'Compile your source'
+      'Compile to see output'
     );
     await page.reload();
     await expect(page.getByRole('textbox', { name: 'Source code' })).toHaveText(
       'int restored(int x) { return x + 9; }'
     );
     await expect(page.getByLabel('Assembly output')).toContainText(
-      'Compile your source'
+      'Compile to see output'
     );
     await page.screenshot({ path: testInfo.outputPath(`${host}.png`) });
     expect(errors).toEqual([]);

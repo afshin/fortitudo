@@ -230,7 +230,7 @@ export function Diagnostics({
           <div className="fortitudo-loading">
             <p className="fortitudo-hint">
               {state.progress?.phase === 'preparing'
-                ? 'Downloads complete. Checking assets and preparing compiler…'
+                ? 'Downloads complete. Preparing compiler…'
                 : 'You can keep editing while the compiler loads.'}
             </p>
             {state.progress?.phase === 'downloading' && (
@@ -313,7 +313,7 @@ export function Diagnostics({
 function status(state: State): string {
   switch (state.status) {
     case 'idle':
-      return 'Ready when you are · Ctrl/Cmd+Enter to compile';
+      return 'Ready · Ctrl/Cmd+Enter to compile';
     case 'loading':
       return state.progress?.phase === 'downloading'
         ? 'Downloading compiler…'
@@ -325,14 +325,14 @@ function status(state: State): string {
         ? `${state.progress.stage}…`
         : 'Compiling…';
     case 'cancelled':
-      return 'Cancelled — compile again when ready';
+      return 'Cancelled';
     case 'failed':
-      return 'Compiler unavailable — retry to load it again';
+      return 'Compiler unavailable — retry compilation';
     case 'ready':
       return stale(state)
-        ? 'Source or options changed — compile to update'
+        ? 'Out of date — compile to update'
         : state.result?.value.exitCode
-          ? 'Some outputs failed — inspect diagnostics'
+          ? 'Some outputs failed — see Diagnostics'
           : state.result
             ? 'Compilation complete'
             : 'Compiler ready';

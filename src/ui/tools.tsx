@@ -15,7 +15,6 @@ export function Pipelines({
 }): React.ReactElement {
   return (
     <section className="fortitudo-form" aria-label="Pipelines pane">
-      <p>Compile generates every applicable output using these pipelines.</p>
       {state.options.language !== 'mlir' && (
         <>
           <label>
@@ -207,12 +206,12 @@ export function Run({
       {!execution.module && (
         <p className="fortitudo-hint">
           {canRun(state)
-            ? 'Run builds your source and calls a supported exported function.'
+            ? 'Run compiles your source and calls an exported function.'
             : 'Choose WebAssembly to run your code, or use a Wasm file.'}
         </p>
       )}
       {fn?.signatureCode === null && (
-        <p>This signature cannot be called by the scalar runner.</p>
+        <p>This function signature is not supported.</p>
       )}
       {busy && (
         <p role="status">
@@ -259,9 +258,8 @@ export function Run({
           />
         </label>
         <p className="fortitudo-hint">
-          Calls support simple scalar Wasm signatures. Pointer and aggregate
-          values are not marshaled. Repeated calls retain module state until
-          reset.
+          Pointer and aggregate values are not supported. Calls retain module
+          state until reset.
         </p>
       </details>
     </section>

@@ -1,21 +1,20 @@
 # Fortitudo
 
 Fortitudo is a browser-only compiler explorer for C, C++, LLVM IR, and MLIR in
-JupyterLab, JupyterLite, and a standalone Lumino application. All three hosts
-use the same workbench and workers. No kernel or remote compiler is needed.
+JupyterLab, JupyterLite, and a standalone app. No kernel or remote compiler is
+needed.
 
 The [web app](https://fortitudo.cc) opens the standalone explorer. Select **Try
-in Jupyter** to use the explorer alongside C23 and C++23 notebooks. Both
-applications run in the browser.
+in Jupyter** to use the explorer alongside C23 and C++23 notebooks.
 
-Select **Guide** in the explorer to read the feature guide below. The same guide
-is available as **Fortitudo guide.md** in JupyterLite.
+Select **Guide** in the explorer to read the guide below. The same guide is
+available as **Fortitudo guide.md** in JupyterLite.
 
 <!-- guide:start -->
 
 ## Install Fortitudo
 
-Install once, then open Fortitudo locally:
+Install and run locally:
 
 ```sh
 pip install fortitudo
@@ -40,10 +39,10 @@ applications that supply their own Lumino host.
 ## Compile and inspect
 
 Edit a function, choose a language, target, and optimization level, then select
-**Compile** or press **Ctrl/Cmd+Enter**. One compilation generates every
-applicable output from the same source revision. Changing output tabs never
-compiles. Compilation runs in a worker, so editing remains available. **Cancel**
-terminates that worker; the next compile loads a fresh one.
+**Compile** or press **Ctrl/Cmd+Enter**. Each compilation generates all outputs
+for the selected language and target. Switching output tabs does not recompile.
+You can keep editing during compilation. **Cancel** stops the compiler; the next
+compile reloads it.
 
 - C/C++: AST, LLVM IR before passes, optimized IR, analysis, function graphs,
   assembly, and object.
@@ -73,9 +72,8 @@ moves focus out without inserting indentation. Graphs have function selection,
 zoom, fit, and DOT/SVG downloads. The Wasm inspector lists size, imports,
 exports, and function signatures without executing the module.
 
-Comparison and layout resets preserve the source editor's undo history. Copy,
-download, and search share one row above each text output. Assembly hides
-compiler provenance by default, retaining code, data, and their directives.
+Comparison and layout resets preserve the source editor's undo history. Assembly
+hides compiler metadata by default, retaining code, data, and their directives.
 Uncheck **Hide metadata** to see it all. **Copy** uses the displayed text;
 **Download** always saves the original file.
 
@@ -92,7 +90,7 @@ system headers are for WebAssembly.
 
 ## Pipelines
 
-**Pipelines** exposes LLVM optimization, analysis, and MLIR passes. An empty
+Use **Pipelines** to set LLVM optimization, analysis, and MLIR passes. An empty
 LLVM pipeline follows the optimization level, for example `default<O2>`.
 Frontend semantics and backend code generation also use that level. The first IR
 view has LLVM optimization passes disabled. Analysis defaults to dominator trees
@@ -100,8 +98,8 @@ and loops; MLIR defaults to `builtin.module(canonicalize,cse)`. LLVM inputs with
 incompatible target triples or layouts report an error instead of being silently
 retargeted. Changing language switches an untouched example to that language;
 edited source is preserved. **Reset example**, beside the source filename,
-explicitly replaces it with that language's example and can be undone. Pipelines
-shows only the fields relevant to the selected language.
+replaces it with that language's example and can be undone. Pipelines shows only
+the fields relevant to the selected language.
 
 ## Execution
 
@@ -111,7 +109,7 @@ separate runner worker initializes on the first Run. Choose an exported function
 and enter its scalar arguments in the Run pane. Supported signatures are `i32`
 or `f64` returns with zero, one, or two matching arguments, and `void()`.
 Unsupported signatures remain visible. Pointer and aggregate values are not
-marshaled. A compatible selection survives a rebuild; otherwise the runner
+supported. A compatible selection survives a rebuild; otherwise the runner
 prefers supported `main`, then a sole callable export. Ambiguous exports require
 selection. `main(i32, i32)` receives `argc = 0` and a null `argv`.
 
@@ -119,24 +117,24 @@ The pane shows the return value, stdout, stderr, status, and errors. Repeated
 calls retain module state. **Reset execution**, **Stop**, timeout, traps, and
 module replacement discard the runner without losing compilation artifacts. The
 default execution timeout is 10 seconds, configurable under **Execution
-settings** in the Run pane; it starts after initialization. Legitimate NaN
-returns are displayed as results. Execution requires WebAssembly; native targets
-remain available for inspection.
+settings** in the Run pane; it starts after initialization. NaN is a valid
+return value. Execution requires WebAssembly; native targets remain available
+for inspection.
 
 ## Commands, files, and sharing
 
 The **Terminal** runs `clang`, `clang++`, `opt`, `llc`, `wasm-ld`, `mlir-opt`,
 and `dot` through the compiler worker. It accepts single and double quotes,
 backslash escapes, and `>` / `2>` redirection. Quote LLVM pipeline arguments
-containing angle brackets. This is one tool invocation per command, without a
-shell, pipelines, or input redirection. For example:
+containing angle brackets. Each command runs one tool; shell pipelines and input
+redirection are not supported. For example:
 
 ```text
 opt "-passes=print<domtree>" -disable-output optimized.ll 2> tree.txt
 dot -Tsvg .square.dot -o square.svg
 ```
 
-The current directory is `/workspace`. Compile seeds it with source and all
+The current directory is `/workspace`. Compile fills it with source and
 generated files. Manual commands can use explicit libraries and compiler flags;
 their output updates the workspace while completed build artifacts remain
 unchanged. A new Compile replaces the workspace. Worker recovery retains its
@@ -144,20 +142,17 @@ latest snapshot. **Files** provides previews and downloads; select a manually
 linked `.wasm` file and choose **Use module** to run it. Keep files under
 `/workspace` to include them in snapshots and the runner's dependencies.
 
-In standalone, **Share** copies a versioned URL containing source and semantic
-compiler options. Opening it restores inputs without compiling or running.
-Binaries, logs, layout, and execution state are excluded. Sharing is unavailable
-in JupyterLab and JupyterLite, where sessions belong to the host workspace.
+In standalone, **Share** copies a link with your source and compiler options.
+Opening it restores them without compiling or running. Binaries, logs, layout,
+and execution state are excluded. Sharing is unavailable in JupyterLab and
+JupyterLite, where sessions belong to the host workspace.
 
 Source, pipeline options, output selections, comparison layout, pane sizes, and
-execution timeout are saved by the host. Jupyter also keeps a browser copy
-scoped to the current workspace, protecting recent edits while its workspace
-writes are deferred. Reopening restores editing state without compiling. Output
-is explicitly marked out of date when source or options change. Invalid saved
-state opens a usable default session with feedback. Version 1 sessions migrate
-to version 2, preserving source and split proportions and replacing the Assembly
-pane with an output group selecting Assembly. Compiled artifacts, command files,
-and running processes are not persisted.
+execution timeout are saved automatically. Jupyter also keeps a browser copy of
+recent edits for each workspace. Reopening restores the session without
+compiling. Output is marked out of date when source or options change. Invalid
+saved state opens a default session with a warning. Compiled artifacts, command
+files, and running processes are not saved.
 
 ## C and C++ notebooks
 

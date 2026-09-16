@@ -37,9 +37,9 @@ export function Output({
   const stage = result?.stages.find(stage => stage.name === kind);
   const failure = stage?.status === 'skipped' ? 'Skipped' : 'Failed';
   const message = !result
-    ? 'Compile your source to inspect this output.'
+    ? 'Compile to see output.'
     : !stage
-      ? 'This output does not apply to the compiled language or target.'
+      ? 'Output unavailable for this language or target.'
       : stage.status === 'success'
         ? kind === 'graphs'
           ? 'No graphs were generated.'
@@ -79,12 +79,10 @@ export function Output({
           className="fortitudo-empty"
           aria-label={`${outputLabels[kind]} output`}
         >
-          <h2>See what your code becomes.</h2>
-          <p>Compile your source, then explore every output.</p>
+          <h2>Compile to see output</h2>
           <p className="fortitudo-hint">
-            The first compile downloads a large compiler. Progress appears
-            above. Once loaded, compilation works offline in this tab. Your code
-            stays in your browser.
+            The first compile downloads a large compiler. Once loaded, you can
+            compile offline in this tab. Your code stays in your browser.
           </p>
         </div>
       ) : (
