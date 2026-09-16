@@ -149,19 +149,7 @@ export function Controls(props: IControlsProps): React.ReactElement {
           </button>
           {props.onShare && <button onClick={props.onShare}>Share</button>}
           <button onClick={props.onGuide}>Guide</button>
-          <details className="fortitudo-more">
-            <summary>More</summary>
-            <button
-              onClick={event => {
-                props.onResetLayout();
-                const details = event.currentTarget.closest('details');
-                details?.removeAttribute('open');
-                details?.querySelector('summary')?.focus();
-              }}
-            >
-              Reset layout
-            </button>
-          </details>
+          <button onClick={props.onResetLayout}>Reset layout</button>
         </div>
       </div>
       <div className="fortitudo-status">

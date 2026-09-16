@@ -145,7 +145,6 @@ for (const [host, url] of Object.entries(hosts)) {
     page.on('pageerror', error => errors.push(error.message));
     await open(page, url);
     // Jupyter may restore another output selection or comparison layout.
-    await page.getByText('More', { exact: true }).click();
     await page.getByRole('button', { name: 'Reset layout' }).click();
     await page.getByRole('tab', { name: 'Assembly', exact: true }).click();
     await page.getByLabel('Language', { exact: true }).selectOption('cpp');
@@ -373,7 +372,6 @@ for (const [host, url] of Object.entries(hosts)) {
         await files.click();
       }
     }
-    await page.getByText('More', { exact: true }).click();
     await page.getByRole('button', { name: 'Reset layout' }).click();
     await edit(page, 'int resized() { return 12; }');
     const workbench = page.locator('#fortitudo-workbench');
@@ -411,7 +409,6 @@ for (const [host, url] of Object.entries(hosts)) {
     await expect(page.getByRole('textbox', { name: 'Source code' })).toHaveText(
       'int resized() { return 12; }'
     );
-    await page.getByText('More', { exact: true }).click();
     await page.getByRole('button', { name: 'Reset layout' }).click();
     await expect.poll(width).toBeGreaterThan(original - 3);
     await expect.poll(width).toBeLessThan(original + 3);
@@ -464,7 +461,6 @@ test('previously docked tab groups restore and save their selection', async ({
   await page.reload();
   await expect(page.getByLabel('Diagnostics pane')).toBeVisible();
   await expect(page.getByLabel('Assembly output')).toBeHidden();
-  await page.getByText('More', { exact: true }).click();
   await page.getByRole('button', { name: 'Reset layout' }).click();
   await expect(workbench.getByRole('tablist')).toHaveCount(3);
   await expect(page.getByLabel('Assembly output')).toBeVisible();

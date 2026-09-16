@@ -53,8 +53,6 @@
 .fortitudo-view.fortitudo-header {
   min-height: 100px;
   max-height: 100px;
-  overflow: visible;
-  z-index: 1;
 }
 
 .fortitudo-controls {
@@ -105,14 +103,6 @@
 
 .fortitudo-workbench button {
   cursor: pointer;
-}
-
-.fortitudo-more > button {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  width: max-content;
-  box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
 }
 
 .fortitudo-workbench button:disabled {
@@ -488,17 +478,6 @@
 .fortitudo-empty .fortitudo-hint {
   margin: 20px 0 0;
   line-height: 1.7;
-}
-
-.fortitudo-more {
-  position: relative;
-  align-self: center;
-}
-
-.fortitudo-more summary {
-  padding: 6px 8px;
-  cursor: pointer;
-  color: var(--fortitudo-muted);
 }
 
 @media (width <= 720px) {

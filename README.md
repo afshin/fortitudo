@@ -56,8 +56,8 @@ terminates that worker; the next compile loads a fresh one.
 The workbench starts with source beside output. Only outputs for the selected
 language and target are shown. The tools along the bottom open when selected;
 select the active tool again to fold it away, with the mouse or Enter/Space.
-Compilation errors open Diagnostics automatically. **More → Reset layout**
-restores this arrangement without changing your source.
+Compilation errors open Diagnostics automatically. **Reset layout** restores
+this arrangement without changing your source.
 
 Every compilation includes diagnostics, recorded commands, raw streams, timings,
 and generated files. A failed stage preserves successful independent outputs.

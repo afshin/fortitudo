@@ -55,10 +55,18 @@ test('focused defaults, contextual outputs, and folding tools @compat', async ({
   );
   await page.getByRole('button', { name: 'Compare' }).click();
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(
-    page.getByRole('button', { name: 'Compile', exact: true })
-  ).toBeInViewport();
-  await page.getByText('More', { exact: true }).click();
+  for (const name of [
+    'Compile',
+    'Run',
+    'Compare',
+    'Share',
+    'Guide',
+    'Reset layout'
+  ]) {
+    await expect(
+      page.getByRole('button', { name, exact: true })
+    ).toBeInViewport({ ratio: 1 });
+  }
   await page.getByRole('button', { name: 'Reset layout' }).click();
   await expect(source).toHaveText('my experiment');
   expect(downloads).toEqual([]);
