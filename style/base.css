@@ -27,6 +27,7 @@
   --fortitudo-border: #dce0e6;
   --fortitudo-accent: #365bbb;
   --fortitudo-code-font: ui-monospace, sfmono-regular, menlo, monospace;
+  --fortitudo-tab-height: 28px;
 
   min-width: 360px;
   min-height: 300px;
@@ -272,7 +273,7 @@
 
 .fortitudo-workbench .lm-TabBar,
 .fortitudo-pane-heading {
-  min-height: 48px;
+  min-height: var(--fortitudo-tab-height);
   background: var(--fortitudo-muted-background);
 }
 
@@ -282,17 +283,18 @@
 
 .fortitudo-pane-heading {
   box-sizing: border-box;
-  max-height: 48px;
+  max-height: var(--fortitudo-tab-height);
   margin: 0;
-  padding: 7px 12px;
+  padding: 3px 12px;
+  border-bottom: 2px solid var(--fortitudo-accent);
   font: inherit;
   line-height: 20px;
 }
 
 .fortitudo-workbench .lm-TabBar-tab {
   box-sizing: border-box;
-  height: 36px;
-  padding: 7px 12px;
+  height: var(--fortitudo-tab-height);
+  padding: 3px 12px;
   border-right: 1px solid var(--fortitudo-border);
   border-bottom: 2px solid transparent;
   line-height: 20px;
@@ -380,19 +382,15 @@
   background: white;
 }
 
-.fortitudo-tools > .lm-TabBar {
-  min-height: 48px;
+.fortitudo-tools > .lm-TabBar,
+.fortitudo-workbench .fortitudo-outputs .lm-TabBar {
+  /* Keep horizontal scrolling without reserving a second row. */
   overflow: auto hidden;
+  scrollbar-width: none;
 }
 
 .fortitudo-tools .lm-TabBar-tab {
   flex: 0 0 auto;
-}
-
-.fortitudo-workbench .fortitudo-outputs .lm-TabBar {
-  /* Reserve room for a native scrollbar without clipping the tab labels. */
-  min-height: 48px;
-  overflow: auto hidden;
 }
 
 .fortitudo-workbench .fortitudo-outputs .lm-TabBar-tab {
@@ -471,8 +469,8 @@
 }
 
 .fortitudo-panels .fortitudo-tools.fortitudo-collapsed {
-  min-height: 48px;
-  max-height: 48px;
+  min-height: var(--fortitudo-tab-height);
+  max-height: var(--fortitudo-tab-height);
 }
 
 .fortitudo-empty {
