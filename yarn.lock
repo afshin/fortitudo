@@ -6728,6 +6728,7 @@ __metadata:
     "@codemirror/commands": ^6.8.0
     "@codemirror/lang-cpp": ^6.0.3
     "@codemirror/language": ^6.11.0
+    "@codemirror/legacy-modes": ^6.5.2
     "@codemirror/search": ^6.6.0
     "@codemirror/state": ^6.5.0
     "@codemirror/view": ^6.36.0

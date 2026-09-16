@@ -35,6 +35,10 @@ export function Output({
   const path = paths.includes(selected) ? selected : paths[0];
   const file = result?.files.find(file => file.path === path);
   const stage = result?.stages.find(stage => stage.name === kind);
+  // Current options may have changed since this output was compiled.
+  const x86 = stage?.commands.some(command =>
+    command.includes('-mtriple=x86_64-unknown-linux-gnu')
+  );
   const failure = stage?.status === 'skipped' ? 'Skipped' : 'Failed';
   const message = !result
     ? 'Compile to see output.'
@@ -72,6 +76,7 @@ export function Output({
           file={file}
           workspace={false}
           label={`${outputLabels[kind]} output`}
+          x86={x86}
           {...actions}
         />
       ) : !result && !state.active && state.status !== 'failed' ? (
@@ -144,11 +149,13 @@ function FileOutput({
   file,
   workspace,
   label,
+  x86,
   ...actions
 }: IFileActions & {
   file: File;
   workspace: boolean;
   label: string;
+  x86?: boolean;
 }): React.ReactElement {
   const [hideMetadata, setHideMetadata] = useState(true);
   const assembly = file.path.endsWith('.s');
@@ -232,7 +239,7 @@ function FileOutput({
           ).join(' ')}
         </pre>
       ) : (
-        <TextOutput text={text} label={label}>
+        <TextOutput text={text} label={label} x86={assembly && x86}>
           {buttons}
         </TextOutput>
       )}
