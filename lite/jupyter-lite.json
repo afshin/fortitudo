@@ -4,6 +4,7 @@
     "appName": "Fortitudo",
     "appUrl": "./lab",
     "faviconUrl": "./icon.svg",
+    "disabledExtensions": ["@jupyterlite/application-extension:logo"],
     "defaultKernelName": "xcpp23"
   }
 }

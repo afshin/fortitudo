@@ -1,5 +1,10 @@
-import { BoxPanel, SplitLayout, SplitPanel, TabPanel } from '@lumino/widgets';
-import type { Widget } from '@lumino/widgets';
+import {
+  BoxPanel,
+  SplitLayout,
+  SplitPanel,
+  TabPanel,
+  Widget
+} from '@lumino/widgets';
 
 import type { Area, Pane } from '../model';
 import { hasComparison, isToolArea } from '../model';
@@ -93,15 +98,31 @@ export class PanePanel extends BoxPanel {
   private create(area: Area, changed = () => this.changed()): ISection {
     if (area.type === 'tab-area') {
       const pane = area.widgets[0];
-      // Output groups already own their tabs. Preserve the saved area without
-      // adding another tab bar around a group that occupies its own split.
+      // Preserve the saved area without a redundant tab around a fixed pane
+      // or an output group that already owns its tabs.
       if (
         area.widgets.length === 1 &&
-        (pane === 'outputs' || pane === 'comparison')
+        (pane === 'source' || pane === 'outputs' || pane === 'comparison')
       ) {
-        const widget = this.panes[pane];
-        widget.node.setAttribute('role', 'region');
-        widget.show();
+        const view = this.panes[pane];
+        let widget: Widget = view;
+        if (pane === 'source') {
+          const panel = new BoxPanel({
+            direction: 'top-to-bottom',
+            spacing: 0
+          });
+          panel.addClass('fortitudo-source');
+          const heading = new Widget({ node: document.createElement('h2') });
+          heading.addClass('fortitudo-pane-heading');
+          heading.node.textContent = view.title.label;
+          panel.addWidget(heading);
+          panel.addWidget(view);
+          BoxPanel.setStretch(view, 1);
+          widget = panel;
+        } else {
+          view.node.setAttribute('role', 'region');
+        }
+        view.show();
         return {
           widget,
           save: () => area,
@@ -109,7 +130,7 @@ export class PanePanel extends BoxPanel {
             if (target !== pane) {
               return false;
             }
-            widget.activate();
+            view.activate();
             return true;
           }
         };

@@ -95,6 +95,21 @@ for (const [host, url] of Object.entries(hosts)) {
       name: 'Outputs',
       exact: true
     });
+    const heading = page.getByRole('heading', { name: 'Source', exact: true });
+    await expect(heading).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Source' })).toHaveCount(0);
+    await expect
+      .poll(async () => {
+        const source = await heading.boundingBox();
+        const tabs = await outputs.locator('.lm-TabBar').boundingBox();
+        return (
+          source !== null &&
+          tabs !== null &&
+          Math.abs(source.y - tabs.y) < 1 &&
+          Math.abs(source.height - tabs.height) < 1
+        );
+      })
+      .toBe(true);
     await expectUnclippedTabs(outputs);
     await page.setViewportSize({ width: 850, height: 720 });
     await expect(

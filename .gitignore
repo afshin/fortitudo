@@ -139,6 +139,7 @@ dmypy.json
 runtime/.cache/
 runtime/build/
 lite/_output/
+lite/brand/labextension/
 lite/.jupyterlite.doit.db
 playwright-report/
 test-results/

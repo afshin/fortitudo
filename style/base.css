@@ -270,10 +270,23 @@
   color: #c04d47;
 }
 
-.fortitudo-workbench .lm-TabBar {
+.fortitudo-workbench .lm-TabBar,
+.fortitudo-pane-heading {
   min-height: 48px;
-  align-items: flex-start;
   background: var(--fortitudo-muted-background);
+}
+
+.fortitudo-workbench .lm-TabBar {
+  align-items: flex-start;
+}
+
+.fortitudo-pane-heading {
+  box-sizing: border-box;
+  max-height: 48px;
+  margin: 0;
+  padding: 7px 12px;
+  font: inherit;
+  line-height: 20px;
 }
 
 .fortitudo-workbench .lm-TabBar-tab {
@@ -294,7 +307,8 @@
   background: var(--fortitudo-border);
 }
 
-.fortitudo-panels .lm-TabPanel {
+.fortitudo-panels .lm-TabPanel,
+.fortitudo-source {
   min-width: 120px;
   min-height: 80px;
 }

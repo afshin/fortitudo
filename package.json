@@ -1,6 +1,9 @@
 {
     "name": "fortitudo",
-    "version": "0.5.2",
+    "version": "0.6.0",
+    "workspaces": [
+        "lite/brand"
+    ],
     "description": "A browser-only compiler explorer for C, C++, LLVM IR, and MLIR.",
     "keywords": [
         "compiler-explorer",
@@ -62,7 +65,7 @@
         "lint": "jlpm stylelint && jlpm prettier && jlpm eslint",
         "lint:check": "jlpm stylelint:check && jlpm prettier:check && jlpm eslint:check",
         "prettier": "jlpm prettier:base --write --list-different",
-        "prettier:base": "prettier \"src/**/*.{ts,tsx}\" \"scripts/*.mjs\" \"ui-tests/tests/*.ts\" \"*.{json,mjs,cjs}\" \"style/*.{css,js}\" \"standalone/*.html\" \"lite/*.json\" \"schema/*.json\" README.md CONTRIBUTING.md AGENTS.md RELEASE.md runtime/README.md ui-tests/README.md",
+        "prettier:base": "prettier \"src/**/*.{ts,tsx}\" \"scripts/*.mjs\" \"ui-tests/tests/*.ts\" \"*.{json,mjs,cjs}\" \"style/*.{css,js}\" \"standalone/*.html\" \"lite/*.json\" lite/brand/package.json \"schema/*.json\" README.md CONTRIBUTING.md AGENTS.md RELEASE.md runtime/README.md ui-tests/README.md",
         "prettier:check": "jlpm prettier:base --check",
         "stylelint": "jlpm stylelint:check --fix",
         "stylelint:check": "stylelint --cache \"style/**/*.css\"",

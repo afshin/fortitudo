@@ -28,6 +28,8 @@ function run(command, args) {
   }
 }
 
+run('jupyter-builder', ['build', resolve(root, 'lite/brand')]);
+
 // Recreate the prefix from the lock; package downloads remain cached.
 rmSync(prefix, { recursive: true, force: true });
 run('micromamba', [
@@ -53,8 +55,9 @@ for (const name of readdirSync(kernels)) {
   }
 }
 
-// A fresh output prevents old extensions or kernels surviving an update.
+// Clear task state too: cached merges must run against the fresh output.
 rmSync(resolve(root, 'lite/_output'), { recursive: true, force: true });
+rmSync(resolve(root, 'lite/.jupyterlite.doit.db'), { force: true });
 run('pixi', [
   'run',
   '--as-is',

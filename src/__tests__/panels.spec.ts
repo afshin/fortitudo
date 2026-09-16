@@ -60,7 +60,7 @@ it('resets containers while retaining views and saving once', () => {
     {
       type: 'tab-area',
       widgets: ['outputs', 'source', 'diagnostics'],
-      currentIndex: 1
+      currentIndex: 0
     },
     () => changes.push(panel.save())
   );
@@ -69,6 +69,9 @@ it('resets containers while retaining views and saving once', () => {
   expect(previous.isDisposed).toBe(true);
   expect(changes).toEqual([panel.save()]);
   expect(panel.save().type).toBe('split-area');
+  expect(panes.source.isHidden).toBe(false);
+  expect(panes.source.node.hasAttribute('role')).toBe(false);
+  expect(panes.source.node.hasAttribute('aria-labelledby')).toBe(false);
   expect(panes.outputs.isHidden).toBe(false);
   for (const pane of Object.values(panes)) {
     expect(pane.isDisposed).toBe(false);

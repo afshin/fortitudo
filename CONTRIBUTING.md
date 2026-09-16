@@ -24,6 +24,10 @@ browser-only xeus integration, which must not be loaded by native JupyterLab.
 Both environments share locked tool versions. The Lite build script selects its
 environment automatically and includes our built extension directly.
 
+The private `lite/brand` workspace bundles `src/jupyter/brand.ts` from the
+shared TypeScript build. The Lite builder includes it only in the demo site,
+where it replaces the JupyterLite logo with a Fortitudo link to `/`.
+
 Pixi uses Node 24. GitHub Actions have their own JavaScript runtime, independent
 of Pixi's Node version. Keep workflow actions on releases that use Node 24 too;
 update their pinned revisions when upgrading them.
@@ -85,7 +89,9 @@ pixi run --as-is jlpm serve:site
 
 `dist/site` serves standalone at its root and JupyterLite under `lite/`. The
 standalone navigation opens Lite in the current tab. The separate
-`dist/standalone` build has no link to an unbundled Lite site. All asset URLs
+`dist/standalone` build omits the site navigation and its assets. The site build
+adds `standalone/navigation.html` and `src/standalone/site.ts` through Vite's
+HTML hook; its version placeholder comes from `package.json`. All asset URLs
 remain relative, including compiler and notebook kernel assets. The site build
 checks required entry points and the 1 GB Pages size limit.
 

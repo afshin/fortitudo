@@ -3,6 +3,7 @@ node_modules
 **/lib
 **/package.json
 !/package.json
+!/lite/brand/package.json
 fortitudo
 eslint.config.mjs
 src/generated

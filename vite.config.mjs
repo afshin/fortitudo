@@ -1,47 +1,57 @@
-import { cpSync, createReadStream, statSync } from 'node:fs';
+import { cpSync, createReadStream, readFileSync, statSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import { defineConfig } from 'vite';
+
+const { version } = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8')
+);
 
 export default defineConfig(({ mode }) => {
   const output = mode === 'site' ? 'dist/site' : 'dist/standalone';
   return {
     root: 'standalone',
     base: './',
+    publicDir: mode === 'site' ? 'public' : false,
+    define: {
+      'import.meta.env.FORTITUDO_VERSION': JSON.stringify(version)
+    },
     build: {
       target: 'es2022',
       outDir: `../${output}`,
       emptyOutDir: true
     },
     plugins: [
-      {
-        name: 'fortitudo-compiler',
-        transformIndexHtml() {
-          if (mode !== 'site') {
-            return [];
-          }
-          return [
+      mode === 'site' && {
+        name: 'fortitudo-site',
+        transformIndexHtml: {
+          // Process the site module and version with Vite's HTML pipeline.
+          order: 'pre',
+          handler: () => [
             {
               tag: 'nav',
               attrs: {
                 class: 'fortitudo-navigation',
-                'aria-label': 'Applications'
+                'aria-label': 'Fortitudo links'
               },
-              children: [
-                { tag: 'strong', children: 'Fortitudo' },
-                {
-                  tag: 'a',
-                  attrs: {
-                    href: './lite/lab/index.html'
-                  },
-                  children:
-                    '<img src="./jupyter.svg" alt="" width="18" height="18">' +
-                    '<span>Try in Jupyter</span>'
-                }
-              ],
+              children: readFileSync(
+                new URL('./standalone/navigation.html', import.meta.url),
+                'utf8'
+              ),
               injectTo: 'body-prepend'
+            },
+            {
+              tag: 'script',
+              attrs: {
+                type: 'module',
+                src: '../src/standalone/site.ts'
+              },
+              injectTo: 'body'
             }
-          ];
-        },
+          ]
+        }
+      },
+      {
+        name: 'fortitudo-compiler',
         generateBundle() {
           for (const id of this.getModuleIds()) {
             if (id.includes('/@jupyterlab/')) {
