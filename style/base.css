@@ -194,6 +194,11 @@
   overflow: hidden;
 }
 
+.fortitudo-workbench .fortitudo-view:focus-visible {
+  /* Host focus on a pane wrapper must not overlap its heading. */
+  outline: none;
+}
+
 .fortitudo-pane {
   display: flex;
   flex-direction: column;
