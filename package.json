@@ -1,6 +1,6 @@
 {
     "name": "fortitudo",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "description": "A browser-only compiler explorer for C, C++, LLVM IR, and MLIR.",
     "keywords": [
         "compiler-explorer",
