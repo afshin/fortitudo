@@ -376,10 +376,11 @@ for (const [host, url] of Object.entries(hosts)) {
     await edit(page, 'int resized() { return 12; }');
     const workbench = page.locator('#fortitudo-workbench');
     await expect(workbench.locator('.lm-DockPanel')).toHaveCount(0);
-    const source = workbench.getByRole('tabpanel', {
-      name: 'Source',
+    const source = workbench.getByRole('region', {
+      name: 'Source pane',
       exact: true
     });
+    await expect(source).toBeVisible();
     const width = () => source.evaluate(node => node.clientWidth);
     const original = await width();
     const handle = workbench.locator(
@@ -412,7 +413,7 @@ for (const [host, url] of Object.entries(hosts)) {
     await page.getByRole('button', { name: 'Reset layout' }).click();
     await expect.poll(width).toBeGreaterThan(original - 3);
     await expect.poll(width).toBeLessThan(original + 3);
-    await expect(workbench.getByRole('tablist')).toHaveCount(3);
+    await expect(workbench.getByRole('tablist')).toHaveCount(2);
     await page.setViewportSize({ width: 650, height: 720 });
     await expect(
       page.getByRole('button', { name: 'Compile', exact: true })
@@ -454,7 +455,7 @@ test('previously docked tab groups restore and save their selection', async ({
   });
   await page.reload();
   const workbench = page.locator('#fortitudo-workbench');
-  await expect(workbench.getByRole('tablist')).toHaveCount(3);
+  await expect(workbench.getByRole('tablist')).toHaveCount(2);
   await expect(page.getByLabel('Assembly output')).toBeVisible();
   await page.getByRole('tab', { name: 'Diagnostics', exact: true }).click();
   await expect(page.getByLabel('Assembly output')).toBeHidden();
@@ -462,7 +463,7 @@ test('previously docked tab groups restore and save their selection', async ({
   await expect(page.getByLabel('Diagnostics pane')).toBeVisible();
   await expect(page.getByLabel('Assembly output')).toBeHidden();
   await page.getByRole('button', { name: 'Reset layout' }).click();
-  await expect(workbench.getByRole('tablist')).toHaveCount(3);
+  await expect(workbench.getByRole('tablist')).toHaveCount(2);
   await expect(page.getByLabel('Assembly output')).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Source code' })).toHaveText(
     'int grouped() { return 12; }'
