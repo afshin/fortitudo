@@ -11,6 +11,6 @@ export default defineConfig({
       formats: ['es'],
       fileName: () => 'worker.js'
     },
-    minify: false
+    minify: 'esbuild'
   }
 });

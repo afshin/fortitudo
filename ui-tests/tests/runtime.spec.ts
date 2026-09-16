@@ -5,6 +5,47 @@ import type { Options, Result } from '../../src/compiler/types';
 
 const standalone = 'http://127.0.0.1:8765/dist/standalone/';
 
+test('runtime library aliases resolve to their payloads @compat', async ({
+  page
+}) => {
+  await page.goto(standalone);
+  await page
+    .getByRole('textbox', { name: 'Source code' })
+    .fill(
+      [
+        '#include <sys/stat.h>',
+        'extern "C" int aliases() {',
+        '  const char *paths[] = {',
+        '    "/lib/libopenblas.so", "/lib/libopenblas.so.0",',
+        '    "/lib/libz.so", "/lib/libz.so.1"',
+        '  };',
+        '  struct stat links[4], files[4];',
+        '  for (int i = 0; i < 4; ++i) {',
+        '    if (lstat(paths[i], &links[i]) || stat(paths[i], &files[i]))',
+        '      return -1;',
+        '    if (!S_ISLNK(links[i].st_mode) || !S_ISREG(files[i].st_mode))',
+        '      return -2;',
+        '    if (files[i].st_size == 0) return -3;',
+        '  }',
+        '  if (files[0].st_ino != files[1].st_ino) return -4;',
+        '  if (files[2].st_ino != files[3].st_ino) return -5;',
+        '  return 4;',
+        '}'
+      ].join('\n')
+    );
+  await page.getByRole('button', { name: 'Run', exact: true }).click();
+  await expect(page.getByLabel('Execution result')).toContainText('Return: 4');
+  await page.getByRole('tab', { name: 'Terminal', exact: true }).click();
+  await page
+    .getByLabel('Compiler command')
+    .fill(
+      'wasm-ld -shared --export-all --unresolved-symbols=import-dynamic ' +
+        'output.o -L/lib -lopenblas -lz -o linked.wasm'
+    );
+  await page.getByRole('button', { name: 'Run command', exact: true }).click();
+  await expect(page.getByLabel('Command log')).toContainText('Exit 0');
+});
+
 test('real compiler: standards, headers, targets, repetition @compat', async ({
   page
 }, testInfo) => {

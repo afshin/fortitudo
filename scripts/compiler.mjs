@@ -193,7 +193,16 @@ async function build() {
     buildPrefix,
     'opt/emsdk/upstream/emscripten/cache/sysroot'
   );
-  const prefix = ['--no-rc', 'run', '--prefix', buildPrefix];
+  // CMake owns optimization and ABI flags, including those normally appended
+  // by this toolchain's activation script. Clear that override after activation.
+  const prefix = [
+    '--no-rc',
+    'run',
+    '--prefix',
+    buildPrefix,
+    'env',
+    'EMCC_CFLAGS='
+  ];
   run('micromamba', [
     ...prefix,
     'emcmake',

@@ -18,10 +18,18 @@ the expected llc main and InitLLVM statements exist before adapting them.
 Removing InitLLVM prevents LLVM shutdown between invocations. Fortitudo changes
 source paths and removes the upstream demo-page copying.
 
+The final compiler and MLIR links use Emscripten's `-Oz` size optimization. The
+build clears the toolchain's implicit `EMCC_CFLAGS` override and declares its
+ABI flags in CMake so the environment cannot silently restore `-O2`.
+`MAIN_MODULE=1` retains exports needed by dynamically loaded user programs;
+changing it to mode 2 would require constraining those programs' imports.
+
 The build assembles a browser filesystem from the Emscripten sysroot and pinned
-host prefix. It keeps upstream header and library packaging behavior. It does
-not minimize the runtime or load the optional MLIR driver during initialization.
-Clang resource headers appear at `/lib/clang/23`.
+host prefix. It preserves public headers and libraries, excluding development
+headers and archives for the toolchain already linked into the compiler. Library
+symlink aliases are recreated during initialization, so each library's contents
+are preloaded only once. Clang resource headers appear at `/lib/clang/23`. The
+optional MLIR driver is loaded only when requested.
 
 Generated assets live in the ignored `compiler/` directory. Its manifest records
 compiler version, resource directory, provenance, file sizes, and SHA-256

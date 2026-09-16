@@ -7,6 +7,11 @@ find_package(Clang REQUIRED CONFIG)
 find_package(MLIR REQUIRED CONFIG)
 find_package(Graphviz REQUIRED CONFIG)
 
+# Keep the pinned toolchain's ABI flags explicit. Its EMCC_CFLAGS also appends
+# -O2, which would override the size optimization selected at link time.
+add_compile_options(-O2 -g0 -msimd128 "-sSUPPORT_LONGJMP=wasm")
+add_link_options(-g0 -msimd128 "-sSUPPORT_LONGJMP=wasm")
+
 set(EMSCRIPTEN_SYSROOT "" CACHE PATH
     "Emscripten sysroot to preload into the browser filesystem")
 set(CLANG_RESOURCE_TREE "" CACHE PATH
@@ -71,6 +76,7 @@ target_include_directories(WasmBoltMlirOpt PRIVATE
 )
 target_link_libraries(WasmBoltMlirOpt PRIVATE MLIRMlirOptMain)
 target_link_options(WasmBoltMlirOpt PRIVATE
+  "SHELL:-Oz"
   "SHELL:-fwasm-exceptions"
   "SHELL:-sSIDE_MODULE=2"
   "SHELL:-Wl,-Bsymbolic"
@@ -128,13 +134,37 @@ file(GLOB RUNTIME_LIBRARY_CANDIDATES
   "${CMAKE_PREFIX_PATH}/lib/*.so*"
   "${CMAKE_PREFIX_PATH}/lib/*.wasm"
   "${CMAKE_PREFIX_PATH}/lib/libfmt*.a")
+set(RUNTIME_LIBRARY_LINKS "")
 foreach(LIBRARY_PATH IN LISTS RUNTIME_LIBRARY_CANDIDATES)
-  file(COPY "${LIBRARY_PATH}" DESTINATION "${RUNTIME_ROOT}/lib"
-       FOLLOW_SYMLINK_CHAIN)
+  if(IS_SYMLINK "${LIBRARY_PATH}")
+    file(REAL_PATH "${LIBRARY_PATH}" LIBRARY_TARGET)
+    if(NOT LIBRARY_TARGET IN_LIST RUNTIME_LIBRARY_CANDIDATES)
+      message(FATAL_ERROR
+        "Runtime library target is not packaged: ${LIBRARY_PATH}")
+    endif()
+    get_filename_component(LIBRARY_NAME "${LIBRARY_PATH}" NAME)
+    get_filename_component(LIBRARY_TARGET "${LIBRARY_TARGET}" NAME)
+    string(APPEND RUNTIME_LIBRARY_LINKS
+      "  FS.symlink('/lib/${LIBRARY_TARGET}', '/lib/${LIBRARY_NAME}');\n")
+  else()
+    file(COPY "${LIBRARY_PATH}" DESTINATION "${RUNTIME_ROOT}/lib")
+  endif()
 endforeach()
 
+# Emscripten's file packager dereferences symlinks. Recreate library aliases
+# in the browser filesystem instead of preloading their contents repeatedly.
+set(RUNTIME_LINKS_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/library-links.js")
+file(WRITE "${RUNTIME_LINKS_SCRIPT}"
+  "(Module['preRun'] ??= []).push(() => {\n"
+  "  FS.mkdirTree('/lib');\n"
+  "${RUNTIME_LIBRARY_LINKS}"
+  "});\n")
+set_property(TARGET Compiler APPEND PROPERTY LINK_DEPENDS
+  "${RUNTIME_LINKS_SCRIPT}")
+
+# Favor download size while retaining exports for arbitrary user side modules.
 target_link_options(Compiler PRIVATE
-  "SHELL:-O2"
+  "SHELL:-Oz"
   "SHELL:-fwasm-exceptions"
   "SHELL:-sMODULARIZE=1"
   "SHELL:-sEXPORT_ES6=1"
@@ -144,6 +174,7 @@ target_link_options(Compiler PRIVATE
   "SHELL:-sMAIN_MODULE=1"
   "SHELL:-sNO_EXIT_RUNTIME=1"
   "SHELL:-sEXPORTED_RUNTIME_METHODS=ccall,cwrap,FS,loadDynamicLibrary"
+  "SHELL:--pre-js=${RUNTIME_LINKS_SCRIPT}"
   "SHELL:--preload-file=${RUNTIME_ROOT}/include@/include"
   "SHELL:--preload-file=${RUNTIME_ROOT}/lib@/lib"
   "SHELL:--preload-file=${CLANG_RESOURCE_TREE}@${CLANG_RESOURCE_DIR}"
