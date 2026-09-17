@@ -185,3 +185,37 @@ it('restores collapsed tools but rejects a collapsed source area', () => {
   ).toBeNull();
   panel.dispose();
 });
+
+it('stacks narrow panes without changing saved orientation or sizes', () => {
+  const panes = views();
+  const changed = jest.fn();
+  const panel = new PanePanel(panes, null, changed);
+  const saved = panel.save();
+  const root = panel.widgets[0];
+  if (!(root instanceof SplitPanel)) {
+    throw new Error('Expected a split panel.');
+  }
+  const source = root.widgets[0];
+  if (!(source instanceof SplitPanel)) {
+    throw new Error('Expected a source split.');
+  }
+  MessageLoop.sendMessage(panel, new Widget.ResizeMessage(390, 800));
+  expect(source.orientation).toBe('vertical');
+  expect(panel.save()).toEqual(saved);
+  expect(changed).not.toHaveBeenCalled();
+  MessageLoop.sendMessage(panel, new Widget.ResizeMessage(1200, 800));
+  expect(source.orientation).toBe('horizontal');
+  expect(panel.save()).toEqual(saved);
+  expect(changed).not.toHaveBeenCalled();
+  MessageLoop.sendMessage(panel, new Widget.ResizeMessage(390, 800));
+  panel.compare();
+  expect(
+    Array.from(panel.node.querySelectorAll('.lm-SplitPanel')).every(
+      split => split.getAttribute('data-orientation') === 'vertical'
+    )
+  ).toBe(true);
+  panel.compare();
+  expect(panel.save()).toEqual(saved);
+  expect(panes.source.isDisposed).toBe(false);
+  panel.dispose();
+});

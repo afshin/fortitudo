@@ -135,6 +135,12 @@ for archive, prefix in archives:
 wheel = root / f'dist/fortitudo-{version}-py3-none-any.whl'
 assert wheel.is_file(), 'Build the current wheel first.'
 with zipfile.ZipFile(wheel) as package:
+    names = package.namelist()
+    assert len(names) == len(set(names)), 'Duplicate wheel destinations.'
+    installs = [name for name in names
+                if name.endswith('/labextensions/fortitudo/install.json')]
+    assert len(installs) == 1, 'Expected one extension install.json.'
+    assert package.read(installs[0]) == (root / 'install.json').read_bytes()
     entry = package.read(f'fortitudo-{version}.dist-info/entry_points.txt')
     assert b'fortitudo = fortitudo.server:main' in entry
     verify_metadata(

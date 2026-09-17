@@ -83,7 +83,7 @@ for (const [host, site] of Object.entries(sites)) {
       await expect(page).toHaveURL(`${site}lite/lab/index.html`);
       expect(page.context().pages()).toHaveLength(pages);
       const home = page.getByRole('link', { name: 'Fortitudo home' });
-      await expect(home).toHaveAttribute('href', '/');
+      await expect(home).toHaveAttribute('href', site);
       await expect(page.locator('#jp-MainLogo')).toHaveCount(1);
       await expect(home.locator('img')).toHaveAttribute(
         'src',
@@ -107,16 +107,19 @@ for (const [host, site] of Object.entries(sites)) {
       await expect(page.getByLabel('Assembly output')).toContainText('twice');
       await page.screenshot({ path: testInfo.outputPath('jupyterlite.png') });
       await home.click();
-      await expect(page).toHaveURL(new URL('/', site).href);
       expect(page.context().pages()).toHaveLength(pages);
-      if (host === 'site') {
-        // This test serves the site below a prefix, outside the domain root.
-        await page.goto(site);
-      }
       await expect(page).toHaveURL(site);
       await expect(
         page.getByRole('textbox', { name: 'Source code' })
       ).toContainText('int square(int value)');
+      await page.goBack();
+      await expect(page).toHaveURL(`${site}lite/lab/index.html`);
+      await page.goBack();
+      await expect(page).toHaveURL(site);
+      const source = page.getByRole('textbox', { name: 'Source code' });
+      await expect(source).toContainText('int square(int value)');
+      await source.fill('int after_back() { return 1; }');
+      await expect(source).toContainText('after_back');
     });
 
     for (const [language, file, outputs] of [

@@ -138,6 +138,36 @@ for (const [host, url] of Object.entries(hosts)) {
         .locator('.lm-TabBar-tabLabel')
     ).toBeInViewport({ ratio: 1 });
     await expectUnclippedTabs(comparison);
+    const previous = await source.boundingBox();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect
+      .poll(async () => {
+        const source = await heading.boundingBox();
+        const primary = await outputs.boundingBox();
+        const secondary = await comparison.boundingBox();
+        return (
+          source !== null &&
+          primary !== null &&
+          secondary !== null &&
+          Math.abs(source.x - primary.x) < 1 &&
+          Math.abs(primary.x - secondary.x) < 1 &&
+          Math.abs(source.width - primary.width) < 1 &&
+          secondary.y >= primary.y + primary.height
+        );
+      })
+      .toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('narrow-layout.png') });
+    await page.setViewportSize({ width: 850, height: 720 });
+    await expect
+      .poll(async () => {
+        const restored = await source.boundingBox();
+        return (
+          restored !== null &&
+          previous !== null &&
+          Math.abs(restored.width - previous.width) < 1
+        );
+      })
+      .toBe(true);
     await page.screenshot({ path: testInfo.outputPath('output-layout.png') });
     const assembly = outputs.getByRole('tab', {
       name: 'Assembly',

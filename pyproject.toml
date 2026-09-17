@@ -61,7 +61,11 @@ ignore-vcs = true
 exclude = ["fortitudo/labextension/**"]
 
 [tool.hatch.build.targets.wheel.shared-data]
-"fortitudo/labextension" = "share/jupyter/labextensions/fortitudo"
+# Editable installs can write install.json through the development symlink.
+# Include it only from the authoritative file at the repository root.
+"fortitudo/labextension/package.json" = "share/jupyter/labextensions/fortitudo/package.json"
+"fortitudo/labextension/schemas" = "share/jupyter/labextensions/fortitudo/schemas"
+"fortitudo/labextension/static" = "share/jupyter/labextensions/fortitudo/static"
 "install.json" = "share/jupyter/labextensions/fortitudo/install.json"
 
 [tool.hatch.build.hooks.version]

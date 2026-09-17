@@ -80,3 +80,37 @@ it('saves navigation and layout reset without losing edits', async () => {
   workbench.close();
   expect(writes).toHaveLength(2);
 });
+
+it.each([false, true])(
+  'saves imported inputs before clearing the URL (save fails: %s)',
+  async fails => {
+    const commands = new CommandRegistry();
+    const shared = { ...snapshot(initial()), source: 'shared' };
+    const clear = jest.fn();
+    let saved: Session | null = null;
+    const save = jest.fn(async (value: Session) => {
+      expect(clear).not.toHaveBeenCalled();
+      if (fails) {
+        fails = false;
+        throw new Error('Storage unavailable');
+      }
+      saved = value;
+    });
+    const workbench = await createWorkbench({
+      commands,
+      workerUrl: new URL('https://example.test/compiler/worker.js'),
+      persistence: { load: async () => snapshot(initial()), save },
+      sharing: { read: () => shared, clear, copy: jest.fn() }
+    });
+    if (saved === null) {
+      expect(clear).not.toHaveBeenCalled();
+      await commands.execute(CommandIDs.setSource, { source: 'edited' });
+      await workbench.saved;
+      expect(saved).toMatchObject({ source: 'edited' });
+    } else {
+      expect(saved).toEqual(shared);
+    }
+    expect(clear).toHaveBeenCalledTimes(1);
+    workbench.close();
+  }
+);

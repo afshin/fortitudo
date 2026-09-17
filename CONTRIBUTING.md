@@ -26,7 +26,8 @@ environment automatically and includes our built extension directly.
 
 The private `lite/brand` workspace bundles `src/jupyter/brand.ts` from the
 shared TypeScript build. The Lite builder includes it only in the demo site,
-where it replaces the JupyterLite logo with a Fortitudo link to `/`.
+where it replaces the JupyterLite logo with a link to the parent standalone
+site, including when deployed below a URL prefix.
 
 Pixi uses Node 24. GitHub Actions have their own JavaScript runtime, independent
 of Pixi's Node version. Keep workflow actions on releases that use Node 24 too;

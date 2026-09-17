@@ -30,6 +30,37 @@ async function command(page: Page, text: string) {
   ).toBeEnabled();
 }
 
+test('Run errors recover in the appropriate pane @compat', async ({ page }) => {
+  await page.goto(standalone);
+  await edit(page, 'int broken( {');
+  await page.getByRole('button', { name: 'Run', exact: true }).click();
+  await expect(page.getByRole('tab', { name: 'Diagnostics' })).toHaveAttribute(
+    'aria-selected',
+    'true'
+  );
+  await expect(
+    page.getByRole('tab', { name: 'Run', exact: true })
+  ).toHaveAttribute('aria-selected', 'false');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await edit(page, 'extern "C" int square(int x) { return x * x; }');
+  await page.getByRole('button', { name: 'Run', exact: true }).click();
+  await expect(page.getByLabel('Execution result')).toContainText('Return: 0');
+  const argument = page.getByLabel('Argument 1', { exact: true });
+  await argument.fill('1.5');
+  await page.getByRole('button', { name: 'Run function' }).click();
+  await expect(page.getByLabel('Run pane')).toContainText(
+    'Enter valid arguments'
+  );
+  await expect(page.getByLabel('Execution result')).toHaveCount(0);
+  await argument.fill('5');
+  await expect(page.getByLabel('Run pane')).not.toContainText(
+    'Enter valid arguments'
+  );
+  await page.getByRole('button', { name: 'Run function' }).click();
+  await expect(page.getByLabel('Execution result')).toContainText('Return: 25');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
 test('scalar signatures, streams, traps, Stop, and runner isolation', async ({
   page,
   context

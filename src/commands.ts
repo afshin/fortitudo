@@ -39,6 +39,7 @@ export namespace CommandIDs {
   export const share = 'fortitudo:share';
   export const copy = 'fortitudo:copy';
   export const download = 'fortitudo:download';
+  export const dismissNotice = 'fortitudo:dismiss-notice';
 }
 
 /** Explicit services and host actions used by the shared commands. */
@@ -64,13 +65,28 @@ export function registerCommands(
   let sequence = 0;
   let disposed = false;
   let startingRun = false;
+  let confirmation: ReturnType<typeof setTimeout> | null = null;
   const idle = () => !disposed && store.state.active === null;
   const add = (id: string, options: CommandRegistry.ICommandOptions) =>
     disposables.add(commands.addCommand(id, options));
 
-  async function build(compile: boolean): Promise<void> {
-    if (!idle()) {
+  function confirm(message: string): void {
+    if (disposed) {
       return;
+    }
+    if (confirmation !== null) {
+      clearTimeout(confirmation);
+    }
+    store.dispatch({ type: 'confirmation', message });
+    confirmation = setTimeout(() => {
+      confirmation = null;
+      store.dispatch({ type: 'confirmation', message: null });
+    }, 4000);
+  }
+
+  async function build(compile: boolean): Promise<boolean> {
+    if (!idle()) {
+      return false;
     }
     const id = ++sequence;
     const { source, options } = store.state;
@@ -83,7 +99,7 @@ export function registerCommands(
     try {
       const info = await compiler.initialize(progress);
       if (disposed || store.state.active?.id !== id) {
-        return;
+        return false;
       }
       store.dispatch({ type: 'initialized', id, info, compile });
       if (compile) {
@@ -96,12 +112,16 @@ export function registerCommands(
           if (result.exitCode !== 0 && !stale(store.state)) {
             context.activatePane('diagnostics');
           }
+          return result.exitCode === 0 && !stale(store.state);
         }
       }
+      return !compile;
     } catch (error) {
-      if (!disposed) {
+      if (!disposed && store.state.active?.id === id) {
         store.dispatch({ type: 'failed', id, message: String(error) });
+        context.activatePane('diagnostics');
       }
+      return false;
     }
   }
 
@@ -263,6 +283,12 @@ export function registerCommands(
       store.dispatch({ type: 'clear-terminal' });
     }
   });
+  add(CommandIDs.dismissNotice, {
+    label: 'Dismiss message',
+    execute: () => {
+      store.dispatch({ type: 'notice', message: null });
+    }
+  });
   add(CommandIDs.selectModule, {
     label: 'Select Wasm module',
     execute: args => {
@@ -329,19 +355,14 @@ export function registerCommands(
       startingRun = true;
       let id: number | null = null;
       try {
-        if (!currentModule(store.state)) {
-          await build(true);
+        if (!currentModule(store.state) && !(await build(true))) {
+          return;
         }
-        if (disposed) {
+        if (disposed || !currentModule(store.state)) {
           return;
         }
         context.activatePane('run');
         const state = store.state;
-        if (!currentModule(state)) {
-          throw new Error(
-            'No current Wasm module. Check source and compilation diagnostics.'
-          );
-        }
         const execution = state.execution;
         const fn = execution.info?.functions.find(
           fn => fn.name === execution.symbol
@@ -388,10 +409,8 @@ export function registerCommands(
         );
         store.dispatch({ type: 'run-finished', id, result });
       } catch (error) {
-        if (id !== null) {
+        if (!disposed) {
           store.dispatch({ type: 'run-failed', id, message: String(error) });
-        } else if (!disposed) {
-          store.dispatch({ type: 'notice', message: String(error) });
         }
       } finally {
         startingRun = false;
@@ -405,7 +424,7 @@ export function registerCommands(
     isEnabled: () => !!context.sharing,
     execute: async () => {
       await context.sharing?.copy(snapshot(store.state));
-      store.dispatch({ type: 'notice', message: 'Share link copied.' });
+      confirm('Share link copied.');
     }
   });
   for (const id of [CommandIDs.copy, CommandIDs.download]) {
@@ -426,6 +445,7 @@ export function registerCommands(
               ? assemblyText(text)
               : text
           );
+          confirm('Output copied.');
         } else {
           context.download(file);
         }
@@ -457,6 +477,9 @@ export function registerCommands(
     dispose() {
       if (!disposed) {
         disposed = true;
+        if (confirmation !== null) {
+          clearTimeout(confirmation);
+        }
         unsubscribe();
         compiler.cancel();
         runner.reset();

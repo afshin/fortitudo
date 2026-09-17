@@ -1,3 +1,4 @@
+import { cpp } from '@codemirror/lang-cpp';
 import {
   HighlightStyle,
   StreamLanguage,
@@ -13,35 +14,33 @@ import * as React from 'react';
 
 import { editorExtensions } from './codemirror';
 
-const x86Highlighting = [
-  StreamLanguage.define(gas),
-  syntaxHighlighting(
-    HighlightStyle.define([
-      {
-        tag: [
-          tags.keyword,
-          tags.variableName,
-          tags.tagName,
-          tags.number,
-          tags.string
-        ],
-        color: 'var(--fortitudo-accent)'
-      },
-      { tag: tags.comment, color: 'var(--fortitudo-muted)' }
-    ])
-  )
-];
+const languages = { cpp: cpp(), x86: StreamLanguage.define(gas) };
+const highlighting = syntaxHighlighting(
+  HighlightStyle.define([
+    {
+      tag: [
+        tags.keyword,
+        tags.variableName,
+        tags.tagName,
+        tags.number,
+        tags.string
+      ],
+      color: 'var(--fortitudo-accent)'
+    },
+    { tag: tags.comment, color: 'var(--fortitudo-muted)' }
+  ])
+);
 
 /** Own the read-only editor; artifact content remains in the store. */
 export function TextOutput({
   text,
   label,
-  x86 = false,
+  language,
   children
 }: {
   text: string;
   label: string;
-  x86?: boolean;
+  language?: keyof typeof languages;
   children?: React.ReactNode;
 }): React.ReactElement {
   const node = useRef<HTMLDivElement>(null);
@@ -55,7 +54,7 @@ export function TextOutput({
       state: EditorState.create({
         extensions: [
           editorExtensions,
-          x86 ? x86Highlighting : [],
+          language ? [languages[language], highlighting] : [],
           EditorState.readOnly.of(true),
           EditorView.editable.of(false),
           EditorView.contentAttributes.of({
@@ -75,7 +74,7 @@ export function TextOutput({
       view.destroy();
       editor.current = null;
     };
-  }, [label, x86]);
+  }, [label, language]);
   useEffect(() => {
     const view = editor.current;
     if (view && view.state.doc.toString() !== text) {
@@ -83,7 +82,7 @@ export function TextOutput({
         changes: { from: 0, to: view.state.doc.length, insert: text }
       });
     }
-  }, [text, label, x86]);
+  }, [text, label, language]);
   return (
     <>
       <div className="fortitudo-file-actions">

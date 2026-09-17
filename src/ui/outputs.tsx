@@ -161,6 +161,12 @@ function FileOutput({
   const assembly = file.path.endsWith('.s');
   const wasm = file.path.endsWith('.wasm');
   const extension = file.path.split('.').pop()?.toLowerCase() ?? '';
+  const language =
+    assembly && x86
+      ? 'x86'
+      : ['c', 'cpp', 'cc', 'cxx', 'h', 'hpp'].includes(extension)
+        ? 'cpp'
+        : undefined;
   const imageTypes: Readonly<Record<string, string>> = {
     svg: 'image/svg+xml',
     png: 'image/png',
@@ -239,7 +245,7 @@ function FileOutput({
           ).join(' ')}
         </pre>
       ) : (
-        <TextOutput text={text} label={label} x86={assembly && x86}>
+        <TextOutput text={text} label={label} language={language}>
           {buttons}
         </TextOutput>
       )}

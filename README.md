@@ -56,7 +56,8 @@ The workbench starts with source beside output. Only outputs for the selected
 language and target are shown. The tools along the bottom open when selected;
 select the active tool again to fold it away, with the mouse or Enter/Space.
 Compilation errors open Diagnostics automatically. **Reset layout** restores
-this arrangement without changing your source.
+this arrangement without changing your source. Narrow windows stack the panes;
+widening the window restores the saved arrangement.
 
 Every compilation includes diagnostics, recorded commands, raw streams, timings,
 and generated files. A failed stage preserves successful independent outputs.
@@ -143,9 +144,12 @@ linked `.wasm` file and choose **Use module** to run it. Keep files under
 `/workspace` to include them in snapshots and the runner's dependencies.
 
 In standalone, **Share** copies a link with your source and compiler options.
-Opening it restores them without compiling or running. Binaries, logs, layout,
-and execution state are excluded. Sharing is unavailable in JupyterLab and
-JupyterLite, where sessions belong to the host workspace.
+New links keep these inputs after `#`, outside the request sent to the server.
+Opening a link saves its inputs locally without compiling or running, then
+removes them from the address so reloading keeps subsequent edits. Older links
+using a query parameter still open. Binaries, logs, layout, and execution state
+are excluded. Sharing is unavailable in JupyterLab and JupyterLite, where
+sessions belong to the host workspace.
 
 Source, pipeline options, output selections, comparison layout, pane sizes, and
 execution timeout are saved automatically. Jupyter also keeps a browser copy of

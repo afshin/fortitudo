@@ -77,6 +77,7 @@ export type State = Readonly<{
   terminal: readonly Stage[];
   execution: Execution;
   notice: string | null;
+  confirmation: string | null;
   position: Readonly<{ line: number; column: number; serial: number }> | null;
 }>;
 
@@ -93,7 +94,8 @@ export type Action =
   | Readonly<{ type: 'clear-terminal' }>
   | Readonly<{ type: 'failed'; id: number; message: string }>
   | Readonly<{ type: 'cancelled' }>
-  | Readonly<{ type: 'notice'; message: string }>
+  | Readonly<{ type: 'notice'; message: string | null }>
+  | Readonly<{ type: 'confirmation'; message: string | null }>
   | Readonly<{ type: 'module'; path: string }>
   | Readonly<{ type: 'symbol'; symbol: string }>
   | Readonly<{ type: 'arguments'; args: readonly string[] }>
@@ -101,7 +103,7 @@ export type Action =
   | Readonly<{ type: 'run-begin'; id: number }>
   | Readonly<{ type: 'run-progress'; id: number; progress: Progress }>
   | Readonly<{ type: 'run-finished'; id: number; result: RunResult }>
-  | Readonly<{ type: 'run-failed'; id: number; message: string }>
+  | Readonly<{ type: 'run-failed'; id: number | null; message: string }>
   | Readonly<{ type: 'run-reset' }>
   | Readonly<{ type: 'navigate'; line: number; column: number }>;
 
@@ -142,6 +144,7 @@ export function initial(session: Session | null = null): State {
       progress: null
     },
     notice: null,
+    confirmation: null,
     position: null
   };
 }
@@ -253,6 +256,8 @@ export function reduce(state: State, action: Action): State {
       return { ...state, active: null, status: 'cancelled', progress: null };
     case 'notice':
       return { ...state, notice: action.message };
+    case 'confirmation':
+      return { ...state, confirmation: action.message };
     case 'module':
       return selectModule(state, action.path);
     case 'symbol': {
@@ -271,7 +276,10 @@ export function reduce(state: State, action: Action): State {
       };
     }
     case 'arguments':
-      return { ...state, execution: { ...state.execution, args: action.args } };
+      return {
+        ...state,
+        execution: { ...state.execution, args: action.args, notice: null }
+      };
     case 'timeout':
       return { ...state, timeout: action.timeout };
     case 'run-begin':
@@ -313,7 +321,7 @@ export function reduce(state: State, action: Action): State {
           }
         : state;
     case 'run-failed':
-      return state.execution.active?.id === action.id
+      return (state.execution.active?.id ?? null) === action.id
         ? {
             ...state,
             execution: {
@@ -321,6 +329,7 @@ export function reduce(state: State, action: Action): State {
               active: null,
               progress: null,
               status: 'failed',
+              result: null,
               notice: action.message
             }
           }

@@ -24,6 +24,7 @@ interface IControlsProps {
   onShare?(): void;
   onStop(): void;
   onGuide(): void;
+  onDismissNotice(): void;
 }
 
 export function Controls(props: IControlsProps): React.ReactElement {
@@ -158,6 +159,7 @@ export function Controls(props: IControlsProps): React.ReactElement {
           <span
             className={state.status === 'failed' ? 'fortitudo-error' : ''}
             role="status"
+            aria-label="Compiler status"
             aria-live="polite"
           >
             {status(state)}
@@ -179,10 +181,18 @@ export function Controls(props: IControlsProps): React.ReactElement {
         </span>
       </div>
       {state.notice && (
-        <p className="fortitudo-notice" role="alert">
-          {state.notice}
-        </p>
+        <div className="fortitudo-notice">
+          <span role="alert">{state.notice}</span>
+          <button onClick={props.onDismissNotice}>Dismiss message</button>
+        </div>
       )}
+      <div
+        className="fortitudo-confirmation"
+        role="status"
+        aria-label="Confirmation"
+      >
+        {state.confirmation}
+      </div>
     </div>
   );
 }

@@ -84,7 +84,7 @@ test.describe('loading feedback', () => {
         await page
           .getByRole('button', { name: 'Compile', exact: true })
           .click();
-        const status = page.getByRole('status');
+        const status = page.getByRole('status', { name: 'Compiler status' });
         const progress = page.getByRole('progressbar', {
           name: 'Compiler download'
         });
@@ -290,7 +290,9 @@ test('missing assets, cancellation during loading, and retry', async ({
     page.getByRole('button', { name: 'Cancel', exact: true })
   ).toBeEnabled();
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Cancelled');
+  await expect(
+    page.getByRole('status', { name: 'Compiler status' })
+  ).toContainText('Cancelled');
   await expect(page.getByRole('progressbar')).toHaveCount(0);
   await expect(page.locator('.fortitudo-spinner')).toHaveCount(0);
   release();
@@ -344,7 +346,9 @@ test('editing, cancellation during compilation, and retry', async ({
     page.getByRole('button', { name: 'Compile', exact: true })
   ).toBeDisabled();
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Cancelled');
+  await expect(
+    page.getByRole('status', { name: 'Compiler status' })
+  ).toContainText('Cancelled');
   await compile(page);
   await expect(page.getByLabel('Assembly output')).toContainText(
     'after_cancel'

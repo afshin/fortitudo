@@ -65,6 +65,13 @@ test('one compile fills outputs and comparison uses them @compat', async ({
   await expect(
     page.getByLabel('AST output', { exact: true })
   ).not.toContainText('$ clang');
+  await tab(page, 'Files');
+  await page
+    .getByLabel('Workspace file')
+    .selectOption('/workspace/snippet.cpp');
+  const preview = page.getByLabel('File output');
+  await expect(preview).toContainText('extern "C" int square');
+  await expect(preview.locator('.cm-line span').first()).toBeVisible();
   await tab(page, 'LLVM IR');
   await expect(page.getByLabel('LLVM IR — before passes output')).toContainText(
     'alloca'
@@ -90,7 +97,10 @@ test('one compile fills outputs and comparison uses them @compat', async ({
   await tab(page, 'Wasm module');
   await expect(page.getByLabel('Wasm module output')).toContainText('i32(i32)');
   const downloaded = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Download', exact: true }).click();
+  await page
+    .getByLabel('Wasm module pane')
+    .getByRole('button', { name: 'Download', exact: true })
+    .click();
   expect((await downloaded).suggestedFilename()).toBe('program.wasm');
   await page.getByRole('button', { name: 'Compare', exact: true }).click();
   await expect(
@@ -216,17 +226,23 @@ test('share links restore inputs without loading a compiler', async ({
   await tab(page, 'Pipelines');
   await page.getByLabel('LLVM pipeline', { exact: true }).fill('mem2reg');
   await page.getByRole('button', { name: 'Share', exact: true }).click();
-  await expect(page.getByRole('alert')).toHaveText('Share link copied.');
+  await expect(page.getByRole('status', { name: 'Confirmation' })).toHaveText(
+    'Share link copied.'
+  );
   const url = await page.evaluate(() => navigator.clipboard.readText());
-  expect(url).toContain('fortitudo=');
+  expect(new URL(url).search).toBe('');
+  expect(new URL(url).hash).toMatch(/^#fortitudo=/);
   let loaded = false;
+  const requests: string[] = [];
   const shared = await context.newPage();
   shared.on('request', request => {
+    requests.push(request.url());
     if (request.url().endsWith('Compiler.wasm')) {
       loaded = true;
     }
   });
   await shared.goto(url);
+  await expect(shared).toHaveURL(standalone);
   await expect(
     shared.getByRole('textbox', { name: 'Source code' })
   ).toContainText('shared');
@@ -234,6 +250,34 @@ test('share links restore inputs without loading a compiler', async ({
   await expect(shared.getByLabel('LLVM pipeline', { exact: true })).toHaveValue(
     'mem2reg'
   );
+  await shared.reload();
+  await expect(shared.getByLabel('Source code')).toContainText('shared');
+  await edit(shared, 'int edited_after_import;');
+  await shared.getByLabel('LLVM pipeline', { exact: true }).fill('instcombine');
+  await shared.reload();
+  await expect(shared.getByLabel('Source code')).toContainText(
+    'edited_after_import'
+  );
+  await expect(shared.getByLabel('LLVM pipeline', { exact: true })).toHaveValue(
+    'instcombine'
+  );
+  expect(requests.every(url => !url.includes('fortitudo='))).toBe(true);
+  const legacy = new URL(url);
+  legacy.search = legacy.hash.slice(1);
+  legacy.hash = '';
+  await shared.goto(legacy.href);
+  await expect(shared).toHaveURL(standalone);
+  await expect(shared.getByLabel('Source code')).toContainText('shared');
+  await shared.reload();
+  await expect(shared.getByLabel('Source code')).toContainText('shared');
   expect(loaded).toBe(false);
   await shared.close();
+});
+
+test('invalid shared inputs show a dismissible error', async ({ page }) => {
+  await page.goto(`${standalone}#fortitudo=invalid`);
+  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.getByLabel('Source code')).toBeVisible();
+  await page.getByRole('button', { name: 'Dismiss message' }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
 });

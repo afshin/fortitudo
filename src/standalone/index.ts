@@ -72,4 +72,9 @@ document.addEventListener('keydown', event =>
 );
 window.addEventListener('resize', () => current?.update());
 window.addEventListener('pagehide', () => current?.dispose());
+window.addEventListener('pageshow', event => {
+  if (event.persisted) {
+    void open().catch(report);
+  }
+});
 void open().catch(report);

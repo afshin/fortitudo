@@ -13,6 +13,7 @@ interface ISection {
   widget: Widget;
   save(): Area;
   activate(pane: Pane): boolean;
+  resize?(narrow: boolean): void;
 }
 
 const defaultArea: Area = {
@@ -76,6 +77,16 @@ export class PanePanel extends BoxPanel {
     }
   }
 
+  protected onResize(message: Widget.ResizeMessage): void {
+    const width = message.width < 0 ? this.node.clientWidth : message.width;
+    const narrow = width < 720;
+    if (width > 0 && this.narrow !== narrow) {
+      this.narrow = narrow;
+      this.section.resize?.(this.narrow);
+    }
+    super.onResize(message);
+  }
+
   private replace(area: Area): void {
     this.restoring = true;
     for (const pane of Object.values(this.panes)) {
@@ -86,6 +97,7 @@ export class PanePanel extends BoxPanel {
     }
     this.section = this.create(area);
     this.addWidget(this.section.widget);
+    this.section.resize?.(this.narrow);
     this.restoring = false;
     this.changed();
   }
@@ -210,11 +222,17 @@ export class PanePanel extends BoxPanel {
       widget: panel,
       save: () => ({
         type: 'split-area',
-        orientation: panel.orientation,
+        orientation: area.orientation,
         sizes,
         children: children.map(child => child.save())
       }),
-      activate: pane => children.some(child => child.activate(pane))
+      activate: pane => children.some(child => child.activate(pane)),
+      resize: narrow => {
+        // Adapt presentation without overwriting the saved arrangement.
+        panel.orientation = narrow ? 'vertical' : area.orientation;
+        panel.setRelativeSizes(sizes);
+        children.forEach(child => child.resize?.(narrow));
+      }
     };
   }
 
@@ -226,6 +244,7 @@ export class PanePanel extends BoxPanel {
 
   private section: ISection;
   private restoring = false;
+  private narrow = false;
 }
 
 function compare(area: Area): Area {

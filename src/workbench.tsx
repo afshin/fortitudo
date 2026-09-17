@@ -49,7 +49,16 @@ export async function createWorkbench(
     notice = `Saved state could not be loaded: ${String(error)}`;
   }
   try {
-    saved = options.sharing?.read() ?? saved;
+    const shared = options.sharing?.read();
+    if (shared) {
+      saved = shared;
+      try {
+        await options.persistence.save(shared);
+        options.sharing?.clear();
+      } catch (error) {
+        notice = `Shared session could not be saved: ${String(error)}`;
+      }
+    }
   } catch (error) {
     notice = String(error);
   }
@@ -225,6 +234,7 @@ export class Workbench extends BoxPanel {
         this.pending = null;
         try {
           await this.options.persistence.save(value);
+          this.options.sharing?.clear();
         } catch (error) {
           this.store.dispatch({
             type: 'notice',

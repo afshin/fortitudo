@@ -5,6 +5,74 @@ import type { Options, Result } from '../../src/compiler/types';
 
 const standalone = 'http://127.0.0.1:8765/dist/standalone/';
 
+test('large AST previews stay searchable and virtualized', async ({
+  page
+}, testInfo) => {
+  await page.addInitScript(() => {
+    const Original = Worker;
+    window.Worker = class extends Original {
+      constructor(...args: ConstructorParameters<typeof Worker>) {
+        super(...args);
+        this.addEventListener('message', (event: MessageEvent<Output>) => {
+          if (event.data.kind === 'result') {
+            const ast = event.data.result.artifacts.find(
+              artifact => artifact.kind === 'ast'
+            );
+            if (ast?.format === 'text') {
+              document.documentElement.dataset.astCharacters = String(
+                ast.text.length
+              );
+            }
+          }
+        });
+      }
+    };
+  });
+  await page.goto(standalone);
+  await page
+    .getByLabel('Source code')
+    .fill(
+      '#include <vector>\n' +
+        'int large_ast_probe(const std::vector<int>& v) { return v.size(); }'
+    );
+  const started = Date.now();
+  await page.getByRole('button', { name: 'Compile', exact: true }).click();
+  await expect(page.getByRole('status').first()).toHaveText(
+    'Compilation complete'
+  );
+  const compilationMs = Date.now() - started;
+  const opened = Date.now();
+  await page.getByRole('tab', { name: 'AST', exact: true }).click();
+  const ast = page.getByLabel('AST output', { exact: true });
+  await expect(ast).toContainText('TranslationUnitDecl');
+  const openingMs = Date.now() - opened;
+  const renderedLines = await ast.locator('.cm-line').count();
+  expect(renderedLines).toBeLessThan(100);
+  await page
+    .getByLabel('AST pane')
+    .getByRole('button', { name: 'Find' })
+    .click();
+  const search = page.getByLabel('AST pane').getByPlaceholder('Find');
+  await search.pressSequentially('large_ast_probe');
+  await search.press('Enter');
+  await expect(ast.locator('.cm-searchMatch-selected')).toHaveText(
+    'large_ast_probe'
+  );
+  const astCharacters = Number(
+    await page.locator('html').getAttribute('data-ast-characters')
+  );
+  expect(astCharacters).toBeGreaterThan(1_000_000);
+  await testInfo.attach('large-ast.json', {
+    body: JSON.stringify({
+      astCharacters,
+      compilationMs,
+      openingMs,
+      renderedLines
+    }),
+    contentType: 'application/json'
+  });
+});
+
 test('runtime library aliases resolve to their payloads @compat', async ({
   page
 }) => {

@@ -15,8 +15,9 @@ const plugin: JupyterFrontEndPlugin<void> = {
     if (!shell) {
       return;
     }
+    const base = new URL(PageConfig.getBaseUrl(), document.baseURI);
     const link = document.createElement('a');
-    link.href = '/';
+    link.href = new URL('../', base).href;
     link.title = 'Fortitudo home';
     link.setAttribute('aria-label', 'Fortitudo home');
     link.style.display = 'flex';
@@ -24,7 +25,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
     link.style.padding = '0 8px';
 
     const icon = document.createElement('img');
-    const base = new URL(PageConfig.getBaseUrl(), document.baseURI);
     icon.src = new URL('icon.svg', base).href;
     icon.alt = '';
     icon.width = 24;

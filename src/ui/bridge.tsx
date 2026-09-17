@@ -59,6 +59,7 @@ export function Bridge(props: IBridgeProps): React.ReactElement {
       onResetLayout: () => execute(CommandIDs.resetLayout),
       onCompare: () => execute(CommandIDs.compare),
       onShare: () => execute(CommandIDs.share),
+      onDismissNotice: () => execute(CommandIDs.dismissNotice),
       onResetExample: () => execute(CommandIDs.resetExample),
       onRun: () => execute(CommandIDs.run),
       onStop: () => execute(CommandIDs.stop),
