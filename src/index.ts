@@ -25,15 +25,7 @@ export type { IRunner, RunRequest, RunResult } from './compiler/execution';
 export { inspectWasm } from './compiler/wasm';
 export type { WasmFunction, WasmInfo } from './compiler/wasm';
 export { currentModule, initial, reduce, snapshot, stale } from './model';
-export type {
-  Action,
-  Area,
-  Execution,
-  OutputGroup,
-  Pane,
-  Session,
-  State
-} from './model';
+export type { Action, Area, Execution, Pane, Session, State } from './model';
 export { session } from './persistence';
 export type { IPersistence } from './persistence';
 export { createSharing } from './share';

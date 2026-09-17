@@ -31,8 +31,7 @@ to the installed command to test a wheel; CI uses a clean environment without
 JupyterLab. Build the combined site before starting either version.
 
 JupyterLab layout tests reset a dedicated workspace for each browser. This keeps
-host sidebar widths from earlier resize tests out of the geometry checks; LLVM
-Explorer's **Reset layout** only resets the workbench's own panes.
+host sidebar widths from earlier resize tests out of the geometry checks.
 
 Successful HTTP requests, expected download disconnects, and Jupyter startup
 messages are quiet by default. Server warnings and errors remain visible. To
@@ -43,12 +42,12 @@ LLVM_EXPLORER_TEST_SERVER_LOGS=1 pixi run --as-is jlpm test:browser
 ```
 
 Chromium exercises all hosts and failure modes. All browsers check tab layout,
-comparison sizing, host-specific sharing controls, and guide navigation with
-keyboard focus restoration. The standalone guide also opens offline. Firefox and
-WebKit run the standalone workflow, artifact comparison, scalar execution,
-LLVM/MLIR tools, real compiler matrix, and both notebook kernels. Results
-include per-stage timings, artifact sizes, compiler measurements, screenshots,
-and traces for failures. Binary files are summarized rather than serialized into
+pane sizing, host-specific sharing controls, and About navigation with keyboard
+focus restoration. About also opens offline in standalone. Firefox and WebKit
+run the standalone workflow, output selection, scalar execution, LLVM/MLIR
+tools, real compiler matrix, and both notebook kernels. Results include
+per-stage timings, artifact sizes, compiler measurements, screenshots, and
+traces for failures. Binary files are summarized rather than serialized into
 measurement attachments. Memory measurements observe the worker's Wasm linear
 memory; they exclude browser overhead.
 
@@ -62,11 +61,11 @@ network-disconnect test covers compilation after initialization, not offline
 page reload.
 
 Explorer coverage checks that one Compile populates applicable outputs and
-changing tabs does no compiler work. It also covers independent comparison
-selections, downloads, custom passes, lazy MLIR loading and retry, command
-redirection, manual modules, scalar signatures, stateful calls, NaN, traps,
-Stop, timeout, and replacement modules. Unit tests cover stage dependencies and
-partial failure, buffer ownership, stale responses, worker generations, session
+changing tabs does no compiler work. It also covers saved output selections,
+downloads, custom passes, lazy MLIR loading and retry, command redirection,
+manual modules, scalar signatures, stateful calls, NaN, traps, Stop, timeout,
+and replacement modules. Unit tests cover stage dependencies and partial
+failure, buffer ownership, stale responses, worker generations, session
 validation, and malformed protocol or Wasm data.
 
 CI runs the full configured suite on main branch pushes, pull requests, and

@@ -36,7 +36,7 @@ it('coalesces saved edits and finishes persistence after closing', async () => {
   expect(writes.every(value => !('result' in value))).toBe(true);
 });
 
-it('saves navigation and layout reset without losing edits', async () => {
+it('saves navigation and output selection without losing edits', async () => {
   const commands = new CommandRegistry();
   const writes: Session[] = [];
   const saved: Session = {
@@ -73,9 +73,9 @@ it('saves navigation and layout reset without losing edits', async () => {
     ...saved.layout,
     currentIndex: 1
   });
-  await commands.execute(CommandIDs.resetLayout);
+  await commands.execute(CommandIDs.selectOutput, { output: 'ir' });
   await workbench.saved;
-  expect(writes.at(-1)?.layout?.type).toBe('split-area');
+  expect(writes.at(-1)?.output).toBe('ir');
   expect(writes.every(value => value.source === saved.source)).toBe(true);
   workbench.close();
   expect(writes).toHaveLength(2);

@@ -146,8 +146,6 @@ for (const [host, url] of Object.entries(hosts)) {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     await open(page, url);
-    // Jupyter may restore another output selection or comparison layout.
-    await page.getByRole('button', { name: 'Reset layout' }).click();
     await page.getByRole('tab', { name: 'Assembly', exact: true }).click();
     await page.getByLabel('Language', { exact: true }).selectOption('cpp');
     await page
@@ -369,7 +367,9 @@ test('initialized compiler can compile changed source offline', async ({
 });
 
 for (const [host, url] of Object.entries(hosts)) {
-  test(`${host}: resize and reset panes within the host`, async ({ page }) => {
+  test(`${host}: resize and restore panes within the host`, async ({
+    page
+  }) => {
     await open(page, url);
     if (host === 'jupyterlab') {
       // Host sidebar widths are independent of LLVM Explorer's saved layout.
@@ -378,7 +378,6 @@ for (const [host, url] of Object.entries(hosts)) {
         await files.click();
       }
     }
-    await page.getByRole('button', { name: 'Reset layout' }).click();
     await edit(page, 'int resized() { return 12; }');
     const workbench = page.locator('#llvm-explorer-workbench');
     await expect(workbench.locator('.lm-DockPanel')).toHaveCount(0);
@@ -416,9 +415,6 @@ for (const [host, url] of Object.entries(hosts)) {
     await expect(page.getByRole('textbox', { name: 'Source code' })).toHaveText(
       'int resized() { return 12; }'
     );
-    await page.getByRole('button', { name: 'Reset layout' }).click();
-    await expect.poll(width).toBeGreaterThan(original - 3);
-    await expect.poll(width).toBeLessThan(original + 3);
     await expect(workbench.getByRole('tablist')).toHaveCount(2);
     await page.setViewportSize({ width: 650, height: 720 });
     await expect(
@@ -436,7 +432,7 @@ test('saved tab groups restore and save their selection', async ({ page }) => {
       JSON.stringify({
         version: 1,
         source: 'int grouped() { return 12; }',
-        outputs: { primary: 'assembly', comparison: 'optimized' },
+        output: 'assembly',
         timeout: 10000,
         options: {
           language: 'cpp',
@@ -478,7 +474,7 @@ test('saved tab groups restore and save their selection', async ({ page }) => {
   await page.reload();
   await expect(page.getByLabel('Diagnostics pane')).toBeVisible();
   await expect(page.getByLabel('Assembly output')).toBeHidden();
-  await page.getByRole('button', { name: 'Reset layout' }).click();
+  await page.getByRole('tab', { name: 'Outputs', exact: true }).click();
   await expect(workbench.getByRole('tablist')).toHaveCount(2);
   await expect(page.getByLabel('Assembly output')).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Source code' })).toHaveText(

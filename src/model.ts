@@ -17,13 +17,11 @@ import { examples } from './examples';
 export type Pane =
   | 'source'
   | 'outputs'
-  | 'comparison'
   | 'diagnostics'
   | 'files'
   | 'terminal'
   | 'run'
   | 'pipelines';
-export type OutputGroup = 'primary' | 'comparison';
 
 export type Area =
   | Readonly<{
@@ -43,7 +41,7 @@ export type Session = Readonly<{
   source: string;
   options: Options;
   layout: Area | null;
-  outputs: Readonly<Record<OutputGroup, OutputKind>>;
+  output: OutputKind;
   timeout: number;
 }>;
 
@@ -63,7 +61,7 @@ export type State = Readonly<{
   source: string;
   options: Options;
   layout: Area | null;
-  outputs: Session['outputs'];
+  output: OutputKind;
   timeout: number;
   revision: number;
   status: 'idle' | 'loading' | 'ready' | 'compiling' | 'cancelled' | 'failed';
@@ -85,7 +83,7 @@ export type Action =
   | Readonly<{ type: 'source'; source: string }>
   | Readonly<{ type: 'options'; options: Options }>
   | Readonly<{ type: 'layout'; layout: Area | null }>
-  | Readonly<{ type: 'output'; group: OutputGroup; output: OutputKind }>
+  | Readonly<{ type: 'output'; output: OutputKind }>
   | Readonly<{ type: 'begin'; id: number }>
   | Readonly<{ type: 'progress'; id: number; progress: Progress }>
   | Readonly<{ type: 'initialized'; id: number; info: Info; compile: boolean }>
@@ -120,7 +118,7 @@ export function initial(session: Session | null = null): State {
     source: session?.source ?? examples.cpp,
     options: session?.options ?? options,
     layout: session?.layout ?? null,
-    outputs: outputSelection(session?.options ?? options, session?.outputs),
+    output: outputSelection(session?.options ?? options, session?.output),
     timeout: session?.timeout ?? 10000,
     revision: 0,
     status: 'idle',
@@ -170,7 +168,7 @@ export function reduce(state: State, action: Action): State {
               state.source === examples[state.options.language]
                 ? examples[action.options.language]
                 : state.source,
-            outputs: outputSelection(action.options, state.outputs),
+            output: outputSelection(action.options, state.output),
             revision: state.revision + 1
           };
     case 'layout':
@@ -181,7 +179,7 @@ export function reduce(state: State, action: Action): State {
       }
       return {
         ...state,
-        outputs: { ...state.outputs, [action.group]: action.output }
+        output: action.output
       };
     case 'begin':
       return {
@@ -404,16 +402,6 @@ export function canRun(state: State): boolean {
   );
 }
 
-/** Comparison is part of the saved layout, including restored tab groups. */
-export function hasComparison(area: Area | null): boolean {
-  if (area === null) {
-    return false;
-  }
-  return area.type === 'tab-area'
-    ? area.widgets.includes('comparison')
-    : area.children.some(hasComparison);
-}
-
 function selectModule(state: State, path: string | null): State {
   const previous = state.execution;
   const execution: Execution = {
@@ -472,29 +460,22 @@ export function snapshot(state: State): Session {
     source: state.source,
     options: state.options,
     layout: state.layout,
-    outputs: state.outputs,
+    output: state.output,
     timeout: state.timeout
   };
 }
 
 function outputSelection(
   options: Options,
-  outputs?: Session['outputs']
-): Session['outputs'] {
+  output: OutputKind = 'assembly'
+): OutputKind {
   const kinds = availableOutputs(options);
-  const primary = outputs?.primary ?? 'assembly';
-  const comparison = outputs?.comparison ?? 'optimized';
-  return {
-    primary: kinds.includes(primary) ? primary : kinds[0],
-    comparison: kinds.includes(comparison) ? comparison : kinds[1]
-  };
+  return kinds.includes(output) ? output : kinds[0];
 }
 
 /** Only auxiliary tab groups can fold away while leaving their tabs visible. */
 export function isToolArea(panes: readonly Pane[]): boolean {
-  return panes.every(
-    pane => !['source', 'outputs', 'comparison'].includes(pane)
-  );
+  return panes.every(pane => pane !== 'source' && pane !== 'outputs');
 }
 
 function equalOptions(left: Options, right: Options): boolean {

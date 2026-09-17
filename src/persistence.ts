@@ -37,13 +37,8 @@ export function session(value: unknown): Session | null {
   ) {
     return null;
   }
-  const { outputs, timeout } = value;
-  if (
-    !isRecord(outputs) ||
-    !isOutputKind(outputs.primary) ||
-    !isOutputKind(outputs.comparison) ||
-    !isTimeout(timeout)
-  ) {
+  const { output, timeout } = value;
+  if (!isOutputKind(output) || !isTimeout(timeout)) {
     return null;
   }
   return {
@@ -51,13 +46,13 @@ export function session(value: unknown): Session | null {
     source: value.source,
     options: value.options,
     layout,
-    outputs: { primary: outputs.primary, comparison: outputs.comparison },
+    output,
     timeout
   };
 }
 
 function pane(value: unknown): Pane | null {
-  return [...panes, 'comparison' as const].find(pane => pane === value) ?? null;
+  return panes.find(pane => pane === value) ?? null;
 }
 
 function area(value: unknown, seen: Set<Pane>, depth: number): Area | null {
@@ -95,7 +90,7 @@ function area(value: unknown, seen: Set<Pane>, depth: number): Area | null {
     !['horizontal', 'vertical'].includes(String(value.orientation)) ||
     !Array.isArray(value.children) ||
     value.children.length < 2 ||
-    value.children.length > panes.length + 1 ||
+    value.children.length > panes.length ||
     !Array.isArray(value.sizes) ||
     value.sizes.length !== value.children.length ||
     !value.sizes.every(

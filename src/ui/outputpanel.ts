@@ -6,23 +6,18 @@ import type { Widget } from '@lumino/widgets';
 import { CommandIDs } from '../commands';
 import { availableOutputs, outputLabels } from '../compiler/types';
 import type { OutputKind } from '../compiler/types';
-import type { OutputGroup } from '../model';
 import type { IStore } from '../state';
 
-/** Lumino owns tabs; their selected representations belong to saved layout. */
+/** Lumino owns tabs; the selected output belongs to application state. */
 export class OutputPanel extends TabPanel {
   constructor(
     store: IStore,
     commands: CommandRegistry,
-    group: OutputGroup,
     create: (kind: OutputKind) => Widget
   ) {
     super({ tabsMovable: false });
     this.addClass('llvm-explorer-outputs');
-    this.node.setAttribute(
-      'aria-label',
-      group === 'primary' ? 'Outputs' : 'Comparison outputs'
-    );
+    this.node.setAttribute('aria-label', 'Outputs');
     let kinds: readonly OutputKind[] = [];
     let updating = false;
     const sync = () => {
@@ -41,7 +36,7 @@ export class OutputPanel extends TabPanel {
           this.addWidget(widget);
         }
       }
-      this.currentIndex = kinds.indexOf(store.state.outputs[group]);
+      this.currentIndex = kinds.indexOf(store.state.output);
       updating = false;
       this.update();
     };
@@ -50,9 +45,9 @@ export class OutputPanel extends TabPanel {
     this.currentChanged.connect(() => {
       this.update();
       const output = kinds[this.currentIndex];
-      if (!updating && output && store.state.outputs[group] !== output) {
+      if (!updating && output && store.state.output !== output) {
         void commands
-          .execute(CommandIDs.selectOutput, { group, output })
+          .execute(CommandIDs.selectOutput, { output })
           .catch(error =>
             store.dispatch({ type: 'notice', message: String(error) })
           );
@@ -82,7 +77,7 @@ export class OutputPanel extends TabPanel {
     if (!tab || !this.isVisible) {
       return;
     }
-    // Scroll only this tab strip; comparison changes must not move the host.
+    // Scroll only this tab strip without moving the host.
     const bar = this.tabBar.node;
     const bounds = bar.getBoundingClientRect();
     const selected = tab.getBoundingClientRect();

@@ -9,7 +9,7 @@ import { command } from './compiler/terminal';
 import { isOptions, isOutputKind, sourceName } from './compiler/types';
 import type { File, ICompiler, Progress } from './compiler/types';
 import { examples } from './examples';
-import { canRun, currentModule, hasComparison, snapshot, stale } from './model';
+import { canRun, currentModule, snapshot, stale } from './model';
 import type { Pane } from './model';
 import { session } from './persistence';
 import type { ISharing } from './share';
@@ -22,11 +22,9 @@ export namespace CommandIDs {
   export const setOptions = 'llvm-explorer:set-options';
   export const compile = 'llvm-explorer:compile';
   export const cancel = 'llvm-explorer:cancel';
-  export const resetLayout = 'llvm-explorer:reset-layout';
   export const saveLayout = 'llvm-explorer:save-layout';
   export const navigate = 'llvm-explorer:navigate';
   export const selectOutput = 'llvm-explorer:select-output';
-  export const compare = 'llvm-explorer:compare';
   export const resetExample = 'llvm-explorer:reset-example';
   export const runCommand = 'llvm-explorer:run-command';
   export const clearTerminal = 'llvm-explorer:clear-terminal';
@@ -48,8 +46,6 @@ export interface ICommandContext {
   readonly compiler: ICompiler;
   readonly runner: IRunner;
   readonly sharing?: ISharing;
-  resetLayout(): void;
-  compare(): void;
   activatePane(pane: Pane): void;
   copy(text: string): Promise<void>;
   download(file: File): void;
@@ -172,42 +168,14 @@ export function registerCommands(
       });
     }
   });
-  add(CommandIDs.resetLayout, {
-    label: 'Reset layout',
-    execute: () => context.resetLayout()
-  });
-  add(CommandIDs.compare, {
-    label: 'Compare outputs',
-    isToggled: () => hasComparison(store.state.layout),
-    execute: () => {
-      if (!hasComparison(store.state.layout)) {
-        const mlir = store.state.options.language === 'mlir';
-        store.dispatch({
-          type: 'output',
-          group: 'primary',
-          output: mlir ? 'mlir' : 'ir'
-        });
-        store.dispatch({
-          type: 'output',
-          group: 'comparison',
-          output: mlir ? 'graphs' : 'optimized'
-        });
-      }
-      context.compare();
-    }
-  });
   add(CommandIDs.selectOutput, {
     label: 'Select output',
     execute: args => {
-      if (
-        (args.group !== 'primary' && args.group !== 'comparison') ||
-        !isOutputKind(args.output)
-      ) {
+      if (!isOutputKind(args.output)) {
         throw new Error('Invalid output selection.');
       }
       store.dispatch({
         type: 'output',
-        group: args.group,
         output: args.output
       });
     }
@@ -462,7 +430,6 @@ export function registerCommands(
       CommandIDs.compile,
       CommandIDs.cancel,
       CommandIDs.initialize,
-      CommandIDs.compare,
       CommandIDs.run,
       CommandIDs.stop,
       CommandIDs.runCommand

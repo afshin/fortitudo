@@ -13,7 +13,7 @@ import type { Diagnostic, Options, OutputKind } from '../compiler/types';
 import type { Pane } from '../model';
 import type { IStore } from '../state';
 import { Editor } from './editor';
-import { Guide } from './guide';
+import { About } from './about';
 import { Files, Output } from './outputs';
 import { Pipelines, Run, Terminal } from './tools';
 import { Controls, Diagnostics, Source } from './views';
@@ -30,7 +30,7 @@ interface IBridgeProps {
 /** Subscribe here; views receive state and command-backed callbacks. */
 export function Bridge(props: IBridgeProps): React.ReactElement {
   const { store, commands, pane, onSize } = props;
-  const [guideOpen, setGuideOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const node = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const element = node.current;
@@ -56,8 +56,6 @@ export function Bridge(props: IBridgeProps): React.ReactElement {
         execute(CommandIDs.setOptions, { options }),
       onCompile: () => execute(CommandIDs.compile),
       onCancel: () => execute(CommandIDs.cancel),
-      onResetLayout: () => execute(CommandIDs.resetLayout),
-      onCompare: () => execute(CommandIDs.compare),
       onShare: () => execute(CommandIDs.share),
       onDismissNotice: () => execute(CommandIDs.dismissNotice),
       onResetExample: () => execute(CommandIDs.resetExample),
@@ -90,9 +88,9 @@ export function Bridge(props: IBridgeProps): React.ReactElement {
             state={state}
             {...callbacks}
             onShare={props.canShare ? callbacks.onShare : undefined}
-            onGuide={() => setGuideOpen(true)}
+            onAbout={() => setAboutOpen(true)}
           />
-          {guideOpen && <Guide onClose={() => setGuideOpen(false)} />}
+          {aboutOpen && <About onClose={() => setAboutOpen(false)} />}
         </div>
       );
     case 'source':
@@ -107,7 +105,6 @@ export function Bridge(props: IBridgeProps): React.ReactElement {
         </Source>
       );
     case 'outputs':
-    case 'comparison':
       return (
         <Output
           state={state}

@@ -143,24 +143,21 @@ it('validates saved inputs and pane identities', () => {
 it('keeps output selections applicable when language and target change', () => {
   let state = reduce(initial(), {
     type: 'output',
-    group: 'primary',
     output: 'wasm'
   });
   state = reduce(state, {
     type: 'options',
     options: { ...state.options, target: 'x86_64-unknown-linux-gnu' }
   });
-  expect(state.outputs.primary).toBe('assembly');
+  expect(state.output).toBe('assembly');
   state = reduce(state, {
     type: 'options',
     options: { ...state.options, language: 'mlir' }
   });
-  expect(state.outputs).toEqual({ primary: 'mlir', comparison: 'graphs' });
-  expect(
-    reduce(state, { type: 'output', group: 'primary', output: 'ast' })
-  ).toBe(state);
-  const saved = { ...snapshot(state), outputs: initial().outputs };
-  expect(initial(saved).outputs).toEqual(state.outputs);
+  expect(state.output).toBe('mlir');
+  expect(reduce(state, { type: 'output', output: 'ast' })).toBe(state);
+  const saved = { ...snapshot(state), output: initial().output };
+  expect(initial(saved).output).toEqual(state.output);
 });
 
 it('changes untouched examples but preserves edited source', () => {

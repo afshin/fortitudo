@@ -52,40 +52,52 @@ for (const [host, url] of Object.entries(hosts)) {
       await page.getByText('Open LLVM Explorer', { exact: true }).click();
     }
     await expect(page.getByLabel('Source code')).toBeVisible();
-    await page.getByRole('button', { name: 'Reset layout' }).click();
+    for (const name of ['Compare', 'Reset layout']) {
+      await expect(page.getByRole('button', { name, exact: true })).toHaveCount(
+        0
+      );
+    }
     const source = page.getByRole('textbox', { name: 'Source code' });
     const original = await source.locator('.cm-line').allTextContents();
-    const guideButton = page.getByRole('button', {
-      name: 'Guide',
+    const aboutButton = page.getByRole('button', {
+      name: 'About',
       exact: true
     });
-    const guide = page.getByRole('dialog', { name: 'LLVM Explorer guide' });
+    const about = page.getByRole('dialog', { name: 'About LLVM Explorer' });
     if (host === 'standalone') {
       await page.context().setOffline(true);
     }
-    await guideButton.focus();
-    await guideButton.press('Enter');
-    await expect(guide).toBeVisible();
+    await aboutButton.focus();
+    await aboutButton.press('Enter');
+    await expect(about).toBeVisible();
+    await expect(about).toContainText('Anutosh Bhat');
+    await expect(about.getByRole('link', { name: 'WasmBolt' })).toHaveAttribute(
+      'href',
+      'https://github.com/anutosh491/WasmBolt'
+    );
+    await about
+      .getByRole('button', { name: 'Install LLVM Explorer', exact: true })
+      .click();
     await expect(
-      guide.locator('pre').filter({ hasText: 'pip install llvm-explorer' })
+      about.locator('pre').filter({ hasText: 'pip install llvm-explorer' })
     ).toBeInViewport();
-    await guide.getByRole('button', { name: 'Execution', exact: true }).click();
+    await about.getByRole('button', { name: 'Execution', exact: true }).click();
     await expect(
-      guide.getByRole('heading', { name: 'Execution', exact: true })
+      about.getByRole('heading', { name: 'Execution', exact: true })
     ).toBeInViewport();
-    await expect(guide).toContainText('Repeated calls retain module state.');
+    await expect(about).toContainText('Repeated calls retain module state.');
     await page.keyboard.press('Escape');
-    await expect(guide).toHaveCount(0);
-    await expect(guideButton).toBeFocused();
-    await guideButton.click();
-    await page.screenshot({ path: testInfo.outputPath('guide.png') });
-    await guide.getByRole('button', { name: 'Close guide' }).click();
-    await expect(guide).toHaveCount(0);
+    await expect(about).toHaveCount(0);
+    await expect(aboutButton).toBeFocused();
+    await aboutButton.click();
+    await page.screenshot({ path: testInfo.outputPath('about.png') });
+    await about.getByRole('button', { name: 'Close About' }).click();
+    await expect(about).toHaveCount(0);
     await expect(source.locator('.cm-line')).toHaveText(original);
     if (host === 'standalone') {
       await page.context().setOffline(false);
     }
-    await source.fill('int undo_after_layout() { return 42; }');
+    await source.fill('int undo_after_resize() { return 42; }');
     await expect(page.getByRole('button', { name: 'Share' })).toHaveCount(
       host === 'standalone' ? 1 : 0
     );
@@ -117,41 +129,18 @@ for (const [host, url] of Object.entries(hosts)) {
         .locator('.lm-TabBar-tabLabel')
     ).toBeInViewport({ ratio: 1 });
     await expectUnclippedTabs(outputs);
-    const compare = page.getByRole('button', { name: 'Compare' });
-    await expect(compare).toHaveAttribute('aria-pressed', 'false');
-    await compare.click();
-    await expect(compare).toHaveAttribute('aria-pressed', 'true');
-    const comparison = page.getByRole('region', {
-      name: 'Comparison outputs',
-      exact: true
-    });
-    await expect(comparison).toBeVisible();
-    await expect(
-      outputs
-        .getByRole('tab', { name: 'LLVM IR', exact: true })
-        .locator('.lm-TabBar-tabLabel')
-    ).toBeInViewport({ ratio: 1 });
-    await expect(
-      comparison
-        .getByRole('tab', { name: 'Optimized IR', exact: true })
-        .locator('.lm-TabBar-tabLabel')
-    ).toBeInViewport({ ratio: 1 });
-    await expectUnclippedTabs(comparison);
     const previous = await source.boundingBox();
     await page.setViewportSize({ width: 390, height: 844 });
     await expect
       .poll(async () => {
         const source = await heading.boundingBox();
         const primary = await outputs.boundingBox();
-        const secondary = await comparison.boundingBox();
         return (
           source !== null &&
           primary !== null &&
-          secondary !== null &&
           Math.abs(source.x - primary.x) < 1 &&
-          Math.abs(primary.x - secondary.x) < 1 &&
           Math.abs(source.width - primary.width) < 1 &&
-          secondary.y >= primary.y + primary.height
+          primary.y >= source.y + source.height
         );
       })
       .toBe(true);
@@ -168,23 +157,6 @@ for (const [host, url] of Object.entries(hosts)) {
       })
       .toBe(true);
     await page.screenshot({ path: testInfo.outputPath('output-layout.png') });
-    const assembly = outputs.getByRole('tab', {
-      name: 'Assembly',
-      exact: true
-    });
-    await assembly.click();
-    await compare.click();
-    await expect(comparison).toHaveCount(0);
-    await expect(compare).toHaveAttribute('aria-pressed', 'false');
-    await expect(assembly).toHaveAttribute('aria-selected', 'true');
-    await compare.click();
-    const reset = page.getByRole('button', { name: 'Reset layout' });
-    await reset.focus();
-    await reset.press('Enter');
-    await expect(reset).toBeFocused();
-    await expect(compare).toHaveAttribute('aria-pressed', 'false');
-    await expect(comparison).toHaveCount(0);
-    await expect(outputs).toBeVisible();
     await source.press('ControlOrMeta+z');
     await expect(source.locator('.cm-line')).toHaveText(original);
   });

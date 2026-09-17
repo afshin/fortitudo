@@ -7,7 +7,7 @@ import {
 } from '@lumino/widgets';
 
 import type { Area, Pane } from '../model';
-import { hasComparison, isToolArea } from '../model';
+import { isToolArea } from '../model';
 
 interface ISection {
   widget: Widget;
@@ -51,26 +51,15 @@ export class PanePanel extends BoxPanel {
     this.addWidget(this.section.widget);
   }
 
-  /** Save the existing area format, including previously docked tab groups. */
+  /** Save pane selections and split proportions. */
   save(): Area {
     return this.section.save();
-  }
-
-  /** Reuse the views while replacing and disposing their layout containers. */
-  reset(): void {
-    this.replace(defaultArea);
-  }
-
-  /** Toggle a second output group without disturbing the source split. */
-  compare(): void {
-    const area = this.save();
-    this.replace(hasComparison(area) ? removeComparison(area) : compare(area));
   }
 
   dispose(): void {
     if (!this.isDisposed) {
       super.dispose();
-      // The comparison view may currently be detached from the layout.
+      // Release every owned view, including any outside the saved layout.
       for (const pane of Object.values(this.panes)) {
         pane.dispose();
       }
@@ -87,21 +76,6 @@ export class PanePanel extends BoxPanel {
     super.onResize(message);
   }
 
-  private replace(area: Area): void {
-    this.restoring = true;
-    for (const pane of Object.values(this.panes)) {
-      pane.parent = null;
-    }
-    if (!Object.values(this.panes).includes(this.section.widget)) {
-      this.section.widget.dispose();
-    }
-    this.section = this.create(area);
-    this.addWidget(this.section.widget);
-    this.section.resize?.(this.narrow);
-    this.restoring = false;
-    this.changed();
-  }
-
   /** Reveal a pane before sending focus to its view. */
   activatePane(pane: Pane): void {
     this.section.activate(pane);
@@ -114,7 +88,7 @@ export class PanePanel extends BoxPanel {
       // or an output group that already owns its tabs.
       if (
         area.widgets.length === 1 &&
-        (pane === 'source' || pane === 'outputs' || pane === 'comparison')
+        (pane === 'source' || pane === 'outputs')
       ) {
         const view = this.panes[pane];
         let widget: Widget = view;
@@ -237,61 +211,13 @@ export class PanePanel extends BoxPanel {
   }
 
   private changed(): void {
-    if (!this.isDisposed && !this.restoring) {
+    if (!this.isDisposed) {
       this.onChange();
     }
   }
 
-  private section: ISection;
-  private restoring = false;
+  private readonly section: ISection;
   private narrow = false;
-}
-
-function compare(area: Area): Area {
-  if (area.type === 'split-area') {
-    return { ...area, children: area.children.map(compare) };
-  }
-  return area.widgets.includes('outputs')
-    ? {
-        type: 'split-area',
-        orientation: 'horizontal',
-        sizes: [0.5, 0.5],
-        children: [
-          area,
-          {
-            type: 'tab-area',
-            widgets: ['comparison'],
-            currentIndex: 0
-          }
-        ]
-      }
-    : area;
-}
-
-function removeComparison(area: Area): Area {
-  if (area.type === 'tab-area') {
-    const widgets = area.widgets.filter(pane => pane !== 'comparison');
-    return {
-      ...area,
-      widgets,
-      currentIndex: Math.min(area.currentIndex, widgets.length - 1)
-    };
-  }
-  const entries = area.children
-    .map((child, index) => ({
-      child: removeComparison(child),
-      size: area.sizes[index]
-    }))
-    .filter(
-      ({ child }) => child.type !== 'tab-area' || child.widgets.length > 0
-    );
-  return entries.length === 1
-    ? entries[0].child
-    : {
-        ...area,
-        children: entries.map(entry => entry.child),
-        sizes: entries.map(entry => entry.size)
-      };
 }
 
 /** Retain proportions when the host changes size during restoration. */

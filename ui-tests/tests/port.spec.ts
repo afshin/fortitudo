@@ -19,7 +19,7 @@ async function tab(page: Page, name: string) {
   }
 }
 
-test('one compile fills outputs and comparison uses them @compat', async ({
+test('one compile fills outputs and saves the selected tab @compat', async ({
   page
 }, testInfo) => {
   await page.addInitScript(() => {
@@ -102,21 +102,15 @@ test('one compile fills outputs and comparison uses them @compat', async ({
     .getByRole('button', { name: 'Download', exact: true })
     .click();
   expect((await downloaded).suggestedFilename()).toBe('program.wasm');
-  await page.getByRole('button', { name: 'Compare', exact: true }).click();
-  await expect(
-    page.getByLabel('LLVM IR — before passes output').first()
-  ).toBeVisible();
-  await expect(page.getByLabel('Optimized IR output').last()).toBeVisible();
+  await tab(page, 'Optimized IR');
+  await expect(page.getByLabel('Optimized IR output')).toContainText('mul');
   await expect(page.locator('html')).toHaveAttribute('data-compiles', '1');
-  await page.screenshot({ path: testInfo.outputPath('comparison.png') });
+  await page.screenshot({ path: testInfo.outputPath('outputs.png') });
   await page.reload();
   await expect(
-    page.getByRole('region', { name: 'Comparison outputs', exact: true })
-  ).toBeVisible();
-  await expect(
-    page.getByLabel('LLVM IR — before passes output').first()
-  ).toBeVisible();
-  await expect(page.getByLabel('Optimized IR output').last()).toBeVisible();
+    page.getByRole('tab', { name: 'Optimized IR', exact: true })
+  ).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByLabel('Optimized IR output')).toBeVisible();
   await expect(page.locator('html')).not.toHaveAttribute('data-compiles');
 });
 

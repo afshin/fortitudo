@@ -10,7 +10,7 @@ import {
   targets
 } from '../compiler/types';
 import type { Diagnostic, Options } from '../compiler/types';
-import { canRun, hasComparison, stale } from '../model';
+import { canRun, stale } from '../model';
 import type { State } from '../model';
 
 interface IControlsProps {
@@ -18,19 +18,16 @@ interface IControlsProps {
   onOptions(options: Options): void;
   onCompile(): void;
   onCancel(): void;
-  onResetLayout(): void;
   onRun(): void;
-  onCompare(): void;
   onShare?(): void;
   onStop(): void;
-  onGuide(): void;
+  onAbout(): void;
   onDismissNotice(): void;
 }
 
 export function Controls(props: IControlsProps): React.ReactElement {
   const { state, onOptions } = props;
   const busy = state.active !== null;
-  const comparing = hasComparison(state.layout);
   const downloads =
     state.progress?.phase === 'downloading' ? state.progress.downloads : null;
   const loaded = downloads?.reduce((sum, item) => sum + item.loaded, 0) ?? 0;
@@ -141,16 +138,8 @@ export function Controls(props: IControlsProps): React.ReactElement {
                 Run
               </button>
             ))}
-          <button
-            onClick={props.onCompare}
-            aria-pressed={comparing}
-            title={comparing ? 'Close comparison' : 'Compare outputs'}
-          >
-            Compare
-          </button>
           {props.onShare && <button onClick={props.onShare}>Share</button>}
-          <button onClick={props.onGuide}>Guide</button>
-          <button onClick={props.onResetLayout}>Reset layout</button>
+          <button onClick={props.onAbout}>About</button>
         </div>
       </div>
       <div className="llvm-explorer-status">

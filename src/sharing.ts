@@ -36,7 +36,7 @@ export function decodeShare(value: string): Session {
         source: decoded.source,
         options: decoded.options,
         layout: null,
-        outputs: { primary: 'assembly', comparison: 'optimized' },
+        output: 'assembly',
         timeout: 10000
       })
     : null;

@@ -14,8 +14,7 @@ function views() {
     files: new Widget(),
     terminal: new Widget(),
     run: new Widget(),
-    pipelines: new Widget(),
-    comparison: new Widget()
+    pipelines: new Widget()
   };
 }
 
@@ -50,37 +49,6 @@ it('restores saved splits and tab groups and reveals inactive panes', () => {
   panel.dispose();
   expect(Object.values(panes).every(pane => pane.isDisposed)).toBe(true);
   expect(changed).toHaveBeenCalledTimes(1);
-});
-
-it('resets containers while retaining views and saving once', () => {
-  const panes = views();
-  const changes: Area[] = [];
-  const panel = new PanePanel(
-    panes,
-    {
-      type: 'tab-area',
-      widgets: ['outputs', 'source', 'diagnostics'],
-      currentIndex: 0
-    },
-    () => changes.push(panel.save())
-  );
-  const previous = panel.widgets[0];
-  panel.reset();
-  expect(previous.isDisposed).toBe(true);
-  expect(changes).toEqual([panel.save()]);
-  expect(panel.save().type).toBe('split-area');
-  expect(panes.source.isHidden).toBe(false);
-  expect(panes.source.node.hasAttribute('role')).toBe(false);
-  expect(panes.source.node.hasAttribute('aria-labelledby')).toBe(false);
-  expect(panes.outputs.isHidden).toBe(false);
-  for (const pane of Object.values(panes)) {
-    expect(pane.isDisposed).toBe(false);
-    if (pane !== panes.comparison) {
-      expect(panel.contains(pane)).toBe(true);
-    }
-  }
-  panel.dispose();
-  expect(changes).toHaveLength(1);
 });
 
 it('preserves pane proportions while the host restores its size', () => {
@@ -118,7 +86,7 @@ it('preserves pane proportions while the host restores its size', () => {
   }
 });
 
-it('restores and resets a sole output group, retaining its views', () => {
+it('restores a sole output pane and releases all owned views', () => {
   const panes = views();
   const area: Area = {
     type: 'tab-area',
@@ -128,14 +96,6 @@ it('restores and resets a sole output group, retaining its views', () => {
   const panel = new PanePanel(panes, area, () => {});
   expect(panel.widgets[0]).toBe(panes.outputs);
   expect(panel.save()).toEqual(area);
-  panel.compare();
-  expect(panel.contains(panes.outputs)).toBe(true);
-  expect(panel.contains(panes.comparison)).toBe(true);
-  panel.compare();
-  expect(panel.save()).toEqual(area);
-  panel.reset();
-  expect(panes.outputs.isDisposed).toBe(false);
-  expect(panel.contains(panes.outputs)).toBe(true);
   panel.dispose();
   expect(Object.values(panes).every(pane => pane.isDisposed)).toBe(true);
 });
@@ -153,9 +113,6 @@ it('folds tools without losing split proportions or the source view', () => {
     throw new Error('Expected the tools tab panel.');
   }
   tools.currentIndex = -1;
-  expect(panel.save()).toEqual(closed);
-  panel.compare();
-  panel.compare();
   expect(panel.save()).toEqual(closed);
   expect(panes.source.isDisposed).toBe(false);
   panel.dispose();
@@ -208,13 +165,11 @@ it('stacks narrow panes without changing saved orientation or sizes', () => {
   expect(panel.save()).toEqual(saved);
   expect(changed).not.toHaveBeenCalled();
   MessageLoop.sendMessage(panel, new Widget.ResizeMessage(390, 800));
-  panel.compare();
   expect(
     Array.from(panel.node.querySelectorAll('.lm-SplitPanel')).every(
       split => split.getAttribute('data-orientation') === 'vertical'
     )
   ).toBe(true);
-  panel.compare();
   expect(panel.save()).toEqual(saved);
   expect(panes.source.isDisposed).toBe(false);
   panel.dispose();

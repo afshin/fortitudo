@@ -38,12 +38,6 @@ test('focused defaults, contextual outputs, and folding tools @compat', async ({
   const outputs = page.getByRole('region', { name: 'Outputs', exact: true });
   await expect(outputs.getByRole('tab')).toHaveText(['MLIR', 'Graphs']);
   await expect(page.getByLabel('Target', { exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Compare' }).click();
-  const comparison = page.getByRole('region', { name: 'Comparison outputs' });
-  await expect(comparison.getByRole('tab', { name: 'Graphs' })).toHaveAttribute(
-    'aria-selected',
-    'true'
-  );
   await source.fill('my experiment');
   await page.getByLabel('Language', { exact: true }).selectOption('cpp');
   await expect(source).toHaveText('my experiment');
@@ -53,21 +47,12 @@ test('focused defaults, contextual outputs, and folding tools @compat', async ({
   await expect(outputs.getByRole('tab', { name: 'Wasm module' })).toHaveCount(
     0
   );
-  await page.getByRole('button', { name: 'Compare' }).click();
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const name of [
-    'Compile',
-    'Run',
-    'Compare',
-    'Share',
-    'Guide',
-    'Reset layout'
-  ]) {
+  for (const name of ['Compile', 'Run', 'Share', 'About']) {
     await expect(
       page.getByRole('button', { name, exact: true })
     ).toBeInViewport({ ratio: 1 });
   }
-  await page.getByRole('button', { name: 'Reset layout' }).click();
   await expect(source).toHaveText('my experiment');
   expect(downloads).toEqual([]);
 });

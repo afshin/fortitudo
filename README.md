@@ -7,10 +7,35 @@ is needed.
 The [web app](https://llvm-explorer.dev/) opens the standalone explorer. Select
 **Try in Jupyter** to use the explorer alongside C23 and C++23 notebooks.
 
-Select **Guide** in the explorer to read the guide below. The same guide is
-available as **LLVM Explorer guide.md** in JupyterLite.
+Select **About** in the explorer for project credits and the guide below. The
+same guide is available as **LLVM Explorer guide.md** in JupyterLite.
 
 <!-- guide:start -->
+
+## About LLVM Explorer
+
+LLVM Explorer compiles and inspects C, C++, LLVM IR, and MLIR in your browser,
+with a shared workbench for standalone use, JupyterLab, and JupyterLite. No
+kernel or remote compiler is needed.
+
+Anutosh Bhat’s work on [WasmBolt](https://github.com/anutosh491/WasmBolt)
+brought the LLVM compiler tools into the browser using WebAssembly. LLVM
+Explorer’s compiler runtime builds on that work, released under the MIT License.
+We reuse WasmBolt’s compiler module, LLVM lifecycle adaptations, and compilation
+pipeline, with an adapted build recipe. LLVM Explorer adds the shared
+React/Lumino workbench, compiler worker service, and JupyterLab, JupyterLite,
+and standalone integrations. WasmBolt’s original copyright and license notice
+are included in our distributions.
+
+The compiler itself is provided by LLVM/Clang and built for WebAssembly using
+Emscripten.
+
+Our notebook environment uses
+[xeus-cpp](https://github.com/compiler-research/xeus-cpp), CppInterOp, and
+[jupyterlite-xeus](https://github.com/jupyterlite/xeus), with browser packages
+from [emscripten-forge](https://github.com/emscripten-forge/recipes). Their work
+makes interactive C and C++ notebooks possible without a server. The Lite build
+preserves package license notices alongside the kernel assets.
 
 ## Install LLVM Explorer
 
@@ -55,28 +80,23 @@ compile reloads it.
 The workbench starts with source beside output. Only outputs for the selected
 language and target are shown. The tools along the bottom open when selected;
 select the active tool again to fold it away, with the mouse or Enter/Space.
-Compilation errors open Diagnostics automatically. **Reset layout** restores
-this arrangement without changing your source. Narrow windows stack the panes;
-widening the window restores the saved arrangement.
+Compilation errors open Diagnostics automatically. Narrow windows stack the
+panes; widening the window restores the saved arrangement.
 
 Every compilation includes diagnostics, recorded commands, raw streams, timings,
 and generated files. A failed stage preserves successful independent outputs.
 Expand **Build details** in Diagnostics for stage status and timings. Select a
-diagnostic to jump to its source location. **Compare** opens a second output
-group, initially comparing LLVM IR before and after passes, or MLIR beside its
-operation graph. Both groups have independent selections and resizable widths.
-Text views provide line numbers, search, copy, and download. Select **Compare**
-again to close the second group while keeping the primary selection. **Find** or
-**Ctrl/Cmd+F** searches the focused source or text output; **Ctrl/Cmd+Enter**
-compiles from either editor. In the source editor, **Escape**, then **Tab**
-moves focus out without inserting indentation. Graphs have function selection,
-zoom, fit, and DOT/SVG downloads. The Wasm inspector lists size, imports,
-exports, and function signatures without executing the module.
+diagnostic to jump to its source location. Text views provide line numbers,
+search, copy, and download. **Find** or **Ctrl/Cmd+F** searches the focused
+source or text output; **Ctrl/Cmd+Enter** compiles from either editor. In the
+source editor, **Escape**, then **Tab** moves focus out without inserting
+indentation. Graphs have function selection, zoom, fit, and DOT/SVG downloads.
+The Wasm inspector lists size, imports, exports, and function signatures without
+executing the module.
 
-Comparison and layout resets preserve the source editor's undo history. Assembly
-hides compiler metadata by default, retaining code, data, and their directives.
-Uncheck **Hide metadata** to see it all. **Copy** uses the displayed text;
-**Download** always saves the original file.
+Assembly hides compiler metadata by default, retaining code, data, and their
+directives. Uncheck **Hide metadata** to see it all. **Copy** uses the displayed
+text; **Download** always saves the original file.
 
 The status strip shows download progress in MB, then preparation and compilation
 activity. Diagnostics lists the individual compiler downloads and any loading
@@ -150,12 +170,12 @@ removes them from the address so reloading keeps subsequent edits. Binaries,
 logs, layout, and execution state are excluded. Sharing is unavailable in
 JupyterLab and JupyterLite, where sessions belong to the host workspace.
 
-Source, pipeline options, output selections, comparison layout, pane sizes, and
-execution timeout are saved automatically. Jupyter also keeps a browser copy of
-recent edits for each workspace. Reopening restores the session without
-compiling. Output is marked out of date when source or options change. Invalid
-saved state opens a default session with a warning. Compiled artifacts, command
-files, and running processes are not saved.
+Source, pipeline options, output selection, pane sizes, and execution timeout
+are saved automatically. Jupyter also keeps a browser copy of recent edits for
+each workspace. Reopening restores the session without compiling. Output is
+marked out of date when source or options change. Invalid saved state opens a
+default session with a warning. Compiled artifacts, command files, and running
+processes are not saved.
 
 ## C and C++ notebooks
 
@@ -226,7 +246,7 @@ and the four input languages. `IRunner`, `RunRequest`, `RunResult`, and
 immutable; transport never detaches buffers already owned by application state.
 
 Command names describe actions, such as `CommandIDs.setSource`,
-`CommandIDs.resetLayout`, and `CommandIDs.selectOutput`. Their IDs use the same
+`CommandIDs.compile`, and `CommandIDs.selectOutput`. Their IDs use the same
 words in kebab case, such as `llvm-explorer:set-source`. Jupyter registers
 `CommandIDs.open`; `registerCommands` takes an `ICommandContext` for the shared
 commands.
@@ -254,26 +274,6 @@ The optional MLIR driver downloads only when MLIR is used, with the same
 integrity checks, progress, cancellation, and retry behavior as the core. MLIR
 exploration uses explicit passes; automatic lowering to an executable, automatic
 compilation, and notebook synchronization remain outside the explorer.
-
-## Acknowledgments
-
-LLVM Explorer’s browser compiler runtime is based on
-[WasmBolt](https://github.com/anutosh491/WasmBolt), created by Anutosh Bhat and
-released under the MIT License. We reuse WasmBolt’s compiler module, LLVM
-lifecycle adaptations, and compilation pipeline, with an adapted build recipe.
-LLVM Explorer adds the shared React/Lumino workbench, compiler worker service,
-and JupyterLab, JupyterLite, and standalone integrations. WasmBolt’s original
-copyright and license notice are included in our distributions.
-
-The compiler itself is provided by LLVM/Clang and built for WebAssembly using
-Emscripten.
-
-Our notebook environment uses
-[xeus-cpp](https://github.com/compiler-research/xeus-cpp), CppInterOp, and
-[jupyterlite-xeus](https://github.com/jupyterlite/xeus), with browser packages
-from [emscripten-forge](https://github.com/emscripten-forge/recipes). Their work
-makes interactive C and C++ notebooks possible without a server. The Lite build
-preserves package license notices alongside the kernel assets.
 
 ## License
 

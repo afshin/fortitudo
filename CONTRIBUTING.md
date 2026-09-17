@@ -148,12 +148,12 @@ pixi run --as-is jlpm serve
 
 ## User guide and notebooks
 
-Edit the feature guide between `guide:start` and `guide:end` in `README.md`.
-`build:guide` generates the shared UI content in `src/generated/guide.ts` and
-`lite/files/LLVM Explorer guide.md`. Both are ignored build outputs. Frontend
-and Lite builds regenerate them; the main watch command also watches the README.
-During standalone development, run `jlpm watch:guide` in a Pixi shell to update
-the guide as you edit it.
+Edit the About content and guide between `guide:start` and `guide:end` in
+`README.md`. `build:guide` generates the shared UI content in
+`src/generated/guide.ts` and `lite/files/LLVM Explorer guide.md`. Both are
+ignored build outputs. Frontend and Lite builds regenerate them; the main watch
+command also watches the README. During standalone development, run
+`jlpm watch:guide` in a Pixi shell to update the guide as you edit it.
 
 The two notebooks in `lite/files` demonstrate the C23 and C++23 kernels. Keep
 their source cells short, preserve kernel metadata, and save without execution

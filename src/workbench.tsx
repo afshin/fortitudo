@@ -88,11 +88,8 @@ export class Workbench extends BoxPanel {
     this.addWidget(header);
     const panes = {
       source: this.view('source'),
-      outputs: new OutputPanel(store, options.commands, 'primary', kind =>
+      outputs: new OutputPanel(store, options.commands, kind =>
         this.view('outputs', kind)
-      ),
-      comparison: new OutputPanel(store, options.commands, 'comparison', kind =>
-        this.view('comparison', kind)
       ),
       diagnostics: this.view('diagnostics'),
       files: this.view('files'),
@@ -102,7 +99,6 @@ export class Workbench extends BoxPanel {
     };
     panes.source.title.label = 'Source';
     panes.outputs.title.label = 'Outputs';
-    panes.comparison.title.label = 'Comparison';
     panes.files.title.label = 'Files';
     panes.terminal.title.label = 'Terminal';
     panes.run.title.label = 'Run';
@@ -118,8 +114,6 @@ export class Workbench extends BoxPanel {
       compiler: this.compiler,
       runner: this.runner,
       sharing: options.sharing,
-      resetLayout: () => this.panels.reset(),
-      compare: () => this.panels.compare(),
       activatePane: pane => this.panels.activatePane(pane),
       copy: text => navigator.clipboard.writeText(text),
       download: file => {
@@ -147,7 +141,7 @@ export class Workbench extends BoxPanel {
         next.source !== previous.source ||
         next.options !== previous.options ||
         next.layout !== previous.layout ||
-        next.outputs !== previous.outputs ||
+        next.output !== previous.output ||
         next.timeout !== previous.timeout
       ) {
         previous = next;
