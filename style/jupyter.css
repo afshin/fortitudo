@@ -1,17 +1,17 @@
-.jp-LauncherCard-icon .fortitudo-icon {
+.jp-LauncherCard-icon .llvm-explorer-icon {
   width: 32px;
   height: 32px;
   color: var(--jp-ui-font-color1);
 }
 
-.fortitudo-jupyter {
-  --fortitudo-background: var(--jp-layout-color0);
-  --fortitudo-muted-background: var(--jp-layout-color1);
-  --fortitudo-foreground: var(--jp-ui-font-color1);
-  --fortitudo-muted: var(--jp-ui-font-color2);
-  --fortitudo-border: var(--jp-border-color2);
-  --fortitudo-accent: var(--jp-brand-color1);
-  --fortitudo-code-font: var(--jp-code-font-family);
+.llvm-explorer-jupyter {
+  --llvm-explorer-background: var(--jp-layout-color0);
+  --llvm-explorer-muted-background: var(--jp-layout-color1);
+  --llvm-explorer-foreground: var(--jp-ui-font-color1);
+  --llvm-explorer-muted: var(--jp-ui-font-color2);
+  --llvm-explorer-border: var(--jp-border-color2);
+  --llvm-explorer-accent: var(--jp-brand-color1);
+  --llvm-explorer-code-font: var(--jp-code-font-family);
 
   color-scheme: normal;
 }

@@ -46,7 +46,7 @@ export class PanePanel extends BoxPanel {
     private readonly onChange: () => void
   ) {
     super({ spacing: 0 });
-    this.addClass('fortitudo-panels');
+    this.addClass('llvm-explorer-panels');
     this.section = this.create(area ?? defaultArea);
     this.addWidget(this.section.widget);
   }
@@ -123,9 +123,9 @@ export class PanePanel extends BoxPanel {
             direction: 'top-to-bottom',
             spacing: 0
           });
-          panel.addClass('fortitudo-source');
+          panel.addClass('llvm-explorer-source');
           const heading = new Widget({ node: document.createElement('h2') });
-          heading.addClass('fortitudo-pane-heading');
+          heading.addClass('llvm-explorer-pane-heading');
           heading.node.textContent = view.title.label;
           panel.addWidget(heading);
           panel.addWidget(view);
@@ -151,7 +151,7 @@ export class PanePanel extends BoxPanel {
       const panel = new TabPanel({ tabsMovable: false });
       panel.tabBar.allowDeselect = tools;
       if (tools) {
-        panel.addClass('fortitudo-tools');
+        panel.addClass('llvm-explorer-tools');
         panel.tabBar.node.title = 'Select a tool to open or close it';
         const keydown = (event: KeyboardEvent) => {
           const tab = panel.tabBar.contentNode.children[panel.currentIndex];
@@ -171,7 +171,7 @@ export class PanePanel extends BoxPanel {
       }
       const resize = () => {
         const collapsed = tools && panel.currentIndex === -1;
-        panel.toggleClass('fortitudo-collapsed', collapsed);
+        panel.toggleClass('llvm-explorer-collapsed', collapsed);
         panel.stackedPanel.setHidden(collapsed);
         panel.fit();
       };

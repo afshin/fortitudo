@@ -1,5 +1,5 @@
 {
-  "title": "Fortitudo",
+  "title": "LLVM Explorer",
   "description": "Defaults for new compiler explorer sessions.",
   "type": "object",
   "additionalProperties": false,

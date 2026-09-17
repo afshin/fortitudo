@@ -51,16 +51,16 @@ export function Editor({
             HighlightStyle.define([
               {
                 tag: tags.keyword,
-                color: 'var(--fortitudo-accent)',
+                color: 'var(--llvm-explorer-accent)',
                 fontWeight: '600'
               },
               {
                 tag: [tags.string, tags.number, tags.bool],
-                color: 'var(--fortitudo-accent)'
+                color: 'var(--llvm-explorer-accent)'
               },
               {
                 tag: tags.comment,
-                color: 'var(--fortitudo-muted)',
+                color: 'var(--llvm-explorer-muted)',
                 fontStyle: 'italic'
               }
             ])
@@ -126,7 +126,7 @@ export function Editor({
   }, [store, onChange]);
   return (
     <>
-      <div className="fortitudo-file-actions">
+      <div className="llvm-explorer-file-actions">
         <span>{sourceName(language)}</span>
         <button
           onClick={onResetExample}
@@ -145,7 +145,7 @@ export function Editor({
           Find
         </button>
       </div>
-      <div className="fortitudo-editor" ref={node} />
+      <div className="llvm-explorer-editor" ref={node} />
     </>
   );
 }

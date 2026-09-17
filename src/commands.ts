@@ -16,30 +16,30 @@ import type { ISharing } from './share';
 import type { IStore } from './state';
 
 export namespace CommandIDs {
-  export const open = 'fortitudo:open';
-  export const initialize = 'fortitudo:initialize';
-  export const setSource = 'fortitudo:set-source';
-  export const setOptions = 'fortitudo:set-options';
-  export const compile = 'fortitudo:compile';
-  export const cancel = 'fortitudo:cancel';
-  export const resetLayout = 'fortitudo:reset-layout';
-  export const saveLayout = 'fortitudo:save-layout';
-  export const navigate = 'fortitudo:navigate';
-  export const selectOutput = 'fortitudo:select-output';
-  export const compare = 'fortitudo:compare';
-  export const resetExample = 'fortitudo:reset-example';
-  export const runCommand = 'fortitudo:run-command';
-  export const clearTerminal = 'fortitudo:clear-terminal';
-  export const run = 'fortitudo:run';
-  export const stop = 'fortitudo:stop';
-  export const selectModule = 'fortitudo:select-module';
-  export const selectExport = 'fortitudo:select-export';
-  export const setArguments = 'fortitudo:set-arguments';
-  export const setTimeout = 'fortitudo:set-timeout';
-  export const share = 'fortitudo:share';
-  export const copy = 'fortitudo:copy';
-  export const download = 'fortitudo:download';
-  export const dismissNotice = 'fortitudo:dismiss-notice';
+  export const open = 'llvm-explorer:open';
+  export const initialize = 'llvm-explorer:initialize';
+  export const setSource = 'llvm-explorer:set-source';
+  export const setOptions = 'llvm-explorer:set-options';
+  export const compile = 'llvm-explorer:compile';
+  export const cancel = 'llvm-explorer:cancel';
+  export const resetLayout = 'llvm-explorer:reset-layout';
+  export const saveLayout = 'llvm-explorer:save-layout';
+  export const navigate = 'llvm-explorer:navigate';
+  export const selectOutput = 'llvm-explorer:select-output';
+  export const compare = 'llvm-explorer:compare';
+  export const resetExample = 'llvm-explorer:reset-example';
+  export const runCommand = 'llvm-explorer:run-command';
+  export const clearTerminal = 'llvm-explorer:clear-terminal';
+  export const run = 'llvm-explorer:run';
+  export const stop = 'llvm-explorer:stop';
+  export const selectModule = 'llvm-explorer:select-module';
+  export const selectExport = 'llvm-explorer:select-export';
+  export const setArguments = 'llvm-explorer:set-arguments';
+  export const setTimeout = 'llvm-explorer:set-timeout';
+  export const share = 'llvm-explorer:share';
+  export const copy = 'llvm-explorer:copy';
+  export const download = 'llvm-explorer:download';
+  export const dismissNotice = 'llvm-explorer:dismiss-notice';
 }
 
 /** Explicit services and host actions used by the shared commands. */

@@ -23,8 +23,7 @@ export function createSharing(
       }
       restored = true;
       const fragment = new URLSearchParams(location.hash.slice(1));
-      const value =
-        fragment.get('fortitudo') ?? location.searchParams.get('fortitudo');
+      const value = fragment.get('llvm-explorer');
       if (value === null) {
         return null;
       }
@@ -35,10 +34,9 @@ export function createSharing(
     clear() {
       if (pending) {
         const url = new URL(location.href);
-        url.searchParams.delete('fortitudo');
         const fragment = new URLSearchParams(url.hash.slice(1));
-        if (fragment.has('fortitudo')) {
-          fragment.delete('fortitudo');
+        if (fragment.has('llvm-explorer')) {
+          fragment.delete('llvm-explorer');
           url.hash = fragment.toString();
         }
         replace(url);
@@ -48,8 +46,7 @@ export function createSharing(
     },
     async copy(session) {
       const url = new URL(location.href);
-      url.searchParams.delete('fortitudo');
-      url.hash = `fortitudo=${encodeShare(session)}`;
+      url.hash = `llvm-explorer=${encodeShare(session)}`;
       await navigator.clipboard.writeText(url.href);
     }
   };

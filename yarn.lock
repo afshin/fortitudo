@@ -1919,17 +1919,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fortitudo/lite-brand@workspace:lite/brand":
-  version: 0.0.0-use.local
-  resolution: "@fortitudo/lite-brand@workspace:lite/brand"
-  dependencies:
-    "@jupyter/builder": ^1.2.0
-    "@jupyterlab/application": ^4.6.0
-    "@jupyterlab/coreutils": ^6.6.0
-    "@lumino/widgets": ^2.7.3
-  languageName: unknown
-  linkType: soft
-
 "@humanfs/core@npm:^0.19.2":
   version: 0.19.2
   resolution: "@humanfs/core@npm:0.19.2"
@@ -3185,6 +3174,17 @@ __metadata:
   checksum: 71217d49b9207bd19d69ae98ad406d0c7ff395b6ad118528f3f81455f973e01597cac1ffa2741f2c6739d4ede17edb49573eaa3246f8f5a6da4d97dcb940309d
   languageName: node
   linkType: hard
+
+"@llvm-explorer/lite-brand@workspace:lite/brand":
+  version: 0.0.0-use.local
+  resolution: "@llvm-explorer/lite-brand@workspace:lite/brand"
+  dependencies:
+    "@jupyter/builder": ^1.2.0
+    "@jupyterlab/application": ^4.6.0
+    "@jupyterlab/coreutils": ^6.6.0
+    "@lumino/widgets": ^2.7.3
+  languageName: unknown
+  linkType: soft
 
 "@lumino/algorithm@npm:^2.0.4, @lumino/algorithm@npm:^2.0.5":
   version: 2.0.5
@@ -6721,63 +6721,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fortitudo@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "fortitudo@workspace:."
-  dependencies:
-    "@codemirror/commands": ^6.8.0
-    "@codemirror/lang-cpp": ^6.0.3
-    "@codemirror/language": ^6.11.0
-    "@codemirror/legacy-modes": ^6.5.2
-    "@codemirror/search": ^6.6.0
-    "@codemirror/state": ^6.5.0
-    "@codemirror/view": ^6.36.0
-    "@eslint/js": ^9.0.0
-    "@jupyter/builder": ^1.2.0
-    "@jupyter/eslint-plugin": ^1.1.0
-    "@jupyterlab/application": ^4.6.0
-    "@jupyterlab/apputils": ^4.7.0
-    "@jupyterlab/coreutils": ^6.6.0
-    "@jupyterlab/launcher": ^4.6.0
-    "@jupyterlab/settingregistry": ^4.6.0
-    "@jupyterlab/statedb": ^4.6.0
-    "@jupyterlab/testutils": ^4.0.0
-    "@lezer/highlight": ^1.2.3
-    "@lumino/commands": ^2.3.3
-    "@lumino/coreutils": ^2.2.2
-    "@lumino/disposable": ^2.1.5
-    "@lumino/messaging": ^2.0.3
-    "@lumino/widgets": ^2.7.3
-    "@playwright/test": ^1.60.0
-    "@types/jest": ^29.2.0
-    "@types/json-schema": ^7.0.11
-    "@types/node": ^24.0.0
-    "@types/react": ^18.0.26
-    "@types/react-dom": ^18.2.0
-    eslint: ^9.0.0
-    eslint-config-prettier: ^9.0.0
-    eslint-plugin-prettier: ^5.0.0
-    eslint-plugin-react-hooks: ^5.2.0
-    globals: ^15.0.0
-    jest: ^29.2.0
-    marked: ^17.0.6
-    npm-run-all2: ^7.0.1
-    prettier: ^3.0.0
-    react: ^18.2.0
-    react-dom: ^18.2.0
-    rimraf: ^5.0.1
-    stylelint: ^15.10.1
-    stylelint-config-recommended: ^13.0.0
-    stylelint-config-standard: ^34.0.0
-    stylelint-csstree-validator: ^3.0.0
-    stylelint-prettier: ^4.0.0
-    typescript: ~5.5.4
-    typescript-eslint: ^8.0.0
-    vite: ^7.0.0
-    yjs: ^13.5.0
-  languageName: unknown
-  linkType: soft
-
 "free-style@npm:3.1.0":
   version: 3.1.0
   resolution: "free-style@npm:3.1.0"
@@ -8277,6 +8220,63 @@ __metadata:
   checksum: 0c37f9f7fa212b38912b7145e1cd16a5f3cd34d782441c3e6ca653485d326f58b3caccda66efce1c5812bde4961bbde3374fae4b0d11bf1226152337f3894aa5
   languageName: node
   linkType: hard
+
+"llvm-explorer@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "llvm-explorer@workspace:."
+  dependencies:
+    "@codemirror/commands": ^6.8.0
+    "@codemirror/lang-cpp": ^6.0.3
+    "@codemirror/language": ^6.11.0
+    "@codemirror/legacy-modes": ^6.5.2
+    "@codemirror/search": ^6.6.0
+    "@codemirror/state": ^6.5.0
+    "@codemirror/view": ^6.36.0
+    "@eslint/js": ^9.0.0
+    "@jupyter/builder": ^1.2.0
+    "@jupyter/eslint-plugin": ^1.1.0
+    "@jupyterlab/application": ^4.6.0
+    "@jupyterlab/apputils": ^4.7.0
+    "@jupyterlab/coreutils": ^6.6.0
+    "@jupyterlab/launcher": ^4.6.0
+    "@jupyterlab/settingregistry": ^4.6.0
+    "@jupyterlab/statedb": ^4.6.0
+    "@jupyterlab/testutils": ^4.0.0
+    "@lezer/highlight": ^1.2.3
+    "@lumino/commands": ^2.3.3
+    "@lumino/coreutils": ^2.2.2
+    "@lumino/disposable": ^2.1.5
+    "@lumino/messaging": ^2.0.3
+    "@lumino/widgets": ^2.7.3
+    "@playwright/test": ^1.60.0
+    "@types/jest": ^29.2.0
+    "@types/json-schema": ^7.0.11
+    "@types/node": ^24.0.0
+    "@types/react": ^18.0.26
+    "@types/react-dom": ^18.2.0
+    eslint: ^9.0.0
+    eslint-config-prettier: ^9.0.0
+    eslint-plugin-prettier: ^5.0.0
+    eslint-plugin-react-hooks: ^5.2.0
+    globals: ^15.0.0
+    jest: ^29.2.0
+    marked: ^17.0.6
+    npm-run-all2: ^7.0.1
+    prettier: ^3.0.0
+    react: ^18.2.0
+    react-dom: ^18.2.0
+    rimraf: ^5.0.1
+    stylelint: ^15.10.1
+    stylelint-config-recommended: ^13.0.0
+    stylelint-config-standard: ^34.0.0
+    stylelint-csstree-validator: ^3.0.0
+    stylelint-prettier: ^4.0.0
+    typescript: ~5.5.4
+    typescript-eslint: ^8.0.0
+    vite: ^7.0.0
+    yjs: ^13.5.0
+  languageName: unknown
+  linkType: soft
 
 "locate-path@npm:^5.0.0":
   version: 5.0.0

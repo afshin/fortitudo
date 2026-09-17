@@ -26,12 +26,12 @@ export const editorExtensions: Extension = [
     '&': { height: '100%', fontSize: '13px' },
     '.cm-scroller': {
       overflow: 'auto',
-      fontFamily: 'var(--fortitudo-code-font)'
+      fontFamily: 'var(--llvm-explorer-code-font)'
     },
     '.cm-content': { padding: '12px 0' },
     '.cm-line': { padding: '0 12px' },
-    '.cm-gutters': { background: 'var(--fortitudo-muted-background)' },
-    '.cm-cursor': { borderLeftColor: 'var(--fortitudo-foreground)' },
+    '.cm-gutters': { background: 'var(--llvm-explorer-muted-background)' },
+    '.cm-cursor': { borderLeftColor: 'var(--llvm-explorer-foreground)' },
     '&.cm-focused': { outline: 'none' }
   })
 ];

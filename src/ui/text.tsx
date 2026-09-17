@@ -25,9 +25,9 @@ const highlighting = syntaxHighlighting(
         tags.number,
         tags.string
       ],
-      color: 'var(--fortitudo-accent)'
+      color: 'var(--llvm-explorer-accent)'
     },
-    { tag: tags.comment, color: 'var(--fortitudo-muted)' }
+    { tag: tags.comment, color: 'var(--llvm-explorer-muted)' }
   ])
 );
 
@@ -85,7 +85,7 @@ export function TextOutput({
   }, [text, label, language]);
   return (
     <>
-      <div className="fortitudo-file-actions">
+      <div className="llvm-explorer-file-actions">
         {children}
         <button
           title="Find in output (Ctrl/Cmd+F)"
@@ -98,7 +98,7 @@ export function TextOutput({
           Find
         </button>
       </div>
-      <div className="fortitudo-editor" ref={node} />
+      <div className="llvm-explorer-editor" ref={node} />
     </>
   );
 }

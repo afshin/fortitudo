@@ -10,14 +10,14 @@ body {
   flex-direction: column;
 }
 
-#fortitudo {
+#llvm-explorer {
   position: relative;
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
 
-#fortitudo > .fortitudo-workbench {
+#llvm-explorer > .llvm-explorer-workbench {
   position: absolute;
   inset: 0;
 }

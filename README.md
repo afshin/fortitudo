@@ -1,24 +1,24 @@
-# Fortitudo
+# LLVM Explorer
 
-Fortitudo is a browser-only compiler explorer for C, C++, LLVM IR, and MLIR in
-JupyterLab, JupyterLite, and a standalone app. No kernel or remote compiler is
-needed.
+LLVM Explorer is a browser-only compiler explorer for C, C++, LLVM IR, and MLIR
+in JupyterLab, JupyterLite, and a standalone app. No kernel or remote compiler
+is needed.
 
-The [web app](https://fortitudo.cc) opens the standalone explorer. Select **Try
-in Jupyter** to use the explorer alongside C23 and C++23 notebooks.
+The [web app](https://llvm-explorer.dev/) opens the standalone explorer. Select
+**Try in Jupyter** to use the explorer alongside C23 and C++23 notebooks.
 
 Select **Guide** in the explorer to read the guide below. The same guide is
-available as **Fortitudo guide.md** in JupyterLite.
+available as **LLVM Explorer guide.md** in JupyterLite.
 
 <!-- guide:start -->
 
-## Install Fortitudo
+## Install LLVM Explorer
 
 Install and run locally:
 
 ```sh
-pip install fortitudo
-fortitudo
+pip install llvm-explorer
+llvm-explorer
 ```
 
 The command opens the explorer in your browser. **Try in Jupyter** opens the
@@ -26,15 +26,15 @@ bundled JupyterLite environment with C23 and C++23 notebooks in the same tab.
 Everything is served from your computer; compilation and notebook execution stay
 in the browser. No JupyterLab installation, Node, or compiler build is required.
 
-Keep the terminal open while using Fortitudo; press **Ctrl+C** to stop serving
-it. Use `fortitudo --no-browser` to print the address, or
-`fortitudo --port 8001` to choose another port. Your browser saves sessions
+Keep the terminal open while using LLVM Explorer; press **Ctrl+C** to stop
+serving it. Use `llvm-explorer --no-browser` to print the address, or
+`llvm-explorer --port 8001` to choose another port. Your browser saves sessions
 separately for each address.
 
 If you have JupyterLab 4.6 or later, the same package also provides its
-extension. Restart JupyterLab and select **Open Fortitudo** in the launcher or
-command palette. The npm package includes the compiler and shared workbench for
-applications that supply their own Lumino host.
+extension. Restart JupyterLab and select **Open LLVM Explorer** in the launcher
+or command palette. The npm package includes the compiler and shared workbench
+for applications that supply their own Lumino host.
 
 ## Compile and inspect
 
@@ -146,10 +146,9 @@ linked `.wasm` file and choose **Use module** to run it. Keep files under
 In standalone, **Share** copies a link with your source and compiler options.
 New links keep these inputs after `#`, outside the request sent to the server.
 Opening a link saves its inputs locally without compiling or running, then
-removes them from the address so reloading keeps subsequent edits. Older links
-using a query parameter still open. Binaries, logs, layout, and execution state
-are excluded. Sharing is unavailable in JupyterLab and JupyterLite, where
-sessions belong to the host workspace.
+removes them from the address so reloading keeps subsequent edits. Binaries,
+logs, layout, and execution state are excluded. Sharing is unavailable in
+JupyterLab and JupyterLite, where sessions belong to the host workspace.
 
 Source, pipeline options, output selections, comparison layout, pane sizes, and
 execution timeout are saved automatically. Jupyter also keeps a browser copy of
@@ -166,7 +165,7 @@ Cells**. The examples use packaged standard library headers, define functions,
 and reuse state across cells.
 
 The notebook interpreter runs in its own browser worker. It is independent of
-Fortitudo's compiler explorer: code, options, and results are not synchronized
+LLVM Explorer's compiler: code, options, and results are not synchronized
 between them. Its Clang version also differs from the explorer's LLVM runtime.
 The first kernel start downloads the interpreter and its libraries. Browser
 memory limits apply; native processes, native platform APIs, and arbitrary
@@ -191,7 +190,7 @@ pixi run --as-is jlpm serve
 pixi run --as-is jlpm serve:standalone
 ```
 
-In JupyterLab or JupyterLite, select **Open Fortitudo** in the launcher or
+In JupyterLab or JupyterLite, select **Open LLVM Explorer** in the launcher or
 command palette. The Lite testbed is served on port 8080; the standalone preview
 prints its local address. These commands run in separate terminals.
 
@@ -214,7 +213,7 @@ page reload is a separate feature.
   URLs.
 
 The shared package entry exports these contracts. Only `src/jupyter/` imports
-JupyterLab packages; the plugin retains `fortitudo:plugin`.
+JupyterLab packages; the plugin uses `llvm-explorer:plugin`.
 
 The compiler API returns `Result.artifacts`, `Result.stages`, and
 `Result.files`. Artifacts carry their build ID, kind, path, and text or binary
@@ -228,7 +227,7 @@ immutable; transport never detaches buffers already owned by application state.
 
 Command names describe actions, such as `CommandIDs.setSource`,
 `CommandIDs.resetLayout`, and `CommandIDs.selectOutput`. Their IDs use the same
-words in kebab case, such as `fortitudo:set-source`. Jupyter registers
+words in kebab case, such as `llvm-explorer:set-source`. Jupyter registers
 `CommandIDs.open`; `registerCommands` takes an `ICommandContext` for the shared
 commands.
 
@@ -258,12 +257,12 @@ compilation, and notebook synchronization remain outside the explorer.
 
 ## Acknowledgments
 
-Fortitudo’s browser compiler runtime is based on
+LLVM Explorer’s browser compiler runtime is based on
 [WasmBolt](https://github.com/anutosh491/WasmBolt), created by Anutosh Bhat and
 released under the MIT License. We reuse WasmBolt’s compiler module, LLVM
 lifecycle adaptations, and compilation pipeline, with an adapted build recipe.
-Fortitudo adds the shared React/Lumino workbench, compiler worker service, and
-JupyterLab, JupyterLite, and standalone integrations. WasmBolt’s original
+LLVM Explorer adds the shared React/Lumino workbench, compiler worker service,
+and JupyterLab, JupyterLite, and standalone integrations. WasmBolt’s original
 copyright and license notice are included in our distributions.
 
 The compiler itself is provided by LLVM/Clang and built for WebAssembly using
@@ -278,6 +277,6 @@ preserves package license notices alongside the kernel assets.
 
 ## License
 
-Fortitudo is BSD-3-Clause licensed. The compiler incorporates WasmBolt and other
-separately licensed software. Required notices are included in
+LLVM Explorer is BSD-3-Clause licensed. The compiler incorporates WasmBolt and
+other separately licensed software. Required notices are included in
 `runtime/licenses/` and copied into each distribution.

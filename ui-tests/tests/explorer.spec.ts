@@ -4,15 +4,15 @@ import type { Page } from '@playwright/test';
 const standalone = 'http://127.0.0.1:8765/dist/standalone/';
 const hosts = {
   standalone,
-  jupyterlab: 'http://127.0.0.1:8766/fortitudo/lab',
+  jupyterlab: 'http://127.0.0.1:8766/llvm-explorer/lab',
   jupyterlite: 'http://127.0.0.1:8765/lite/_output/lab/index.html'
 };
 
 async function open(page: Page, url: string): Promise<void> {
   await page.goto(url);
   if (url !== standalone) {
-    const launch = page.getByText('Open Fortitudo', { exact: true });
-    const workbench = page.locator('#fortitudo-workbench');
+    const launch = page.getByText('Open LLVM Explorer', { exact: true });
+    const workbench = page.locator('#llvm-explorer-workbench');
     await expect(launch.first().or(workbench).first()).toBeVisible();
     if (!(await workbench.isVisible())) {
       await launch.first().click();
@@ -29,11 +29,11 @@ async function reopen(page: Page, url: string): Promise<void> {
     return;
   }
   await page
-    .getByRole('tab', { name: 'Fortitudo', exact: true })
+    .getByRole('tab', { name: 'LLVM Explorer', exact: true })
     .locator('.lm-TabBar-tabCloseIcon')
     .click();
-  await expect(page.locator('#fortitudo-workbench')).toHaveCount(0);
-  await page.getByText('Open Fortitudo', { exact: true }).first().click();
+  await expect(page.locator('#llvm-explorer-workbench')).toHaveCount(0);
+  await page.getByText('Open LLVM Explorer', { exact: true }).first().click();
 }
 
 async function edit(page: Page, source: string): Promise<void> {
@@ -112,7 +112,7 @@ test.describe('loading feedback', () => {
         await page.setViewportSize({ width: 650, height: 720 });
         await expect(progress).toBeInViewport();
         await page.emulateMedia({ reducedMotion: 'reduce' });
-        const spinner = page.locator('.fortitudo-spinner');
+        const spinner = page.locator('.llvm-explorer-spinner');
         await expect(spinner).toHaveCSS('animation-name', 'none');
         download();
         await expect(status).toHaveText('Preparing compiler…');
@@ -252,7 +252,7 @@ for (const [host, url] of Object.entries(hosts)) {
 test('invalid saved state falls back with feedback', async ({ page }) => {
   await page.goto(standalone);
   await page.evaluate(() => {
-    localStorage.setItem('fortitudo:session:v1', '{"version":99}');
+    localStorage.setItem('llvm-explorer:session:v1', '{"version":99}');
   });
   await page.reload();
   await expect(page.getByRole('alert')).toContainText('Saved state is invalid');
@@ -294,7 +294,7 @@ test('missing assets, cancellation during loading, and retry', async ({
     page.getByRole('status', { name: 'Compiler status' })
   ).toContainText('Cancelled');
   await expect(page.getByRole('progressbar')).toHaveCount(0);
-  await expect(page.locator('.fortitudo-spinner')).toHaveCount(0);
+  await expect(page.locator('.llvm-explorer-spinner')).toHaveCount(0);
   release();
   await page.unrouteAll({ behavior: 'wait' });
   await compile(page);
@@ -372,7 +372,7 @@ for (const [host, url] of Object.entries(hosts)) {
   test(`${host}: resize and reset panes within the host`, async ({ page }) => {
     await open(page, url);
     if (host === 'jupyterlab') {
-      // Host sidebar widths are independent of Fortitudo's saved layout.
+      // Host sidebar widths are independent of LLVM Explorer's saved layout.
       const files = page.getByRole('tab', { name: /^File Browser/ });
       if ((await files.getAttribute('aria-selected')) === 'true') {
         await files.click();
@@ -380,7 +380,7 @@ for (const [host, url] of Object.entries(hosts)) {
     }
     await page.getByRole('button', { name: 'Reset layout' }).click();
     await edit(page, 'int resized() { return 12; }');
-    const workbench = page.locator('#fortitudo-workbench');
+    const workbench = page.locator('#llvm-explorer-workbench');
     await expect(workbench.locator('.lm-DockPanel')).toHaveCount(0);
     const source = workbench.getByRole('region', {
       name: 'Source pane',
@@ -428,20 +428,23 @@ for (const [host, url] of Object.entries(hosts)) {
   });
 }
 
-test('previously docked tab groups restore and save their selection', async ({
-  page
-}) => {
+test('saved tab groups restore and save their selection', async ({ page }) => {
   await open(page, standalone);
   await page.evaluate(() => {
     localStorage.setItem(
-      'fortitudo:session:v1',
+      'llvm-explorer:session:v1',
       JSON.stringify({
         version: 1,
         source: 'int grouped() { return 12; }',
+        outputs: { primary: 'assembly', comparison: 'optimized' },
+        timeout: 10000,
         options: {
           language: 'cpp',
           target: 'wasm32-unknown-emscripten',
-          optimization: 2
+          optimization: 2,
+          llvmPipeline: null,
+          analysisPipeline: 'print<domtree>,print<loops>',
+          mlirPipeline: 'builtin.module(canonicalize,cse)'
         },
         layout: {
           type: 'split-area',
@@ -451,7 +454,14 @@ test('previously docked tab groups restore and save their selection', async ({
             { type: 'tab-area', widgets: ['source'], currentIndex: 0 },
             {
               type: 'tab-area',
-              widgets: ['assembly', 'diagnostics'],
+              widgets: [
+                'outputs',
+                'diagnostics',
+                'files',
+                'terminal',
+                'run',
+                'pipelines'
+              ],
               currentIndex: 0
             }
           ]
@@ -460,7 +470,7 @@ test('previously docked tab groups restore and save their selection', async ({
     );
   });
   await page.reload();
-  const workbench = page.locator('#fortitudo-workbench');
+  const workbench = page.locator('#llvm-explorer-workbench');
   await expect(workbench.getByRole('tablist')).toHaveCount(2);
   await expect(page.getByLabel('Assembly output')).toBeVisible();
   await page.getByRole('tab', { name: 'Diagnostics', exact: true }).click();

@@ -2,7 +2,7 @@
 _commit: v4.6.5
 _src_path: https://github.com/jupyterlab/extension-template
 advanced: true
-author_email: fortitudo@darian.at
+author_email: git@darian.at
 author_name: A. T. Darian
 create_claude_symlink: false
 create_gemini_symlink: false
@@ -10,10 +10,10 @@ has_ai_rules: true
 has_binder: false
 has_settings: true
 kind: frontend
-labextension_name: fortitudo
+labextension_name: llvm-explorer
 project_short_description: A JupyterLab extension.
-python_name: fortitudo
-repository: https://github.com/afshin/fortitudo
+python_name: llvm_explorer
+repository: https://github.com/afshin/llvm-explorer
 test: true
 yarn_linker: node-modules
 

@@ -14,7 +14,7 @@ module.exports = {
   plugins: [
     {
       apply(compiler) {
-        compiler.hooks.afterEmit.tap('FortitudoCompiler', () => {
+        compiler.hooks.afterEmit.tap('LLVMExplorerCompiler', () => {
           cpSync(
             resolve(__dirname, 'compiler'),
             resolve(compiler.options.output.path, 'compiler'),

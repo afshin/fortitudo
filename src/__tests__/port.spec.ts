@@ -81,11 +81,11 @@ it('plans applicable outputs with a single optimization stage', () => {
   expect(plan('mlir').steps.map(step => step.name)).toEqual(['mlir', 'graphs']);
 });
 
-it('migrates v1 layouts without losing edits or split proportions', () => {
-  const saved = session({
-    version: 1,
+it('validates saved layouts without changing edits or proportions', () => {
+  const saved = {
+    ...snapshot(initial()),
     source: 'saved source',
-    options: { language: 'c', target: options.target, optimization: 3 },
+    options: { ...options, language: 'c', optimization: 3 },
     layout: {
       type: 'split-area',
       orientation: 'horizontal',
@@ -94,32 +94,22 @@ it('migrates v1 layouts without losing edits or split proportions', () => {
         { type: 'tab-area', widgets: ['source'], currentIndex: 0 },
         {
           type: 'tab-area',
-          widgets: ['assembly', 'diagnostics'],
+          widgets: [
+            'outputs',
+            'diagnostics',
+            'files',
+            'terminal',
+            'run',
+            'pipelines'
+          ],
           currentIndex: 0
         }
       ]
     }
-  });
-  expect(saved?.version).toBe(2);
-  expect(saved?.source).toBe('saved source');
-  expect(saved?.layout).toMatchObject({
-    sizes: [0.3, 0.7],
-    children: [
-      { widgets: ['source'] },
-      {
-        widgets: [
-          'outputs',
-          'diagnostics',
-          'files',
-          'terminal',
-          'run',
-          'pipelines'
-        ]
-      }
-    ]
-  });
-  expect(saved?.outputs.primary).toBe('assembly');
-  expect(session({ ...snapshot(initial()), version: '2' })).toBeNull();
+  };
+  expect(session(saved)).toEqual(saved);
+  expect(session({ ...saved, version: '1' })).toBeNull();
+  expect(session({ ...saved, version: 2 })).toBeNull();
 });
 
 it('shares Unicode inputs without results or layout', () => {
@@ -134,8 +124,8 @@ it('shares Unicode inputs without results or layout', () => {
   expect(restored.layout).toBeNull();
   expect(restored).not.toHaveProperty('files');
   expect(() => decodeShare('not.a.link')).toThrow();
-  const url = new URL('https://example.test/fortitudo/');
-  url.searchParams.set('fortitudo', encodeShare(state));
+  const url = new URL('https://example.test/llvm-explorer/');
+  url.hash = `llvm-explorer=${encodeShare(state)}`;
   const sharing = createSharing(url);
   expect(sharing.read()?.source).toBe(state.source);
   expect(sharing.read()).toBeNull();

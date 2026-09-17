@@ -9,7 +9,7 @@ import zipfile
 
 root = Path(__file__).resolve().parent.parent
 project = json.loads((root / 'package.json').read_text())
-routes = json.loads((root / 'fortitudo/site/routes.json').read_text())
+routes = json.loads((root / 'llvm_explorer/site/routes.json').read_text())
 version = project['version']
 manifest = json.loads((root / 'compiler/manifest.json').read_text())
 assert manifest['origin'] == 'source', 'Build the pinned compiler first.'
@@ -65,32 +65,33 @@ def verify_site(label, read):
 
 
 verify_site('local build', lambda scope, path: (
-    root / 'fortitudo' / ('labextension' if scope == 'extension' else 'site')
+    root / 'llvm_explorer'
+    / ('labextension' if scope == 'extension' else 'site')
     / path
 ).read_bytes())
 
 
-guide = (root / 'lite/files/Fortitudo guide.md').read_bytes()
+guide = (root / 'lite/files/LLVM Explorer guide.md').read_bytes()
 for name in [
-    'lite/_output/files/Fortitudo guide.md',
-    'dist/site/lite/files/Fortitudo guide.md',
+    'lite/_output/files/LLVM Explorer guide.md',
+    'dist/site/lite/files/LLVM Explorer guide.md',
 ]:
     assert (root / name).read_bytes() == guide, f'{name}: stale guide'
 
 
 for name in [
-    'fortitudo/labextension/static/compiler',
+    'llvm_explorer/labextension/static/compiler',
     'dist/standalone/compiler',
-    'lite/_output/extensions/fortitudo/static/compiler',
+    'lite/_output/extensions/llvm-explorer/static/compiler',
     'dist/site/compiler',
-    'dist/site/lite/extensions/fortitudo/static/compiler',
+    'dist/site/lite/extensions/llvm-explorer/static/compiler',
 ]:
     verify(name, lambda path, base=root / name: (base / path).read_bytes())
 
 archives = [
-    (root / 'dist/fortitudo.tgz', 'package/compiler/'),
-    (root / f'dist/fortitudo-{version}.tar.gz',
-     f'fortitudo-{version}/fortitudo/labextension/static/compiler/'),
+    (root / 'dist/llvm-explorer.tgz', 'package/compiler/'),
+    (root / f'dist/llvm_explorer-{version}.tar.gz',
+     f'llvm_explorer-{version}/llvm_explorer/labextension/static/compiler/'),
 ]
 for archive, prefix in archives:
     with tarfile.open(archive) as package:
@@ -118,13 +119,13 @@ for archive, prefix in archives:
             for contract in ['Artifact', 'Stage', 'IRunner', 'inspectWasm']:
                 assert contract in declarations, f'Missing {contract} export'
         else:
-            metadata = package.extractfile(f'fortitudo-{version}/PKG-INFO')
+            metadata = package.extractfile(f'llvm_explorer-{version}/PKG-INFO')
             assert metadata is not None, 'Missing Python metadata.'
             verify_metadata(metadata.read(), archive.name)
             def read_site(scope, path):
                 directory = 'labextension' if scope == 'extension' else 'site'
                 member = package.extractfile(
-                    f'fortitudo-{version}/fortitudo/{directory}/{path}'
+                    f'llvm_explorer-{version}/llvm_explorer/{directory}/{path}'
                 )
                 assert member is not None, path
                 return member.read()
@@ -132,26 +133,26 @@ for archive, prefix in archives:
         assert not any('/.cache/' in name or '/node_modules/' in name
                        for name in package.getnames())
 
-wheel = root / f'dist/fortitudo-{version}-py3-none-any.whl'
+wheel = root / f'dist/llvm_explorer-{version}-py3-none-any.whl'
 assert wheel.is_file(), 'Build the current wheel first.'
 with zipfile.ZipFile(wheel) as package:
     names = package.namelist()
     assert len(names) == len(set(names)), 'Duplicate wheel destinations.'
     installs = [name for name in names
-                if name.endswith('/labextensions/fortitudo/install.json')]
+                if name.endswith('/labextensions/llvm-explorer/install.json')]
     assert len(installs) == 1, 'Expected one extension install.json.'
     assert package.read(installs[0]) == (root / 'install.json').read_bytes()
-    entry = package.read(f'fortitudo-{version}.dist-info/entry_points.txt')
-    assert b'fortitudo = fortitudo.server:main' in entry
+    entry = package.read(f'llvm_explorer-{version}.dist-info/entry_points.txt')
+    assert b'llvm-explorer = llvm_explorer.server:main' in entry
     verify_metadata(
-        package.read(f'fortitudo-{version}.dist-info/METADATA'), wheel.name
+        package.read(f'llvm_explorer-{version}.dist-info/METADATA'), wheel.name
     )
     matches = [name for name in package.namelist()
                if name.endswith('/static/compiler/manifest.json')]
     assert len(matches) == 1, 'The wheel must contain one compiler copy.'
     extension = matches[0].removesuffix('static/compiler/manifest.json')
     verify_site(wheel.name, lambda scope, path: package.read(
-        (extension if scope == 'extension' else 'fortitudo/site/') + path
+        (extension if scope == 'extension' else 'llvm_explorer/site/') + path
     ))
     for match in matches:
         prefix = match.removesuffix('manifest.json')

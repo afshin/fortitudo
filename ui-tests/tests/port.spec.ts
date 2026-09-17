@@ -231,7 +231,7 @@ test('share links restore inputs without loading a compiler', async ({
   );
   const url = await page.evaluate(() => navigator.clipboard.readText());
   expect(new URL(url).search).toBe('');
-  expect(new URL(url).hash).toMatch(/^#fortitudo=/);
+  expect(new URL(url).hash).toMatch(/^#llvm-explorer=/);
   let loaded = false;
   const requests: string[] = [];
   const shared = await context.newPage();
@@ -261,21 +261,13 @@ test('share links restore inputs without loading a compiler', async ({
   await expect(shared.getByLabel('LLVM pipeline', { exact: true })).toHaveValue(
     'instcombine'
   );
-  expect(requests.every(url => !url.includes('fortitudo='))).toBe(true);
-  const legacy = new URL(url);
-  legacy.search = legacy.hash.slice(1);
-  legacy.hash = '';
-  await shared.goto(legacy.href);
-  await expect(shared).toHaveURL(standalone);
-  await expect(shared.getByLabel('Source code')).toContainText('shared');
-  await shared.reload();
-  await expect(shared.getByLabel('Source code')).toContainText('shared');
+  expect(requests.every(url => !url.includes('llvm-explorer='))).toBe(true);
   expect(loaded).toBe(false);
   await shared.close();
 });
 
 test('invalid shared inputs show a dismissible error', async ({ page }) => {
-  await page.goto(`${standalone}#fortitudo=invalid`);
+  await page.goto(`${standalone}#llvm-explorer=invalid`);
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByLabel('Source code')).toBeVisible();
   await page.getByRole('button', { name: 'Dismiss message' }).click();

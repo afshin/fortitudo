@@ -18,7 +18,7 @@ export class OutputPanel extends TabPanel {
     create: (kind: OutputKind) => Widget
   ) {
     super({ tabsMovable: false });
-    this.addClass('fortitudo-outputs');
+    this.addClass('llvm-explorer-outputs');
     this.node.setAttribute(
       'aria-label',
       group === 'primary' ? 'Outputs' : 'Comparison outputs'

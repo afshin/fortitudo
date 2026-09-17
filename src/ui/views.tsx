@@ -36,11 +36,11 @@ export function Controls(props: IControlsProps): React.ReactElement {
   const loaded = downloads?.reduce((sum, item) => sum + item.loaded, 0) ?? 0;
   const total = downloads?.reduce((sum, item) => sum + item.total, 0) ?? 0;
   return (
-    <div className="fortitudo-controls">
-      <div className="fortitudo-toolbar">
-        <strong className="fortitudo-brand">
-          <span className="fortitudo-icon" aria-hidden="true" />
-          Fortitudo
+    <div className="llvm-explorer-controls">
+      <div className="llvm-explorer-toolbar">
+        <strong className="llvm-explorer-brand">
+          <span className="llvm-explorer-icon" aria-hidden="true" />
+          LLVM Explorer
         </strong>
         <label>
           <span>Language</span>
@@ -115,9 +115,9 @@ export function Controls(props: IControlsProps): React.ReactElement {
             </label>
           </>
         )}
-        <div className="fortitudo-actions">
+        <div className="llvm-explorer-actions">
           <button
-            className="fortitudo-primary"
+            className="llvm-explorer-primary"
             onClick={props.onCompile}
             disabled={busy}
             title="Compile (Ctrl/Cmd+Enter)"
@@ -153,11 +153,13 @@ export function Controls(props: IControlsProps): React.ReactElement {
           <button onClick={props.onResetLayout}>Reset layout</button>
         </div>
       </div>
-      <div className="fortitudo-status">
-        <div className="fortitudo-activity">
-          {busy && <span className="fortitudo-spinner" aria-hidden="true" />}
+      <div className="llvm-explorer-status">
+        <div className="llvm-explorer-activity">
+          {busy && (
+            <span className="llvm-explorer-spinner" aria-hidden="true" />
+          )}
           <span
-            className={state.status === 'failed' ? 'fortitudo-error' : ''}
+            className={state.status === 'failed' ? 'llvm-explorer-error' : ''}
             role="status"
             aria-label="Compiler status"
             aria-live="polite"
@@ -181,13 +183,13 @@ export function Controls(props: IControlsProps): React.ReactElement {
         </span>
       </div>
       {state.notice && (
-        <div className="fortitudo-notice">
+        <div className="llvm-explorer-notice">
           <span role="alert">{state.notice}</span>
           <button onClick={props.onDismissNotice}>Dismiss message</button>
         </div>
       )}
       <div
-        className="fortitudo-confirmation"
+        className="llvm-explorer-confirmation"
         role="status"
         aria-label="Confirmation"
       >
@@ -205,11 +207,11 @@ export function Source({
   children: React.ReactNode;
 }): React.ReactElement {
   return (
-    <section className="fortitudo-pane" aria-label="Source pane">
+    <section className="llvm-explorer-pane" aria-label="Source pane">
       {children}
       {(state.options.language === 'c' || state.options.language === 'cpp') &&
         state.options.target !== 'wasm32-unknown-emscripten' && (
-          <p className="fortitudo-hint">
+          <p className="llvm-explorer-hint">
             This target has Clang built-in headers. Use WebAssembly for the
             packaged C/C++ system headers.
           </p>
@@ -229,22 +231,25 @@ export function Diagnostics({
   const filename = result?.sourcePath;
   return (
     <section
-      className="fortitudo-pane fortitudo-diagnostics"
+      className="llvm-explorer-pane llvm-explorer-diagnostics"
       aria-label="Diagnostics pane"
     >
       {stale(state) && (
-        <p className="fortitudo-hint">Out of date — compile to update</p>
+        <p className="llvm-explorer-hint">Out of date — compile to update</p>
       )}
-      <div className="fortitudo-diagnostic-list">
+      <div className="llvm-explorer-diagnostic-list">
         {state.status === 'loading' && (
-          <div className="fortitudo-loading">
-            <p className="fortitudo-hint">
+          <div className="llvm-explorer-loading">
+            <p className="llvm-explorer-hint">
               {state.progress?.phase === 'preparing'
                 ? 'Downloads complete. Preparing compiler…'
                 : 'You can keep editing while the compiler loads.'}
             </p>
             {state.progress?.phase === 'downloading' && (
-              <ul className="fortitudo-downloads" aria-label="Compiler assets">
+              <ul
+                className="llvm-explorer-downloads"
+                aria-label="Compiler assets"
+              >
                 {state.progress.downloads.map(download => (
                   <li key={download.name}>
                     <span>{download.name}</span>
@@ -256,13 +261,15 @@ export function Diagnostics({
           </div>
         )}
         {state.status === 'failed' && state.notice && (
-          <p className="fortitudo-hint fortitudo-error">{state.notice}</p>
+          <p className="llvm-explorer-hint llvm-explorer-error">
+            {state.notice}
+          </p>
         )}
         {result?.diagnostics.length ? (
           result.diagnostics.map((diagnostic, index) => (
             <button
               key={index}
-              className="fortitudo-diagnostic"
+              className="llvm-explorer-diagnostic"
               disabled={
                 stale(state) ||
                 diagnostic.file !== filename ||
@@ -277,7 +284,7 @@ export function Diagnostics({
             </button>
           ))
         ) : state.active === null && state.status !== 'failed' ? (
-          <p className="fortitudo-hint">
+          <p className="llvm-explorer-hint">
             {result
               ? result.exitCode === 0
                 ? 'No errors or warnings.'
@@ -288,7 +295,10 @@ export function Diagnostics({
         {result && result.stages.length > 0 && (
           <details open={result.exitCode !== 0}>
             <summary>Build details · {Math.round(result.duration)} ms</summary>
-            <ul className="fortitudo-stages" aria-label="Compilation stages">
+            <ul
+              className="llvm-explorer-stages"
+              aria-label="Compilation stages"
+            >
               {result.stages.map(stage => (
                 <li key={stage.name}>
                   <strong>

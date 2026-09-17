@@ -21,12 +21,12 @@ def extension_path() -> Path:
     local = Path(__file__).parent / 'labextension'
     if local.is_dir():
         return local
-    package = distribution('fortitudo')
-    suffix = 'share/jupyter/labextensions/fortitudo/package.json'
+    package = distribution('llvm-explorer')
+    suffix = 'share/jupyter/labextensions/llvm-explorer/package.json'
     for path in package.files or []:
         if path.as_posix().endswith(suffix):
             return Path(package.locate_file(path)).resolve().parent
-    raise FileNotFoundError('The Fortitudo extension assets are missing.')
+    raise FileNotFoundError('The LLVM Explorer extension assets are missing.')
 
 
 class SiteHandler(BaseHTTPRequestHandler):
@@ -109,7 +109,7 @@ def open_browser(url: str) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description='Open the Fortitudo explorer and JupyterLite locally.'
+        description='Open LLVM Explorer and JupyterLite locally.'
     )
     parser.add_argument('--version', action='version', version=__version__)
     parser.add_argument(
@@ -129,7 +129,7 @@ def main(argv: list[str] | None = None) -> int:
         roots = {'site': site, 'extension': extension_path()}
     except (OSError, ValueError) as error:
         parser.exit(
-            1, 'Local site assets are missing. Reinstall Fortitudo.\n'
+            1, 'Local site assets are missing. Reinstall LLVM Explorer.\n'
             f'{error}\n'
         )
     handler = partial(SiteHandler, roots=roots, routes=routes)
@@ -137,17 +137,17 @@ def main(argv: list[str] | None = None) -> int:
         server = ThreadingHTTPServer(('127.0.0.1', args.port), handler)
     except OSError as error:
         parser.exit(
-            1, f'Cannot start Fortitudo: {error}.\n'
+            1, f'Cannot start LLVM Explorer: {error}.\n'
             'Choose another port with --port PORT.\n'
         )
     with server:
         url = f'http://127.0.0.1:{server.server_port}/'
-        print(f'Fortitudo is running at {url}', flush=True)
+        print(f'LLVM Explorer is running at {url}', flush=True)
         print('Press Ctrl+C to stop.', flush=True)
         if not args.no_browser:
             Thread(target=open_browser, args=(url,), daemon=True).start()
         try:
             server.serve_forever()
         except KeyboardInterrupt:
-            print('\nStopped Fortitudo.', flush=True)
+            print('\nStopped LLVM Explorer.', flush=True)
     return 0

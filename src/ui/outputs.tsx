@@ -51,14 +51,14 @@ export function Output({
         : `${failure}: ${stage.stderr}`;
   return (
     <section
-      className="fortitudo-pane"
+      className="llvm-explorer-pane"
       aria-label={`${outputLabels[kind]} pane`}
     >
       {stale(state) && (
-        <p className="fortitudo-hint">Out of date — compile to update</p>
+        <p className="llvm-explorer-hint">Out of date — compile to update</p>
       )}
       {kind === 'graphs' && paths.length > 0 && (
-        <label className="fortitudo-file-picker">
+        <label className="llvm-explorer-file-picker">
           Graph
           <select value={path} onChange={event => select(event.target.value)}>
             {paths.map(path => (
@@ -81,18 +81,18 @@ export function Output({
         />
       ) : !result && !state.active && state.status !== 'failed' ? (
         <div
-          className="fortitudo-empty"
+          className="llvm-explorer-empty"
           aria-label={`${outputLabels[kind]} output`}
         >
           <h2>Compile to see output</h2>
-          <p className="fortitudo-hint">
+          <p className="llvm-explorer-hint">
             The first compile downloads a large compiler. Once loaded, you can
             compile offline in this tab. Your code stays in your browser.
           </p>
         </div>
       ) : (
         <pre
-          className="fortitudo-output"
+          className="llvm-explorer-output"
           aria-label={`${outputLabels[kind]} output`}
         >
           {state.active && !result
@@ -114,8 +114,8 @@ export function Files({
   const file =
     state.files.find(file => file.path === selected) ?? state.files[0];
   return (
-    <section className="fortitudo-pane" aria-label="Files pane">
-      <label className="fortitudo-file-picker">
+    <section className="llvm-explorer-pane" aria-label="Files pane">
+      <label className="llvm-explorer-file-picker">
         Workspace file
         <select
           value={file?.path ?? ''}
@@ -130,14 +130,14 @@ export function Files({
       </label>
       {state.filesRevision !== null &&
         state.filesRevision !== state.revision && (
-          <p className="fortitudo-hint">
+          <p className="llvm-explorer-hint">
             These files belong to earlier source or options.
           </p>
         )}
       {file ? (
         <FileOutput file={file} workspace label="File output" {...actions} />
       ) : (
-        <p className="fortitudo-hint">
+        <p className="llvm-explorer-hint">
           Compile or run a command to create files.
         </p>
       )}
@@ -188,7 +188,7 @@ function FileOutput({
     <>
       <span>{filename(file.path)}</span>
       {assembly && (
-        <label className="fortitudo-filter">
+        <label className="llvm-explorer-filter">
           <input
             type="checkbox"
             checked={hideMetadata}
@@ -231,14 +231,14 @@ function FileOutput({
   return (
     <>
       {(binary || image) && (
-        <div className="fortitudo-file-actions">{buttons}</div>
+        <div className="llvm-explorer-file-actions">{buttons}</div>
       )}
       {wasm ? (
         <WasmOutput file={file} />
       ) : image ? (
         <ImageOutput data={file.data} type={image} />
       ) : binary ? (
-        <pre className="fortitudo-output">
+        <pre className="llvm-explorer-output">
           {file.data.length.toLocaleString()} bytes{'\n\n'}
           {Array.from(file.data.subarray(0, 256), byte =>
             byte.toString(16).padStart(2, '0')
@@ -295,7 +295,7 @@ function ImageOutput({
   }, [data, type]);
   return (
     <>
-      <div className="fortitudo-file-actions">
+      <div className="llvm-explorer-file-actions">
         <button onClick={() => setZoom(null)}>Fit graph</button>
         <button onClick={() => setZoom(Math.max(0.1, (zoom ?? 1) / 1.25))}>
           Zoom out
@@ -304,7 +304,7 @@ function ImageOutput({
           Zoom in
         </button>
       </div>
-      <div className="fortitudo-graph">
+      <div className="llvm-explorer-graph">
         {url && (
           <img
             src={url}

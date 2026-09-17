@@ -4,7 +4,7 @@ node_modules
 **/package.json
 !/package.json
 !/lite/brand/package.json
-fortitudo
+llvm_explorer
 eslint.config.mjs
 src/generated
 .venv

@@ -5,7 +5,7 @@ import { session } from './persistence';
 /** Shared links include editing inputs, never execution or generated files. */
 export function encodeShare(value: Session): string {
   const text = JSON.stringify({
-    version: 2,
+    version: 1,
     source: value.source,
     options: value.options
   });
@@ -22,7 +22,7 @@ export function encodeShare(value: Session): string {
 
 export function decodeShare(value: string): Session {
   if (!/^[A-Za-z0-9_-]+$/.test(value)) {
-    throw new Error('Invalid Fortitudo share link.');
+    throw new Error('Invalid LLVM Explorer share link.');
   }
   const base64 = value.replaceAll('-', '+').replaceAll('_', '/');
   const binary = atob(base64);
@@ -41,7 +41,7 @@ export function decodeShare(value: string): Session {
       })
     : null;
   if (!saved) {
-    throw new Error('Invalid Fortitudo share link.');
+    throw new Error('Invalid LLVM Explorer share link.');
   }
   return saved;
 }

@@ -21,7 +21,7 @@ for (const [host, site] of Object.entries(sites)) {
     test('repository metadata and offline fallback @compat', async ({
       page
     }, testInfo) => {
-      const api = 'https://api.github.com/repos/afshin/fortitudo';
+      const api = 'https://api.github.com/repos/afshin/llvm-explorer';
       const failures: string[] = [];
       page.on('pageerror', error => failures.push(error.message));
       await page.route(`${api}**`, route =>
@@ -32,9 +32,11 @@ for (const [host, site] of Object.entries(sites)) {
         })
       );
       await page.goto(site);
-      const details = page.locator('#fortitudo-repository-details');
+      const details = page.locator('#llvm-explorer-repository-details');
       await expect(details).toHaveText('v1.2.3 · 42 stars · 1 fork');
-      const badges = page.getByRole('navigation', { name: 'Fortitudo links' });
+      const badges = page.getByRole('navigation', {
+        name: 'LLVM Explorer links'
+      });
       await badges.screenshot({ path: testInfo.outputPath('badges.png') });
       await page.emulateMedia({ colorScheme: 'dark' });
       await badges.screenshot({ path: testInfo.outputPath('badges-dark.png') });
@@ -69,8 +71,8 @@ for (const [host, site] of Object.entries(sites)) {
       await page.getByRole('button', { name: 'Compile', exact: true }).click();
       await expect(page.getByLabel('Assembly output')).toContainText('i32.mul');
       await expect(
-        page.getByRole('link', { name: 'afshin/fortitudo on GitHub' })
-      ).toHaveAttribute('href', 'https://github.com/afshin/fortitudo');
+        page.getByRole('link', { name: 'afshin/llvm-explorer on GitHub' })
+      ).toHaveAttribute('href', 'https://github.com/afshin/llvm-explorer');
       await page.screenshot({ path: testInfo.outputPath('site.png') });
 
       const link = page.getByRole('link', {
@@ -82,7 +84,7 @@ for (const [host, site] of Object.entries(sites)) {
       await link.click();
       await expect(page).toHaveURL(`${site}lite/lab/index.html`);
       expect(page.context().pages()).toHaveLength(pages);
-      const home = page.getByRole('link', { name: 'Fortitudo home' });
+      const home = page.getByRole('link', { name: 'LLVM Explorer home' });
       await expect(home).toHaveAttribute('href', site);
       await expect(page.locator('#jp-MainLogo')).toHaveCount(1);
       await expect(home.locator('img')).toHaveAttribute(
@@ -99,7 +101,10 @@ for (const [host, site] of Object.entries(sites)) {
             )
         )
         .toBe(true);
-      await page.getByText('Open Fortitudo', { exact: true }).first().click();
+      await page
+        .getByText('Open LLVM Explorer', { exact: true })
+        .first()
+        .click();
       await page
         .getByRole('textbox', { name: 'Source code' })
         .fill('int twice(int value) { return value + value; }');
@@ -151,12 +156,12 @@ for (const [host, site] of Object.entries(sites)) {
         }
         await expect(notebook.locator('.jp-OutputArea-error')).toHaveCount(0);
         await notebook
-          .getByRole('link', { name: 'Fortitudo guide' })
+          .getByRole('link', { name: 'LLVM Explorer guide' })
           .first()
           .click();
         const guide = page.locator('.jp-MarkdownViewer');
         await expect(
-          guide.getByRole('heading', { name: 'Fortitudo guide' })
+          guide.getByRole('heading', { name: 'LLVM Explorer guide' })
         ).toBeVisible();
         await expect(guide).toContainText(
           'Repeated calls retain module state.'

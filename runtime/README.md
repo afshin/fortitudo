@@ -1,6 +1,6 @@
 # Compiler runtime
 
-Fortitudo vendors WasmBolt's compiler module and build recipe from revision
+LLVM Explorer vendors WasmBolt's compiler module and build recipe from revision
 `6566da129fde331db3f4f24856c7ea56c2c4d71c` of
 [WasmBolt](https://github.com/anutosh491/WasmBolt), by Anutosh Bhat. The MIT
 notice is in `licenses/WasmBolt.txt`.
@@ -15,8 +15,8 @@ The wrapper preserves upstream exported functions, target initialization, Clang
 invocation, LLVM option resets, opt pipeline, llc adaptation, dynamic loading
 support, memory settings, and optional MLIR driver. The CMake file checks that
 the expected llc main and InitLLVM statements exist before adapting them.
-Removing InitLLVM prevents LLVM shutdown between invocations. Fortitudo changes
-source paths and removes the upstream demo-page copying.
+Removing InitLLVM prevents LLVM shutdown between invocations. LLVM Explorer
+changes source paths and removes the upstream demo-page copying.
 
 The final compiler and MLIR links use Emscripten's `-Oz` size optimization. The
 build clears the toolchain's implicit `EMCC_CFLAGS` override and declares its

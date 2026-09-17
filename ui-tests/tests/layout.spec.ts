@@ -3,7 +3,7 @@ import type { Locator } from '@playwright/test';
 
 const hosts = {
   standalone: 'http://127.0.0.1:8765/dist/standalone/',
-  jupyterlab: 'http://127.0.0.1:8766/fortitudo/lab',
+  jupyterlab: 'http://127.0.0.1:8766/llvm-explorer/lab',
   jupyterlite: 'http://127.0.0.1:8765/dist/site/lite/lab/index.html'
 };
 
@@ -42,15 +42,14 @@ for (const [host, url] of Object.entries(hosts)) {
   test(`${host}: output tabs fit and sharing follows the host @compat`, async ({
     page
   }, testInfo) => {
-    // Reset layout only resets Fortitudo, not Jupyter's saved sidebar widths.
+    // Jupyter saves sidebar widths separately from the explorer's layout.
     // Keep this geometry test independent of other tests and browser runs.
+    const workspace = `llvm-explorer-layout-${testInfo.project.name}`;
     const address =
-      host === 'jupyterlab'
-        ? `${url}/workspaces/fortitudo-layout-${testInfo.project.name}?reset`
-        : url;
+      host === 'jupyterlab' ? `${url}/workspaces/${workspace}?reset` : url;
     await page.goto(address);
     if (host !== 'standalone') {
-      await page.getByText('Open Fortitudo', { exact: true }).click();
+      await page.getByText('Open LLVM Explorer', { exact: true }).click();
     }
     await expect(page.getByLabel('Source code')).toBeVisible();
     await page.getByRole('button', { name: 'Reset layout' }).click();
@@ -60,7 +59,7 @@ for (const [host, url] of Object.entries(hosts)) {
       name: 'Guide',
       exact: true
     });
-    const guide = page.getByRole('dialog', { name: 'Fortitudo guide' });
+    const guide = page.getByRole('dialog', { name: 'LLVM Explorer guide' });
     if (host === 'standalone') {
       await page.context().setOffline(true);
     }
@@ -68,7 +67,7 @@ for (const [host, url] of Object.entries(hosts)) {
     await guideButton.press('Enter');
     await expect(guide).toBeVisible();
     await expect(
-      guide.locator('pre').filter({ hasText: 'pip install fortitudo' })
+      guide.locator('pre').filter({ hasText: 'pip install llvm-explorer' })
     ).toBeInViewport();
     await guide.getByRole('button', { name: 'Execution', exact: true }).click();
     await expect(

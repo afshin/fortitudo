@@ -1,7 +1,7 @@
 [workspace]
 authors = ["A. T. Darian <git@darian.at>"]
 channels = ["conda-forge"]
-name = "fortitudo"
+name = "llvm-explorer"
 platforms = ["osx-arm64", "linux-64"]
 version = "0.1.0"
 

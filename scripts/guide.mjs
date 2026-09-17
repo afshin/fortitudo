@@ -40,8 +40,8 @@ function build() {
       `export const sections = ${JSON.stringify(sections, null, 2)} as const;\n`
   );
   write(
-    resolve(root, 'lite/files/Fortitudo guide.md'),
-    `# Fortitudo guide\n\n${markdown}\n`
+    resolve(root, 'lite/files/LLVM Explorer guide.md'),
+    `# LLVM Explorer guide\n\n${markdown}\n`
   );
 }
 

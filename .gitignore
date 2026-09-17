@@ -7,9 +7,9 @@ node_modules/
 *.egg-info/
 .ipynb_checkpoints
 *.tsbuildinfo
-fortitudo/labextension
+llvm_explorer/labextension
 # Version file is handled by hatchling
-fortitudo/_version.py
+llvm_explorer/_version.py
 
 # Integration tests
 ui-tests/test-results/
@@ -134,8 +134,8 @@ dmypy.json
 /work/
 /compiler/
 /src/generated/
-/fortitudo/site/
-/lite/files/Fortitudo guide.md
+/llvm_explorer/site/
+/lite/files/LLVM Explorer guide.md
 runtime/.cache/
 runtime/build/
 lite/_output/

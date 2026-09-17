@@ -14,7 +14,7 @@ export function Pipelines({
   onOptions(options: Options): void;
 }): React.ReactElement {
   return (
-    <section className="fortitudo-form" aria-label="Pipelines pane">
+    <section className="llvm-explorer-form" aria-label="Pipelines pane">
       {state.options.language !== 'mlir' && (
         <>
           <label>
@@ -58,7 +58,7 @@ export function Pipelines({
           />
         </label>
       )}
-      <p className="fortitudo-hint">
+      <p className="llvm-explorer-hint">
         {state.options.language === 'mlir'
           ? 'MLIR produces transformed IR and an operation graph.'
           : 'Leave the LLVM pipeline empty to follow the optimization level.'}
@@ -78,12 +78,12 @@ export function Terminal({
 }): React.ReactElement {
   const [command, setCommand] = useState('');
   return (
-    <section className="fortitudo-pane" aria-label="Terminal pane">
-      <div className="fortitudo-caption">
+    <section className="llvm-explorer-pane" aria-label="Terminal pane">
+      <div className="llvm-explorer-caption">
         <span>clang · clang++ · opt · llc · wasm-ld · mlir-opt · dot</span>
         <button onClick={onClear}>Clear log</button>
       </div>
-      <pre className="fortitudo-output" aria-label="Command log">
+      <pre className="llvm-explorer-output" aria-label="Command log">
         {state.terminal
           .map(stage =>
             [
@@ -99,7 +99,7 @@ export function Terminal({
           'Working directory: /workspace. Compile replaces the workspace.'}
       </pre>
       <form
-        className="fortitudo-command-line"
+        className="llvm-explorer-command-line"
         onSubmit={event => {
           event.preventDefault();
           if (command.trim() && !state.active) {
@@ -148,8 +148,8 @@ export function Run({
     execution.result?.status === 'success' ? execution.result.value : null;
   const returned = value === null ? 'void' : String(value);
   return (
-    <section className="fortitudo-form" aria-label="Run pane">
-      <div className="fortitudo-run-controls">
+    <section className="llvm-explorer-form" aria-label="Run pane">
+      <div className="llvm-explorer-run-controls">
         <label>
           Export
           <select
@@ -199,12 +199,12 @@ export function Run({
         )}
       </div>
       {execution.module !== null && !currentModule(state) && (
-        <p className="fortitudo-hint">
+        <p className="llvm-explorer-hint">
           Out of date — Run rebuilds source when WebAssembly is selected.
         </p>
       )}
       {!execution.module && (
-        <p className="fortitudo-hint">
+        <p className="llvm-explorer-hint">
           {canRun(state)
             ? 'Run compiles your source and calls an exported function.'
             : 'Choose WebAssembly to run your code, or use a Wasm file.'}
@@ -223,7 +223,7 @@ export function Run({
         </p>
       )}
       {(execution.notice || execution.result?.status === 'failed') && (
-        <p role="alert" className="fortitudo-error">
+        <p role="alert" className="llvm-explorer-error">
           {execution.notice ||
             (execution.result?.status === 'failed'
               ? execution.result.message
@@ -257,7 +257,7 @@ export function Run({
             }}
           />
         </label>
-        <p className="fortitudo-hint">
+        <p className="llvm-explorer-hint">
           Pointer and aggregate values are not supported. Calls retain module
           state until reset.
         </p>

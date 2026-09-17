@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
     base: './',
     publicDir: mode === 'site' ? 'public' : false,
     define: {
-      'import.meta.env.FORTITUDO_VERSION': JSON.stringify(version)
+      'import.meta.env.LLVM_EXPLORER_VERSION': JSON.stringify(version)
     },
     build: {
       target: 'es2022',
@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       mode === 'site' && {
-        name: 'fortitudo-site',
+        name: 'llvm-explorer-site',
         transformIndexHtml: {
           // Process the site module and version with Vite's HTML pipeline.
           order: 'pre',
@@ -30,8 +30,8 @@ export default defineConfig(({ mode }) => {
             {
               tag: 'nav',
               attrs: {
-                class: 'fortitudo-navigation',
-                'aria-label': 'Fortitudo links'
+                class: 'llvm-explorer-navigation',
+                'aria-label': 'LLVM Explorer links'
               },
               children: readFileSync(
                 new URL('./standalone/navigation.html', import.meta.url),
@@ -51,7 +51,7 @@ export default defineConfig(({ mode }) => {
         }
       },
       {
-        name: 'fortitudo-compiler',
+        name: 'llvm-explorer-compiler',
         generateBundle() {
           for (const id of this.getModuleIds()) {
             if (id.includes('/@jupyterlab/')) {

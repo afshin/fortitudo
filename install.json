@@ -1,5 +1,5 @@
 {
   "packageManager": "python",
-  "packageName": "fortitudo",
-  "uninstallInstructions": "Uninstall fortitudo with your Python package manager."
+  "packageName": "llvm-explorer",
+  "uninstallInstructions": "Uninstall llvm-explorer with your Python package manager."
 }

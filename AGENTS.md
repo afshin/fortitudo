@@ -1,7 +1,7 @@
-# Fortitudo Agent Instructions
+# LLVM Explorer Agent Instructions
 
-Fortitudo is a browser-only compiler explorer for JupyterLab, JupyterLite, and a
-standalone Lumino application. The hosts share the same application.
+LLVM Explorer is a browser-only compiler explorer for JupyterLab, JupyterLite,
+and a standalone Lumino application. The hosts share the same application.
 
 ## Engineering principles
 
@@ -86,9 +86,9 @@ Git staging and commits are the user's responsibility.
   together; use type-only imports where appropriate.
 - Follow existing casing: PascalCase for types/classes, camelCase for
   functions/values, and I-prefixed interfaces as required by ESLint.
-- Centralize command IDs in CommandIDs; use `fortitudo:command-name` values.
-  Preserve `fortitudo:plugin` for the existing Jupyter plugin.
-- Namespace shared CSS with `fortitudo-` and provide standalone defaults for
+- Centralize command IDs in CommandIDs; use `llvm-explorer:command-name` values.
+  Use `llvm-explorer:plugin` for the Jupyter plugin.
+- Namespace shared CSS with `llvm-explorer-` and provide standalone defaults for
   theme values. Put Jupyter-specific theme integration in the host layer.
 - Document exported contracts and non-obvious decisions. Explain reasons and
   invariants; avoid comments that merely restate the code.

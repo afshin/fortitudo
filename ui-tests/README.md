@@ -26,20 +26,20 @@ settings and saved workspaces so tests do not restore your personal workspace.
 Servers started by Playwright stop when the run ends.
 
 The local launcher runs on port 8767. By default, tests use
-`python -m fortitudo` from the checkout. Set `FORTITUDO_LOCAL_COMMAND` to the
-installed command to test a wheel; CI uses a clean environment without
+`python -m llvm-explorer` from the checkout. Set `LLVM_EXPLORER_LOCAL_COMMAND`
+to the installed command to test a wheel; CI uses a clean environment without
 JupyterLab. Build the combined site before starting either version.
 
 JupyterLab layout tests reset a dedicated workspace for each browser. This keeps
-host sidebar widths from earlier resize tests out of the geometry checks;
-Fortitudo's **Reset layout** only resets the workbench's own panes.
+host sidebar widths from earlier resize tests out of the geometry checks; LLVM
+Explorer's **Reset layout** only resets the workbench's own panes.
 
 Successful HTTP requests, expected download disconnects, and Jupyter startup
 messages are quiet by default. Server warnings and errors remain visible. To
 include request logs and Jupyter startup details, run:
 
 ```sh
-FORTITUDO_TEST_SERVER_LOGS=1 pixi run --as-is jlpm test:browser
+LLVM_EXPLORER_TEST_SERVER_LOGS=1 pixi run --as-is jlpm test:browser
 ```
 
 Chromium exercises all hosts and failure modes. All browsers check tab layout,
@@ -67,7 +67,7 @@ selections, downloads, custom passes, lazy MLIR loading and retry, command
 redirection, manual modules, scalar signatures, stateful calls, NaN, traps,
 Stop, timeout, and replacement modules. Unit tests cover stage dependencies and
 partial failure, buffer ownership, stale responses, worker generations, session
-migration, and malformed protocol or Wasm data.
+validation, and malformed protocol or Wasm data.
 
 CI runs the full configured suite on main branch pushes, pull requests, and
 release builds. It builds all hosts and installs the required browsers before

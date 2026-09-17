@@ -9,7 +9,7 @@ from pathlib import Path
 class RequestHandler(SimpleHTTPRequestHandler):
   def log_request(self, code='-', size='-'):
     if (
-      os.environ.get('FORTITUDO_TEST_SERVER_LOGS') == '1'
+      os.environ.get('LLVM_EXPLORER_TEST_SERVER_LOGS') == '1'
       or (isinstance(code, int) and code >= 400)
     ):
       super().log_request(code, size)

@@ -39,7 +39,7 @@ export type Area =
     }>;
 
 export type Session = Readonly<{
-  version: 2;
+  version: 1;
   source: string;
   options: Options;
   layout: Area | null;
@@ -468,7 +468,7 @@ export function stale(state: State): boolean {
 
 export function snapshot(state: State): Session {
   return {
-    version: 2,
+    version: 1,
     source: state.source,
     options: state.options,
     layout: state.layout,

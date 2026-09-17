@@ -76,15 +76,15 @@ export class Workbench extends BoxPanel {
     private readonly store: IStore
   ) {
     super({ direction: 'top-to-bottom', spacing: 0 });
-    this.id = 'fortitudo-workbench';
-    this.title.label = 'Fortitudo';
-    this.title.iconClass = 'fortitudo-icon';
+    this.id = 'llvm-explorer-workbench';
+    this.title.label = 'LLVM Explorer';
+    this.title.iconClass = 'llvm-explorer-icon';
     this.title.closable = true;
-    this.addClass('fortitudo-workbench');
+    this.addClass('llvm-explorer-workbench');
     this.compiler = createCompiler(options.workerUrl);
     this.runner = createRunner(options.workerUrl);
     const header = this.view('controls');
-    header.addClass('fortitudo-header');
+    header.addClass('llvm-explorer-header');
     this.addWidget(header);
     const panes = {
       source: this.view('source'),
@@ -137,7 +137,7 @@ export class Workbench extends BoxPanel {
     this.binding = options.commands.addKeyBinding({
       command: CommandIDs.compile,
       keys: ['Accel Enter'],
-      selector: '.fortitudo-workbench'
+      selector: '.llvm-explorer-workbench'
     });
     let previous = snapshot(store.state);
     let position = store.state.position;
@@ -203,7 +203,7 @@ export class Workbench extends BoxPanel {
         onSize={resize}
       />
     ));
-    widget.addClass('fortitudo-view');
+    widget.addClass('llvm-explorer-view');
     widget.node.dataset.pane = pane;
     if (output) {
       widget.node.dataset.output = output;

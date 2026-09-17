@@ -13,7 +13,7 @@ import { createWorkbench } from '../workbench';
 import type { Workbench } from '../workbench';
 import { createPersistence } from './persistence';
 
-const pluginId = 'fortitudo:plugin';
+const pluginId = 'llvm-explorer:plugin';
 
 const plugin: JupyterFrontEndPlugin<void> = {
   id: pluginId,
@@ -32,7 +32,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     // Tracker restoration removes entries that are not widget records.
     // Keep editing state in its own namespace.
     const tracker = new WidgetTracker<Workbench>({
-      namespace: 'fortitudo-workbench'
+      namespace: 'llvm-explorer-workbench'
     });
     let current: Workbench | null = null;
     let opening: Promise<void> | null = null;
@@ -41,12 +41,12 @@ const plugin: JupyterFrontEndPlugin<void> = {
     const workspace = PageConfig.getOption('workspace') || 'default';
     const persistence = createPersistence(
       state,
-      `fortitudo:session:${path}:${workspace}`
+      `llvm-explorer:session:${path}:${workspace}`
     );
     app.commands.addCommand(CommandIDs.open, {
-      label: 'Open Fortitudo',
+      label: 'Open LLVM Explorer',
       caption: 'Explore compiler outputs and run WebAssembly in your browser',
-      iconClass: 'fortitudo-icon',
+      iconClass: 'llvm-explorer-icon',
       execute: () => {
         if (current && !current.isDisposed) {
           if (!current.isAttached) {
@@ -78,7 +78,10 @@ const plugin: JupyterFrontEndPlugin<void> = {
                   layout: null
                 }) ?? defaults;
             } catch (error) {
-              console.warn('Fortitudo settings could not be loaded.', error);
+              console.warn(
+                'LLVM Explorer settings could not be loaded.',
+                error
+              );
             }
           }
           const workbench = await createWorkbench({
@@ -88,7 +91,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
             defaults
           });
           current = workbench;
-          workbench.addClass('fortitudo-jupyter');
+          workbench.addClass('llvm-explorer-jupyter');
           workbench.disposed.connect(() => {
             saved = workbench.saved;
             current = null;
@@ -102,7 +105,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
         return opening;
       }
     });
-    palette?.addItem({ command: CommandIDs.open, category: 'Fortitudo' });
+    palette?.addItem({ command: CommandIDs.open, category: 'LLVM Explorer' });
     launcher?.add({ command: CommandIDs.open, category: 'Other', rank: 1 });
     if (restorer) {
       void restorer
@@ -111,7 +114,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
           name: () => 'workbench'
         })
         .catch(error => {
-          console.error('Fortitudo restoration failed.', error);
+          console.error('LLVM Explorer restoration failed.', error);
         });
     }
   }

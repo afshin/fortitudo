@@ -18,15 +18,15 @@ import unittest
 from unittest.mock import patch
 from urllib.request import urlopen
 
-from fortitudo import __version__
-from fortitudo.server import SiteHandler, main, open_browser
+from llvm_explorer import __version__
+from llvm_explorer.server import SiteHandler, main, open_browser
 
 
 class ServerTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         root = Path(self.directory.name)
-        (root / 'index.html').write_text('<h1>Fortitudo</h1>')
+        (root / 'index.html').write_text('<h1>LLVM Explorer</h1>')
         (root / 'worker.js').write_text('self.onmessage = () => {};')
         (root / 'module.wasm').write_bytes(b'\0asm')
         (root / 'secret.txt').write_text('Not in the asset manifest')
@@ -113,7 +113,7 @@ class LauncherTests(unittest.TestCase):
 
     def test_installed_command(self):
         # Isolated mode cannot import the checkout or an unrelated installation.
-        command = [sys.executable, '-I', '-m', 'fortitudo']
+        command = [sys.executable, '-I', '-m', 'llvm_explorer']
         version = subprocess.check_output(command + ['--version'], text=True)
         self.assertEqual(version.strip(), __version__)
         with tempfile.TemporaryDirectory() as directory:

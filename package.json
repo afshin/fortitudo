@@ -1,5 +1,5 @@
 {
-    "name": "fortitudo",
+    "name": "llvm-explorer",
     "version": "0.8.0",
     "workspaces": [
         "lite/brand"
@@ -15,14 +15,14 @@
         "jupyterlite",
         "lumino"
     ],
-    "homepage": "https://fortitudo.cc",
+    "homepage": "https://llvm-explorer.dev/",
     "bugs": {
-        "url": "https://github.com/afshin/fortitudo/issues"
+        "url": "https://github.com/afshin/llvm-explorer/issues"
     },
     "license": "BSD-3-Clause",
     "author": {
         "name": "A. T. Darian",
-        "email": "fortitudo@darian.at"
+        "email": "git@darian.at"
     },
     "files": [
         "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
@@ -43,7 +43,7 @@
     "style": "style/index.css",
     "repository": {
         "type": "git",
-        "url": "https://github.com/afshin/fortitudo.git"
+        "url": "https://github.com/afshin/llvm-explorer.git"
     },
     "scripts": {
         "build": "jlpm build:lib && jlpm build:worker && jlpm check:compiler && jlpm build:labextension:dev",
@@ -57,7 +57,7 @@
         "clean": "jlpm clean:lib",
         "clean:lib": "rimraf lib tsconfig.tsbuildinfo",
         "clean:lintcache": "rimraf .eslintcache .stylelintcache",
-        "clean:labextension": "rimraf fortitudo/labextension fortitudo/_version.py",
+        "clean:labextension": "rimraf llvm_explorer/labextension llvm_explorer/_version.py",
         "clean:all": "jlpm clean:lib && jlpm clean:labextension && jlpm clean:lintcache",
         "eslint": "jlpm eslint:check --fix",
         "eslint:check": "eslint src --max-warnings 0",
@@ -156,7 +156,7 @@
     },
     "jupyterlab": {
         "extension": "lib/jupyter/plugin.js",
-        "outputDir": "fortitudo/labextension",
+        "outputDir": "llvm_explorer/labextension",
         "schemaDir": "schema",
         "webpackConfig": "webpack.config.cjs"
     },

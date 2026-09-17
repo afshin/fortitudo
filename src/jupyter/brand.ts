@@ -7,8 +7,8 @@ let logo: Widget | null = null;
 
 // Bundled only by lite/brand; installed JupyterLab keeps its own branding.
 const plugin: JupyterFrontEndPlugin<void> = {
-  id: 'fortitudo:lite-brand',
-  description: 'Link the JupyterLite logo to the Fortitudo home page.',
+  id: 'llvm-explorer:lite-brand',
+  description: 'Link the JupyterLite logo to the LLVM Explorer home page.',
   autoStart: true,
   optional: [ILabShell],
   activate: (_, shell: ILabShell | null) => {
@@ -18,8 +18,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
     const base = new URL(PageConfig.getBaseUrl(), document.baseURI);
     const link = document.createElement('a');
     link.href = new URL('../', base).href;
-    link.title = 'Fortitudo home';
-    link.setAttribute('aria-label', 'Fortitudo home');
+    link.title = 'LLVM Explorer home';
+    link.setAttribute('aria-label', 'LLVM Explorer home');
     link.style.display = 'flex';
     link.style.alignItems = 'center';
     link.style.padding = '0 8px';
