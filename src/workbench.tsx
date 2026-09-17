@@ -34,6 +34,7 @@ export async function createWorkbench(
   options: IWorkbenchOptions
 ): Promise<Workbench> {
   let saved = options.defaults ?? null;
+  let invalid = false;
   let notice: string | null = null;
   try {
     const value = await options.persistence.load();
@@ -42,6 +43,7 @@ export async function createWorkbench(
       if (parsed) {
         saved = parsed;
       } else {
+        invalid = true;
         notice = 'Saved state is invalid. A default session was opened.';
       }
     }
@@ -52,6 +54,8 @@ export async function createWorkbench(
     const shared = options.sharing?.read();
     if (shared) {
       saved = shared;
+      invalid = false;
+      notice = null;
       try {
         await options.persistence.save(shared);
         options.sharing?.clear();
@@ -63,6 +67,13 @@ export async function createWorkbench(
     notice = String(error);
   }
   const store = createStore(initial(saved));
+  if (invalid) {
+    try {
+      await options.persistence.save(snapshot(store.state));
+    } catch (error) {
+      notice = `Default session could not be saved: ${String(error)}`;
+    }
+  }
   if (notice) {
     store.dispatch({ type: 'notice', message: notice });
   }

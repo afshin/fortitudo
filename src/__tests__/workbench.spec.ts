@@ -82,14 +82,82 @@ it('saves navigation and output selection without losing edits', async () => {
 });
 
 it.each([false, true])(
-  'saves imported inputs before clearing the URL (save fails: %s)',
-  async fails => {
+  'replaces invalid state before any edits (host defaults: %s)',
+  async useDefaults => {
+    const defaults = useDefaults
+      ? { ...snapshot(initial()), source: 'host default' }
+      : undefined;
+    let saved: unknown = { version: 99 };
+    const save = jest.fn(async (value: Session) => {
+      saved = JSON.parse(JSON.stringify(value));
+    });
+    const options = {
+      commands: new CommandRegistry(),
+      workerUrl: new URL('https://example.test/compiler/worker.js'),
+      defaults,
+      persistence: { load: async () => saved, save }
+    };
+    const workbench = await createWorkbench(options);
+    expect(saved).toEqual(defaults ?? snapshot(initial()));
+    expect(save).toHaveBeenCalledTimes(1);
+    workbench.close();
+    const reopened = await createWorkbench(options);
+    expect(save).toHaveBeenCalledTimes(1);
+    reopened.close();
+  }
+);
+
+it('keeps editing usable when saving the replacement session fails', async () => {
+  const commands = new CommandRegistry();
+  const save = jest
+    .fn(async (_value: Session) => {})
+    .mockRejectedValueOnce(new Error('Storage unavailable'));
+  const workbench = await createWorkbench({
+    commands,
+    workerUrl: new URL('https://example.test/compiler/worker.js'),
+    persistence: { load: async () => ({ version: 99 }), save }
+  });
+  expect(save).toHaveBeenCalledTimes(1);
+  await commands.execute(CommandIDs.setSource, { source: 'edited' });
+  await workbench.saved;
+  expect(save).toHaveBeenCalledTimes(2);
+  expect(save).toHaveBeenLastCalledWith(
+    expect.objectContaining({ source: 'edited' })
+  );
+  workbench.close();
+});
+
+it('does not overwrite saved state when reading storage fails', async () => {
+  const save = jest.fn();
+  const workbench = await createWorkbench({
+    commands: new CommandRegistry(),
+    workerUrl: new URL('https://example.test/compiler/worker.js'),
+    persistence: {
+      load: async () => {
+        throw new Error('Storage unavailable');
+      },
+      save
+    }
+  });
+  expect(save).not.toHaveBeenCalled();
+  workbench.close();
+});
+
+it.each([
+  { invalid: false, fails: false },
+  { invalid: false, fails: true },
+  { invalid: true, fails: false },
+  { invalid: true, fails: true }
+])(
+  'saves shared inputs first (invalid: $invalid, save fails: $fails)',
+  async ({ invalid, fails }) => {
     const commands = new CommandRegistry();
     const shared = { ...snapshot(initial()), source: 'shared' };
     const clear = jest.fn();
     let saved: Session | null = null;
     const save = jest.fn(async (value: Session) => {
       expect(clear).not.toHaveBeenCalled();
+      expect(value.source).not.toBe(initial().source);
       if (fails) {
         fails = false;
         throw new Error('Storage unavailable');
@@ -99,7 +167,10 @@ it.each([false, true])(
     const workbench = await createWorkbench({
       commands,
       workerUrl: new URL('https://example.test/compiler/worker.js'),
-      persistence: { load: async () => snapshot(initial()), save },
+      persistence: {
+        load: async () => (invalid ? { version: 99 } : snapshot(initial())),
+        save
+      },
       sharing: { read: () => shared, clear, copy: jest.fn() }
     });
     if (saved === null) {

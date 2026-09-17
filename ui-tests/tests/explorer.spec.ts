@@ -247,7 +247,7 @@ for (const [host, url] of Object.entries(hosts)) {
   });
 }
 
-test('invalid saved state falls back with feedback', async ({ page }) => {
+test('invalid saved state is replaced once @compat', async ({ page }) => {
   await page.goto(standalone);
   await page.evaluate(() => {
     localStorage.setItem('llvm-explorer:session:v1', '{"version":99}');
@@ -257,6 +257,11 @@ test('invalid saved state falls back with feedback', async ({ page }) => {
   await expect(
     page.getByRole('textbox', { name: 'Source code' })
   ).toContainText('square');
+  await page.reload();
+  await expect(
+    page.getByRole('textbox', { name: 'Source code' })
+  ).toContainText('square');
+  await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
 test('missing assets, cancellation during loading, and retry', async ({
