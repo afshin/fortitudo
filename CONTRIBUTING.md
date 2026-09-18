@@ -91,10 +91,9 @@ pixi run --as-is jlpm serve:site
 `dist/site` serves standalone at its root and JupyterLite under `lite/`. The
 standalone navigation opens Lite in the current tab. The separate
 `dist/standalone` build omits the site navigation and its assets. The site build
-adds `standalone/navigation.html` and `src/standalone/site.ts` through Vite's
-HTML hook; its version placeholder comes from `package.json`. All asset URLs
-remain relative, including compiler and notebook kernel assets. The site build
-checks required entry points and the 1 GB Pages size limit.
+adds `standalone/navigation.html` and `style/site.css` through Vite's HTML hook.
+All asset URLs remain relative, including compiler and notebook kernel assets.
+The site build checks required entry points and the 1 GB Pages size limit.
 
 The same build stages `llvm_explorer/site` for the Python launcher. Its URL
 manifest maps identical assets to one stored file, sharing the compiler with the

@@ -2,19 +2,12 @@ import { cpSync, createReadStream, readFileSync, statSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import { defineConfig } from 'vite';
 
-const { version } = JSON.parse(
-  readFileSync(new URL('./package.json', import.meta.url), 'utf8')
-);
-
 export default defineConfig(({ mode }) => {
   const output = mode === 'site' ? 'dist/site' : 'dist/standalone';
   return {
     root: 'standalone',
     base: './',
     publicDir: mode === 'site' ? 'public' : false,
-    define: {
-      'import.meta.env.LLVM_EXPLORER_VERSION': JSON.stringify(version)
-    },
     build: {
       target: 'es2022',
       outDir: `../${output}`,
@@ -24,7 +17,7 @@ export default defineConfig(({ mode }) => {
       mode === 'site' && {
         name: 'llvm-explorer-site',
         transformIndexHtml: {
-          // Process the site module and version with Vite's HTML pipeline.
+          // Process navigation assets with Vite's HTML pipeline.
           order: 'pre',
           handler: () => [
             {
@@ -40,12 +33,12 @@ export default defineConfig(({ mode }) => {
               injectTo: 'body-prepend'
             },
             {
-              tag: 'script',
+              tag: 'link',
               attrs: {
-                type: 'module',
-                src: '../src/standalone/site.ts'
+                rel: 'stylesheet',
+                href: '../style/site.css'
               },
-              injectTo: 'body'
+              injectTo: 'head'
             }
           ]
         }

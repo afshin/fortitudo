@@ -15,8 +15,7 @@
 
 .llvm-explorer-navigation-links {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 24px;
+  gap: 8px;
 }
 
 .llvm-explorer-navigation .llvm-explorer-brand {
@@ -32,12 +31,12 @@
   display: inline-flex;
   box-sizing: border-box;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  min-width: 36px;
   min-height: 36px;
-  padding: 2px 0;
+  padding: 6px;
+  border-radius: 4px;
   color: inherit;
-  font-size: 13px;
-  font-weight: 600;
   text-decoration: none;
 }
 
@@ -45,21 +44,13 @@
   flex: none;
 }
 
-.llvm-explorer-badge-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.5;
-}
-
-.llvm-explorer-badge-text small {
-  font-size: 11px;
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.75;
+.llvm-explorer-jupyter-icon {
+  /* Match the orange ring's height and center to GitHub's visible circle. */
+  transform: translate(-0.3px, 0.85px) scale(1.2);
 }
 
 .llvm-explorer-navigation a:hover {
-  color: #365bbb;
+  background: #e6e9ef;
 }
 
 .llvm-explorer-navigation a:focus-visible {
@@ -79,6 +70,6 @@
   }
 
   .llvm-explorer-navigation a:hover {
-    color: #91adff;
+    background: #343e4b;
   }
 }

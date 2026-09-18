@@ -18,43 +18,62 @@ for (const [host, site] of Object.entries(sites)) {
       }
     });
 
-    test('repository metadata and offline fallback @compat', async ({
-      page
-    }, testInfo) => {
-      const api = 'https://api.github.com/repos/afshin/llvm-explorer';
+    test('accessible navigation icons @compat', async ({ page }, testInfo) => {
       const failures: string[] = [];
       page.on('pageerror', error => failures.push(error.message));
-      await page.route(`${api}**`, route =>
-        route.fulfill({
-          json: route.request().url().endsWith('/releases/latest')
-            ? { tag_name: 'v1.2.3' }
-            : { stargazers_count: 42, forks_count: 1 }
-        })
-      );
       await page.goto(site);
-      const details = page.locator('#llvm-explorer-repository-details');
-      await expect(details).toHaveText('v1.2.3 · 42 stars · 1 fork');
-      const badges = page.getByRole('navigation', {
+      const navigation = page.getByRole('navigation', {
         name: 'LLVM Explorer links'
       });
-      await badges.screenshot({ path: testInfo.outputPath('badges.png') });
-      await page.emulateMedia({ colorScheme: 'dark' });
-      await badges.screenshot({ path: testInfo.outputPath('badges-dark.png') });
-      await page.setViewportSize({ width: 390, height: 850 });
-      await badges.screenshot({
-        path: testInfo.outputPath('badges-narrow.png')
+      const jupyter = navigation.getByRole('link', {
+        name: 'Try in Jupyter',
+        exact: true
       });
-
-      await page.route(`${api}**`, route => route.abort());
-      const failed = [api, `${api}/releases/latest`].map(url =>
-        page.waitForEvent('requestfailed', request => request.url() === url)
+      const github = navigation.getByRole('link', {
+        name: 'afshin/llvm-explorer on GitHub',
+        exact: true
+      });
+      await expect(jupyter).toHaveAttribute(
+        'title',
+        'Try in Jupyter — C23 and C++23 notebooks'
       );
+      await expect(github).toHaveAttribute(
+        'title',
+        'afshin/llvm-explorer on GitHub'
+      );
+      for (const link of [jupyter, github]) {
+        await expect(link).toBeVisible();
+        await expect(link).toHaveText('');
+        await expect(link.locator('img')).toHaveAttribute('alt', '');
+        await expect
+          .poll(() =>
+            link
+              .locator('img')
+              .evaluate(
+                image =>
+                  image instanceof HTMLImageElement && image.naturalWidth > 0
+              )
+          )
+          .toBe(true);
+      }
+      await jupyter.focus();
+      await expect(jupyter).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(github).toBeFocused();
+      await navigation.screenshot({
+        path: testInfo.outputPath('navigation.png')
+      });
+      await page.emulateMedia({ colorScheme: 'dark' });
+      await navigation.screenshot({
+        path: testInfo.outputPath('navigation-dark.png')
+      });
+      await page.setViewportSize({ width: 390, height: 850 });
+      await navigation.screenshot({
+        path: testInfo.outputPath('navigation-narrow.png')
+      });
       await page.reload();
-      await Promise.all(failed);
-      await expect(details).toHaveText(/^\s*v\S+ · Source on GitHub\s*$/);
-      await expect(
-        page.getByRole('link', { name: 'Try in Jupyter' })
-      ).toBeVisible();
+      await expect(jupyter).toBeVisible();
+      await expect(github).toBeVisible();
       await expect(
         page.getByRole('textbox', { name: 'Source code' })
       ).toBeVisible();
